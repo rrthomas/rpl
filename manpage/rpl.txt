@@ -1,0 +1,52 @@
+NAME
+  rpl - replace strings in files
+
+SYNOPSIS
+  rpl [-LhiwbqvsRepfdt] [-xSUFFIX] <old_string> <new_string> <target_file ...>
+
+DESCRIPTION
+  rpl is an intelligent recursive search and replacement utility. It will
+  change strings with new strings in multiple text files at the same time.
+
+  rpl can verify, find and edit several plain texts quickly. This tool
+  can work recursively over directories and supports limiting of the search
+  to specific file suffixes.
+
+OPTIONS
+  Basic usage is to specify two strings and one or more filenames or directories
+  on the command line. The first string is the string to replace, and the second
+  string is the replacement string.
+
+  -h, --help         A short help text.
+  -L, --license      Show the license and exit.
+  -xSUFFIX           Search only files ending with SUFFIX, e.g. ".txt". May be
+                     specified multiple times.
+  -i, --ignore-case  Ignore the case of old_string.
+  -w, --whole-words  Make old_string match only on word boundaries.
+  -b, --backup       Move the original files to filename~ before replacing them.
+  -q, --quiet        Quiet mode.
+  -v, --verbose      Verbose mode.
+  -s, --dry-run      Simulation mode, no files are changed.
+  -R, --recursive    Recurse into subdirectories.
+  -e, --escape       Expand escape sequences in old_string and new_string.
+                     Examples of escape sequences are '\\n' (new-line), '\\t' (tab), '\\x42' (hexadecimal number 42), '\\033' (octal number 033).
+  -p, --prompt       Prompt for confirmation before replacing each file.
+  -f, --force        Ignore errors when trying to restore permissions and file
+                     ownership.
+  -d, --keep-times   Keep modification times when replacing files.
+  -a, --all          Do not ignore files and directories starting with '.'
+
+EXAMPLES
+  Replace all occurrences of "F" (on word boundaries) with "A" in all text
+  files under the grades/ directory:
+
+    $ rpl -Rwd -x'.txt' 'F' 'A' grades/
+
+SEE ALSO
+  find(1), sed(1).
+
+HISTORY
+  This program was written for Debian as a free replacement for the non-free rpl program by Joe Laffey.
+
+AUTHORS
+     Goran Weinholt <weinholt@debian.org>.
