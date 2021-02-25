@@ -92,13 +92,75 @@ class ChainStream(io.RawIOBase):
         b[:len(output)] = output
         return len(output)
 
+        def readable(self):
+            return True
 
-def slurp(filename):
-    """Read a file into a string, aborting on error."""
-    try:
-        return open(filename).read()
-    except IOError as e:
-        die(os_EX_DATAERR, "Could not read file {}".format(filename))
+        def _read_next_chunk(self, max_length):
+            # Return 0 or more bytes from the current stream, first returning all
+            # leftover bytes. If the stream is closed returns b''
+            if self.leftover:
+                return self.leftover
+            elif self.stream is not None:
+                return self.stream.read(max_length)
+            else:
+                return b''
+
+        def readinto(self, b):
+            buffer_length = len(b)
+            chunk = self._read_next_chunk(buffer_length)
+            while len(chunk) == 0:
+                # move to next stream
+                if self.stream is not None:
+                    self.stream.close()
+                try:
+                    self.stream = next(self.stream_iter)
+                    chunk = self._read_next_chunk(buffer_length)
+                except StopIteration:
+                    # No more streams to chain together
+                    self.stream = None
+                    return 0  # indicate EOF
+            output, self.leftover = chunk[:buffer_length], chunk[buffer_length:]
+            b[:len(output)] = output
+            return len(output)
+
+    return io.BufferedReader(ChainStream(), buffer_size=buffer_size)
+
+
+def warn(message):
+    print("\nrpl: {}".format(message), file=sys.stderr)
+
+def get_files(filenames, recurse, verbose, hidden_files):
+    """Yield (filename, permissions) pairs."""
+    for filename in filenames:
+        try:
+            perms = os.lstat(filename)
+        except OSError as e:
+            warn("SKIPPING {}: unable to read permissions; error: {}".format(filename, e))
+            continue
+
+        if S_ISDIR(perms.st_mode):
+            if recurse:
+                if verbose:
+                    warn("Scanning directory: {}".format(filename))
+
+                for f in os.listdir(filename):
+                    if not hidden_files and f.startswith('.'):
+                        if verbose:
+                            warn("SKIPPING: {} (hidden)".format(
+                                os.path.join(filename, f))
+                            )
+                        continue
+
+                    yield from get_files([os.path.join(filename, f)],
+                                         recurse, verbose, hidden_files)
+            else:
+                if verbose:
+                    warn("SKIPPING directory {}".format(filename))
+                continue
+        elif S_ISREG(perms.st_mode):
+            yield filename, perms
+        else:
+            warn("SKIPPING: {} (not a regular file)".format(filename))
 
 
 def unescape(s):
@@ -242,6 +304,10 @@ parser.add_argument("-s", "--dry-run",
                     action="store_true",
                     help="simulation mode")
 
+parser.add_argument("-R", "--recursive",
+                    action="store_true",
+                    help="recurse into subdirectories")
+
 parser.add_argument("-e", "--escape",
                     action="store_true",
                     help="expand escapes in OLD-TEXT and NEW-TEXT [deprecated]")
@@ -339,28 +405,16 @@ regex = re.compile("(" + regex_str + ")", re.I if args.ignore_case else 0)
 
 total_files = 0
 total_matches = 0
-for filename in files:
-    perms = None
-    if filename == "-":
-        filename = "standard input"
-        # Access stdin and stdout as binary.
-        f = sys.stdin.buffer
-        o = sys.stdout.buffer
-        tmp_path = None
-    else:
-        # Check `filename` is a regular file, and get its permissions
-        try:
-            perms = os.lstat(filename)
-        except OSError as e:
-            warn("Skipping {}: unable to read permissions ({})".format(filename, e))
-            continue
-        if S_ISDIR(perms.st_mode):
-            if verbose:
-                warn("Skipping directory {}".format(filename))
-            continue
-        elif not S_ISREG(perms.st_mode):
-            warn("Skipping: {} (not a regular file)".format(filename))
-            continue
+files = get_files(files, args.recursive, args.verbose, args.hidden_files)
+for filename, perms in files:
+    total_files += 1
+
+    # Open the input file
+    try:
+        f = open(filename, "rb")
+    except IOError as e:
+        warn("SKIPPING {}: cannot open for reading; error: {}".format(filename, e))
+        continue
 
         # Open the input file
         try:
