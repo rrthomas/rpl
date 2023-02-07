@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from _typeshed import WriteableBuffer
 
 
-VERSION = "1.15"
+VERSION = "1.15.1"
 
 def simple_warning( # pylint: disable=too-many-arguments
         message: Union[Warning, str],
