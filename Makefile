@@ -2,12 +2,14 @@
 
 all: README.md
 
-release:
+dist: README.md
 	tox && \
 	git diff --exit-code && \
 	rm -rf ./dist && \
 	mkdir dist && \
-	python3 setup.py sdist bdist_wheel && \
+	python -m build
+
+release: dist
 	twine upload dist/* && \
 	git tag v$$(python3 setup.py --version) && \
 	git push --tags
