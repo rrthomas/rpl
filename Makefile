@@ -2,7 +2,7 @@
 
 all: README.md
 
-dist: README.md
+dist: all
 	tox && \
 	git diff --exit-code && \
 	rm -rf ./dist && \
