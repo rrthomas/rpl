@@ -1,6 +1,0 @@
-# Settings for the runner script
-runner:
-  rpl_options: "--encoding=utf-8 Lorem L-O-R-E-M"
-  grep_options: ""
-  grep_pattern: "decoding error"
-  grep_file: "executable.stderr"

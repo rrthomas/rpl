@@ -1,6 +1,0 @@
-# Settings for the runner script
-runner:
-  rpl_options: "amét amèt"
-  grep_options: ""
-  grep_pattern: "amèt"
-  grep_file: "executable.stdout"

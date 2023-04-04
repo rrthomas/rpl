@@ -8,7 +8,8 @@ from setuptools.command.install import install
 class rpl_build_py(build_py):
     def run(self):
         os.environ['COLUMNS'] = '999'
-        self.spawn(['help2man', '--locale=C.UTF-8', '--no-info', '--name="replace strings in files"', '--include=man-include.1', '--output=rpl.1', './rpl'])
+        os.environ['PYTHONPATH'] = '.'
+        self.spawn(['help2man', '--locale=C.UTF-8', '--no-info', '--name="replace strings in files"', '--include=man-include.1', '--output=rpl.1', 'python', '-m', 'rpl'])
         super().run()
 
 # Override build_manpages command to do nothing

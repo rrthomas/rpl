@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3, or (at your option)
@@ -43,6 +41,8 @@ if TYPE_CHECKING:
 
 VERSION = pkg_resources.require('rpl')[0].version
 
+prog: str
+
 def simple_warning( # pylint: disable=too-many-arguments
         message: Union[Warning, str],
         category: Type[Warning], # pylint: disable=unused-argument
@@ -51,11 +51,11 @@ def simple_warning( # pylint: disable=too-many-arguments
         file: Optional[TextIO] = sys.stderr, # pylint: disable=redefined-outer-name
         line: Optional[str] = None # pylint: disable=unused-argument
 ) -> None:
-    print(f"\n{parser.prog}: {message}", file=file or sys.stderr)
+    print(f"\n{prog}: {message}", file=file or sys.stderr)
 warnings.showwarning = simple_warning
 
 def die(code: int, msg: str) -> NoReturn:
-    warn(msg)
+    warn(Warning(msg))
     sys.exit(code)
 
 
@@ -102,7 +102,7 @@ def caselike(model: str, string: str) -> str:
 def replace(
         instream: BinaryIO, outstream: BinaryIO,
         old_regex: regex.Pattern[str], new_pattern: str,
-        encoding: str,
+        encoding: str, ignore_case: str,
 ) -> int:
     matches = 0
 
@@ -134,7 +134,7 @@ def replace(
             results.append(parts[i])
             if parts[i + 1] != '':
                 replacement = old_regex.sub(new_pattern, parts[i + 1])
-                if args.ignore_case == "match":
+                if ignore_case == "match":
                     replacement = caselike(parts[i + 1], replacement)
                 results.append(replacement)
 
@@ -146,11 +146,14 @@ def replace(
     return matches
 
 
-# Create command line argument parser.
-parser = argparse.ArgumentParser(description="Search and replace text in files.",
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('--version', action='version',
-                    version="%(prog)s " + VERSION + '''
+def main(argv: List[str]) -> None:
+    # Create command line argument parser.
+    parser = argparse.ArgumentParser(description="Search and replace text in files.",
+                                    formatter_class=argparse.RawDescriptionHelpFormatter)
+    global prog
+    prog = parser.prog
+    parser.add_argument('--version', action='version',
+                        version="%(prog)s " + VERSION + '''
 Copyright (C) 2018-2022 Reuben Thomas <rrt@sc3d.org>
 Copyright (C) 2017 Jochen Kupperschmidt <homework@nwsnet.de>
 Copyright (C) 2016 Kevin Coyner <kcoyner@debian.org>
@@ -162,83 +165,82 @@ You may redistribute copies of %(prog)s under the terms of the
 GNU General Public License.
 For more information about these matters, see the file named COPYING.''')
 
-parser.add_argument("--encoding", metavar="ENCODING",
-                    help="specify character set encoding")
+    parser.add_argument("--encoding", metavar="ENCODING",
+                        help="specify character set encoding")
 
-parser.add_argument("-E", "--extended-regex",
-                    action="store_true",
-                    help=argparse.SUPPRESS)
+    parser.add_argument("-E", "--extended-regex",
+                        action="store_true",
+                        help=argparse.SUPPRESS)
 
-parser.add_argument("-i", "--ignore-case",
-                    action="store_true",
-                    help="search case-insensitively")
+    parser.add_argument("-i", "--ignore-case",
+                        action="store_true",
+                        help="search case-insensitively")
 
-parser.add_argument("-m", "--match-case",
-                    action="store_const",
-                    dest="ignore_case",
-                    const="match",
-                    help="ignore case when searching, but try to match case of replacement to case of original, either capitalized, all upper-case, or mixed")
+    parser.add_argument("-m", "--match-case",
+                        action="store_const",
+                        dest="ignore_case",
+                        const="match",
+                        help="ignore case when searching, but try to match case of replacement to case of original, either capitalized, all upper-case, or mixed")
 
-parser.add_argument("-w", "--whole-words",
-                    action="store_true",
-                    help="whole words (OLD-TEXT matches on word boundaries only)")
+    parser.add_argument("-w", "--whole-words",
+                        action="store_true",
+                        help="whole words (OLD-TEXT matches on word boundaries only)")
 
-parser.add_argument("-b", "--backup",
-                    action="store_true",
-                    help="rename original FILE to FILE~ before replacing")
+    parser.add_argument("-b", "--backup",
+                        action="store_true",
+                        help="rename original FILE to FILE~ before replacing")
 
-parser.add_argument("-q", "--quiet",
-                    action="store_true",
-                    help="quiet mode")
+    parser.add_argument("-q", "--quiet",
+                        action="store_true",
+                        help="quiet mode")
 
-parser.add_argument("-v", "--verbose",
-                    action="store_true",
-                    help="verbose mode")
+    parser.add_argument("-v", "--verbose",
+                        action="store_true",
+                        help="verbose mode")
 
-parser.add_argument("-s", "--dry-run",
-                    action="store_true",
-                    help="simulation mode")
+    parser.add_argument("-s", "--dry-run",
+                        action="store_true",
+                        help="simulation mode")
 
-parser.add_argument("-e", "--escape",
-                    action="store_true",
-                    help="expand escapes in OLD-TEXT and NEW-TEXT [deprecated]")
+    parser.add_argument("-e", "--escape",
+                        action="store_true",
+                        help="expand escapes in OLD-TEXT and NEW-TEXT [deprecated]")
 
-parser.add_argument("-F", "--fixed-strings",
-                    action="store_true",
-                    help="treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions")
+    parser.add_argument("-F", "--fixed-strings",
+                        action="store_true",
+                        help="treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions")
 
-parser.add_argument("--files",
-                    action="store_true",
-                    help="OLD-TEXT and NEW-TEXT are file names to read patterns from")
+    parser.add_argument("--files",
+                        action="store_true",
+                        help="OLD-TEXT and NEW-TEXT are file names to read patterns from")
 
-parser.add_argument("-x", "--glob",
-                    action="append",
-                    help="modify only files matching the given glob (may be given more than once)")
+    parser.add_argument("-x", "--glob",
+                        action="append",
+                        help="modify only files matching the given glob (may be given more than once)")
 
-parser.add_argument("-R", "--recursive",
-                    action="store_true",
-                    help="search recursively")
+    parser.add_argument("-R", "--recursive",
+                        action="store_true",
+                        help="search recursively")
 
-parser.add_argument("-p", "--prompt",
-                    action="store_true",
-                    help="prompt before modifying each file")
+    parser.add_argument("-p", "--prompt",
+                        action="store_true",
+                        help="prompt before modifying each file")
 
-parser.add_argument("-f", "--force",
-                    action="store_true",
-                    help="ignore errors when trying to preserve attributes")
+    parser.add_argument("-f", "--force",
+                        action="store_true",
+                        help="ignore errors when trying to preserve attributes")
 
-parser.add_argument("-d", "--keep-times",
-                    action="store_true",
-                    help="keep the modification times on modified files")
+    parser.add_argument("-d", "--keep-times",
+                        action="store_true",
+                        help="keep the modification times on modified files")
 
-parser.add_argument('old_str', metavar='OLD-TEXT')
-parser.add_argument('new_str', metavar='NEW-TEXT')
-parser.add_argument('file', metavar='FILE', nargs='*',
-                    help="`-' or no FILE argument means standard input")
+    parser.add_argument('old_str', metavar='OLD-TEXT')
+    parser.add_argument('new_str', metavar='NEW-TEXT')
+    parser.add_argument('file', metavar='FILE', nargs='*',
+                        help="`-' or no FILE argument means standard input")
 
-args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-def main() -> None:
     files = args.file
 
     # If no --glob arguments given, use a match-all glob
@@ -405,7 +407,7 @@ def main() -> None:
 
         # Do the actual work now
         try:
-            num_matches = replace(f, o, old_regex, new_str, encoding)
+            num_matches = replace(f, o, old_regex, new_str, encoding, args.ignore_case)
         except UnicodeDecodeError as e:
             warn(f"{filename}: decoding error ({e.reason})")
             warn("You can specify the encoding with --encoding")
@@ -486,5 +488,3 @@ def main() -> None:
             total_files,
             "s" if total_files != 1 else "",
         ))
-
-main()

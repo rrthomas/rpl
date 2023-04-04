@@ -1,6 +1,0 @@
-# Settings for the runner script
-runner:
-  rpl_options: "lorem loReM"
-  grep_options: "-i"
-  grep_pattern: "lorem"
-  grep_file: "executable.stdout"
