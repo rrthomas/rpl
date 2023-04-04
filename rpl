@@ -452,10 +452,11 @@ def main() -> None:
 
         if tmp_path is not None:
             if args.backup:
+                backup_name = f"{filename}~"
                 try:
-                    shutil.move(filename, filename + "~")
+                    shutil.move(filename, backup_name)
                 except OSError as e:
-                    warn(f"Error renaming {filename} to {filename + '~'}; error: {e}")
+                    warn(f"Error renaming {filename} to {backup_name}; error: {e}")
                     continue
 
             # Rename the file
