@@ -28,12 +28,13 @@ import warnings
 from warnings import warn
 from typing import (
     List, Optional, Union, Type, NoReturn, cast,
-    IO, BinaryIO, TextIO, TYPE_CHECKING,
+    BinaryIO, TextIO, TYPE_CHECKING,
 )
 
 import regex
 from regex import RegexFlag
 from chardet.universaldetector import UniversalDetector
+from chainstream import ChainStream
 
 if TYPE_CHECKING:
     from _typeshed import WriteableBuffer
@@ -55,62 +56,6 @@ warnings.showwarning = simple_warning
 def die(code: int, msg: str) -> NoReturn:
     warn(msg)
     sys.exit(code)
-
-
-# Adapted from: https://stackoverflow.com/questions/24528278/stream-multiple-files-into-a-readable-object-in-python
-# Note: the original code is licensed under CC-BY-SA 3.0, which is
-# upwards-compatible with 4.0, and hence compatible with GPLv3.
-class ChainStream(io.RawIOBase):
-    """
-    Chain an iterable of IO[bytes] together into a single buffered stream.
-    Usage:
-        def generate_open_file_streams():
-            for file in filenames:
-                yield open(file, 'rb')
-        f = io.BufferedReader(ChainStream(generate_open_file_streams()))
-        f.read()
-    """
-    def __init__(self, streams: List[IO[bytes]]):
-        super().__init__()
-        self.leftover = b''
-        self.stream_iter = iter(streams)
-        try:
-            self.stream: Optional[IO[bytes]] = next(self.stream_iter)
-        except StopIteration:
-            self.stream = None
-
-    def readable(self) -> bool:
-        return True
-
-    def _read_next_chunk(self, max_length: int) -> bytes:
-        # Return 0 or more bytes from the current stream, first returning all
-        # leftover bytes. If the stream is closed returns b''
-        if self.leftover:
-            return self.leftover
-        if self.stream is not None:
-            data = self.stream.read(max_length)
-            assert data is not None # FIXME: stream cannot be non-blocking
-            return data
-        return b''
-
-    def readinto(self, b: WriteableBuffer) -> int:
-        m = memoryview(b) # Allow slicing of the buffer
-        buffer_length = len(m)
-        chunk = self._read_next_chunk(buffer_length)
-        while len(chunk) == 0:
-            # move to next stream
-            if self.stream is not None:
-                self.stream.close()
-            try:
-                self.stream = next(self.stream_iter)
-                chunk = self._read_next_chunk(buffer_length)
-            except StopIteration:
-                # No more streams to chain together
-                self.stream = None
-                return 0  # indicate EOF
-        output, self.leftover = chunk[:buffer_length], chunk[buffer_length:]
-        m[:len(output)] = output
-        return len(output)
 
 
 def slurp(filename: str) -> str:
