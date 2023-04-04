@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import pkg_resources
 import locale
 import argparse
 import os
@@ -40,7 +41,7 @@ if TYPE_CHECKING:
     from _typeshed import WriteableBuffer
 
 
-VERSION = "1.15.2"
+VERSION = pkg_resources.require('rpl')[0].version
 
 def simple_warning( # pylint: disable=too-many-arguments
         message: Union[Warning, str],
