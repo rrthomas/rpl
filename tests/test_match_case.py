@@ -13,4 +13,5 @@ FIXTURE_DIR = Path(__file__).parent.resolve() / 'test_files'
 def test_match_case(datafiles: Path) -> None:
     test_file = str(datafiles / 'lorem.txt')
     main(['lorem', 'loReM', test_file])
-    assert re.match('lorem', open(test_file, encoding='ascii').read(), re.IGNORECASE)
+    with open(test_file, encoding='ascii') as f:
+        assert re.match('lorem', f.read(), re.IGNORECASE)

@@ -13,4 +13,5 @@ FIXTURE_DIR = Path(__file__).parent.resolve() / 'test_files'
 def test_use_regexp(datafiles: Path) -> None:
     test_file = str(datafiles / 'lorem.txt')
     main(['a[a-z]+', 'coffee', test_file])
-    assert re.search('coffee elit', open(test_file, encoding='ascii').read(), re.IGNORECASE)
+    with open(test_file, encoding='ascii') as f:
+        assert re.search('coffee elit', f.read(), re.IGNORECASE)

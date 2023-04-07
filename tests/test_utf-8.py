@@ -13,4 +13,5 @@ FIXTURE_DIR = Path(__file__).parent.resolve() / 'test_files'
 def test_utf_8(datafiles: Path) -> None:
     test_file = str(datafiles / 'lorem-utf-8.txt')
     main(['amét', 'amèt', test_file])
-    assert re.search('amèt', open(test_file, encoding='utf-8').read())
+    with open(test_file, encoding='utf-8') as f:
+        assert re.search('amèt', f.read())

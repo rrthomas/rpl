@@ -13,4 +13,5 @@ FIXTURE_DIR = Path(__file__).parent.resolve() / 'test_files'
 def test_no_flags(datafiles: Path) -> None:
     test_file = str(datafiles / 'lorem.txt')
     main(['Lorem', 'L-O-R-E-M', test_file])
-    assert re.search('L-O-R-E-M', open(test_file, encoding='ascii').read())
+    with open(test_file, encoding='ascii') as f:
+        assert re.search('L-O-R-E-M', f.read())
