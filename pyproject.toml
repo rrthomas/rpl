@@ -1,2 +1,12 @@
 [build-system]
 requires = ["argparse-manpage[setuptools]"]
+
+[tool.mypy]
+exclude = [
+    '^build_manpages',
+    '^dist',
+    '^build',
+    '^tests-output',
+    'setup.py',
+]
+strict = true
