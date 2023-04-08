@@ -146,7 +146,7 @@ def replace(
     return matches
 
 
-def main(argv: List[str]) -> None:
+def get_parser() -> argparse.ArgumentParser:
     # Create command line argument parser.
     parser = argparse.ArgumentParser(description="Search and replace text in files.",
                                     formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -239,7 +239,10 @@ For more information about these matters, see the file named COPYING.''')
     parser.add_argument('file', metavar='FILE', nargs='*',
                         help="`-' or no FILE argument means standard input")
 
-    args = parser.parse_args(argv)
+    return parser
+
+def main(argv: List[str]) -> None:
+    args = get_parser().parse_args(argv)
 
     files = args.file
 
