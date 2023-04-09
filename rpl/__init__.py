@@ -241,7 +241,7 @@ For more information about these matters, see the file named COPYING.''')
 
     return parser
 
-def main(argv: List[str]) -> None:
+def main(argv: Optional[List[str]]=sys.argv) -> None:
     args = get_parser().parse_args(argv)
 
     files = args.file
