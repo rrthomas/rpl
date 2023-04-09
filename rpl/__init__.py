@@ -241,7 +241,7 @@ For more information about these matters, see the file named COPYING.''')
 
     return parser
 
-def main(argv: Optional[List[str]]=sys.argv) -> None:
+def main(argv: List[str]=sys.argv[1:]) -> None: # pylint: disable=dangerous-default-value
     args = get_parser().parse_args(argv)
 
     files = args.file
