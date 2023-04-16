@@ -1,5 +1,43 @@
+[project]
+name = "rpl"
+version = "1.15.3"
+description = "Replace strings in files"
+license = {text = "GPL v3 or later"}
+authors = [
+    {name = "Reuben Thomas", email = "rrt@sc3d.org"}
+]
+readme = "README.md"
+urls = {home_page = "https://github.com/rrthomas/rpl"}
+requires-python = ">= 3.7"
+dependencies = [
+    "regex >= 2022.3.2",
+    "chardet",
+    "chainstream",
+]
+classifiers = [
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+]
+
+[project.scripts]
+rpl = "rpl:main"
+
 [build-system]
-requires = ["argparse-manpage[setuptools] >= 4.1"]
+requires = [
+    "argparse-manpage[setuptools] @ git+https://github.com/rrthomas/argparse-manpage.git",
+    "pytest-datafiles",
+    "regex >= 2022.3.2",
+    "chardet",
+    "chainstream",
+]
+
+[tool.setuptools]
+packages = ["rpl"]
+
+[tool.build_manpages]
+manpages = [
+    "rpl.1:module=rpl:function=get_parser:manual_title=User Commands:include=man-include.1",
+]
 
 [tool.mypy]
 exclude = [
