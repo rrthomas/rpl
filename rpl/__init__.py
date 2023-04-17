@@ -27,16 +27,13 @@ import warnings
 from warnings import warn
 from typing import (
     List, Optional, Union, Type, NoReturn, cast,
-    BinaryIO, TextIO, TYPE_CHECKING,
+    BinaryIO, TextIO,
 )
 
 import regex
 from regex import RegexFlag
 from chardet.universaldetector import UniversalDetector
 from chainstream import ChainStream
-
-if TYPE_CHECKING:
-    from _typeshed import WriteableBuffer
 
 
 VERSION = pkg_resources.require('rpl')[0].version
