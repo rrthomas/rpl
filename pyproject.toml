@@ -41,7 +41,6 @@ manpages = [
 
 [tool.mypy]
 exclude = [
-    '^build_manpages',
     '^dist',
     '^build',
     '^tests-output',
