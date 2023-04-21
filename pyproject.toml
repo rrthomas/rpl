@@ -44,6 +44,5 @@ exclude = [
     '^dist',
     '^build',
     '^tests-output',
-    'setup.py',
 ]
 strict = true
