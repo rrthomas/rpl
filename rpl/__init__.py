@@ -162,7 +162,7 @@ You may redistribute copies of %(prog)s under the terms of the
 GNU General Public License.
 For more information about these matters, see the file named COPYING.''')
 
-    parser.add_argument("--encoding", metavar="ENCODING",
+    parser.add_argument("--encoding",
                         help="specify character set encoding")
 
     parser.add_argument("-E", "--extended-regex",
