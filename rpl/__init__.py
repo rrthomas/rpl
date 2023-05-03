@@ -13,7 +13,7 @@
 
 from __future__ import annotations
 
-import pkg_resources
+import importlib.metadata
 import locale
 import argparse
 import os
@@ -36,7 +36,7 @@ from chardet.universaldetector import UniversalDetector
 from chainstream import ChainStream
 
 
-VERSION = pkg_resources.require('rpl')[0].version
+VERSION = importlib.metadata.version('rpl')
 
 prog: str
 
