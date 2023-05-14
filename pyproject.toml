@@ -24,7 +24,7 @@ rpl = "rpl:main"
 
 [build-system]
 requires = [
-    "argparse-manpage[setuptools] @ git+https://github.com/rrthomas/argparse-manpage.git",
+    "argparse-manpage[setuptools] >= 4.2",
     "pytest-datafiles",
     "regex >= 2022.3.2",
     "chardet",
