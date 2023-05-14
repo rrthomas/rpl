@@ -15,7 +15,7 @@ release:
 	make test
 	make dist
 	twine upload dist/* && \
-	git tag v$$(grep version setup.cfg | grep -o "[0-9.]\+") && \
+	git tag v$$(grep version pyproject.toml | grep -o "[0-9.]\+") && \
 	git push --tags
 
 README.md: rpl README.md.in Makefile
