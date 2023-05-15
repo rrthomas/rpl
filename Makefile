@@ -3,13 +3,13 @@
 all: README.md
 
 dist: all
+	git diff --exit-code && \
 	rm -rf ./dist && \
 	mkdir dist && \
 	python -m build
 
 test:
-	tox && \
-	git diff --exit-code
+	tox
 
 release:
 	make test
