@@ -157,10 +157,9 @@ Copyright (C) 2016 Kevin Coyner <kcoyner@debian.org>
 Copyright (C) 2004-2005 Göran Weinholt <weinholt@debian.org>
 Copyright (C) 2004 Christian Häggström <chm@c00.info>
 
-%(prog)s comes with ABSOLUTELY NO WARRANTY.
-You may redistribute copies of %(prog)s under the terms of the
-GNU General Public License.
-For more information about these matters, see the file named COPYING.''')
+Licence GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.''')
 
     parser.add_argument("--encoding",
                         help="specify character set encoding")
