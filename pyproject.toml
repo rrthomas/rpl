@@ -31,9 +31,6 @@ requires = [
     "chainstream",
 ]
 
-[tool.setuptools]
-packages = ["rpl"]
-
 [tool.build_manpages]
 manpages = [
     "rpl.1:module=rpl:function=get_parser:manual_title=User Commands:include=man-include.1",
