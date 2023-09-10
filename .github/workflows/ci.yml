@@ -1,0 +1,21 @@
+name: CI
+
+on: [ push, pull_request ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies (macOS)
+      if: ${{ matrix.os == 'macos-latest' }}
+      run: |
+        # Prepend optional brew binary directories to PATH
+        echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
+    - name: Build
+      run: |
+        pip install tox
+        tox --skip-missing-interpreters
