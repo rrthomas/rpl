@@ -43,3 +43,24 @@ exclude = [
     '^tests-output',
 ]
 strict = true
+
+[tool.pylint.main]
+# Use multiple processes to speed up Pylint: 0 = auto-detect.
+jobs = 0
+
+[tool.pylint.format]
+good-names = "e,f,i,o,r,s,fn"
+disable = [
+    "fixme",
+    "consider-using-f-string",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-branches",
+    "too-many-statements",
+    "global-statement",
+]
+enable = [
+    "useless-suppression",
+]

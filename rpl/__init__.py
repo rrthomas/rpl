@@ -26,8 +26,14 @@ import tempfile
 import warnings
 from warnings import warn
 from typing import (
-    List, Optional, Union, Type, NoReturn, cast,
-    BinaryIO, TextIO,
+    List,
+    Optional,
+    Union,
+    Type,
+    NoReturn,
+    cast,
+    BinaryIO,
+    TextIO,
 )
 
 import regex
@@ -36,20 +42,24 @@ from chardet.universaldetector import UniversalDetector
 from chainstream import ChainStream
 
 
-VERSION = importlib.metadata.version('rpl')
+VERSION = importlib.metadata.version("rpl")
 
 prog: str
 
-def simple_warning( # pylint: disable=too-many-arguments
-        message: Union[Warning, str],
-        category: Type[Warning], # pylint: disable=unused-argument
-        filename: str, # pylint: disable=unused-argument
-        lineno: int, # pylint: disable=unused-argument
-        file: Optional[TextIO] = sys.stderr, # pylint: disable=redefined-outer-name
-        line: Optional[str] = None # pylint: disable=unused-argument
+
+def simple_warning(  # pylint: disable=too-many-arguments
+    message: Union[Warning, str],
+    category: Type[Warning],  # pylint: disable=unused-argument
+    filename: str,  # pylint: disable=unused-argument
+    lineno: int,  # pylint: disable=unused-argument
+    file: Optional[TextIO] = sys.stderr,
+    line: Optional[str] = None,  # pylint: disable=unused-argument
 ) -> None:
     print(f"\n{prog}: {message}", file=file or sys.stderr)
+
+
 warnings.showwarning = simple_warning
+
 
 def die(code: int, msg: str) -> NoReturn:
     warn(Warning(msg))
@@ -59,14 +69,19 @@ def die(code: int, msg: str) -> NoReturn:
 def slurp(filename: str) -> str:
     """Read a file into a string, aborting on error."""
     try:
-        return Path(filename).read_text('utf-8')
+        return Path(filename).read_text("utf-8")
     except IOError:
         die(os.EX_DATAERR, f"Could not read file {filename}")
 
 
 def unescape(s: str) -> str:
-    r = regex.compile(r'\\([0-7]{1,3}|x[0-9a-fA-F]{2}|[nrtvafb\\])')
-    return r.sub(lambda match: cast(str, eval(f'"{match.group()}"')), s) # pylint: disable=eval-used
+    r = regex.compile(r"\\([0-7]{1,3}|x[0-9a-fA-F]{2}|[nrtvafb\\])")
+    return r.sub(
+        # pylint: disable=eval-used
+        lambda match: cast(str, eval(f'"{match.group()}"')),
+        s,
+    )
+
 
 def casetype(string: str) -> int:
     # Starts with lower case
@@ -87,6 +102,7 @@ def casetype(string: str) -> int:
 
     return case
 
+
 def caselike(model: str, string: str) -> str:
     if len(string) > 0:
         case = casetype(model)
@@ -96,15 +112,19 @@ def caselike(model: str, string: str) -> str:
             string = string.upper()
     return string
 
+
 def replace(
-        instream: BinaryIO, outstream: BinaryIO,
-        old_regex: regex.Pattern[str], new_pattern: str,
-        encoding: str, ignore_case: str,
+    instream: BinaryIO,
+    outstream: BinaryIO,
+    old_regex: regex.Pattern[str],
+    new_pattern: str,
+    encoding: str,
+    ignore_case: str,
 ) -> int:
     matches = 0
 
-    tonext = ''
-    retry_prefix = b''
+    tonext = ""
+    retry_prefix = b""
     while True:
         block = retry_prefix + instream.read(io.DEFAULT_BUFFER_SIZE)
         if len(block) == 0:
@@ -112,30 +132,30 @@ def replace(
 
         try:
             block_str = block.decode(encoding=encoding)
-            retry_prefix = b''
+            retry_prefix = b""
         except UnicodeDecodeError as e:
             # Try carrying invalid input over to next iteration in case it's
             # just incomplete
             if e.start > 0:
-                retry_prefix = block[e.start:]
-                block_str = block[:e.start].decode(encoding=encoding)
+                retry_prefix = block[e.start :]
+                block_str = block[: e.start].decode(encoding=encoding)
             else:
                 raise e
 
         parts = old_regex.split(tonext + block_str)
         matches += len(parts) // (1 + old_regex.groups)
-        tonext = parts[-1] or ''
+        tonext = parts[-1] or ""
 
         results = []
         for i in range(0, len(parts) - old_regex.groups, 1 + old_regex.groups):
             results.append(parts[i])
-            if parts[i + 1] != '':
+            if parts[i + 1] != "":
                 replacement = old_regex.sub(new_pattern, parts[i + 1])
                 if ignore_case == "match":
                     replacement = caselike(parts[i + 1], replacement)
                 results.append(replacement)
 
-        joined_parts = ''.join(results)
+        joined_parts = "".join(results)
         outstream.write(joined_parts.encode(encoding=encoding))
 
     outstream.write(tonext.encode(encoding=encoding))
@@ -145,12 +165,18 @@ def replace(
 
 def get_parser() -> argparse.ArgumentParser:
     # Create command line argument parser.
-    parser = argparse.ArgumentParser(description="Search and replace text in files.",
-                                    formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="Search and replace text in files.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     global prog
     prog = parser.prog
-    parser.add_argument('--version', action='version',
-                        version="%(prog)s " + VERSION + '''
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s "
+        + VERSION
+        + """
 Copyright (C) 2018-2023 Reuben Thomas <rrt@sc3d.org>
 Copyright (C) 2017 Jochen Kupperschmidt <homework@nwsnet.de>
 Copyright (C) 2016 Kevin Coyner <kcoyner@debian.org>
@@ -159,92 +185,120 @@ Copyright (C) 2004 Christian Häggström <chm@c00.info>
 
 Licence GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.''')
+There is NO WARRANTY, to the extent permitted by law.""",
+    )
 
-    parser.add_argument("--encoding",
-                        help="specify character set encoding")
+    parser.add_argument("--encoding", help="specify character set encoding")
 
-    parser.add_argument("-E", "--extended-regex",
-                        action="store_true",
-                        help=argparse.SUPPRESS)
+    parser.add_argument(
+        "-E", "--extended-regex", action="store_true", help=argparse.SUPPRESS
+    )
 
-    parser.add_argument("-i", "--ignore-case",
-                        action="store_true",
-                        help="search case-insensitively")
+    parser.add_argument(
+        "-i", "--ignore-case", action="store_true", help="search case-insensitively"
+    )
 
-    parser.add_argument("-m", "--match-case",
-                        action="store_const",
-                        dest="ignore_case",
-                        const="match",
-                        help="ignore case when searching, but try to match case of replacement to case of original, either capitalized, all upper-case, or mixed")
+    parser.add_argument(
+        "-m",
+        "--match-case",
+        action="store_const",
+        dest="ignore_case",
+        const="match",
+        help="ignore case when searching, but try to match case of replacement to "
+        + "case of original, either capitalized, all upper-case, or mixed",
+    )
 
-    parser.add_argument("-w", "--whole-words",
-                        action="store_true",
-                        help="whole words (OLD-TEXT matches on word boundaries only)")
+    parser.add_argument(
+        "-w",
+        "--whole-words",
+        action="store_true",
+        help="whole words (OLD-TEXT matches on word boundaries only)",
+    )
 
-    parser.add_argument("-b", "--backup",
-                        action="store_true",
-                        help="rename original FILE to FILE~ before replacing")
+    parser.add_argument(
+        "-b",
+        "--backup",
+        action="store_true",
+        help="rename original FILE to FILE~ before replacing",
+    )
 
-    parser.add_argument("-q", "--quiet",
-                        action="store_true",
-                        help="quiet mode")
+    parser.add_argument("-q", "--quiet", action="store_true", help="quiet mode")
 
-    parser.add_argument("-v", "--verbose",
-                        action="store_true",
-                        help="verbose mode")
+    parser.add_argument("-v", "--verbose", action="store_true", help="verbose mode")
 
-    parser.add_argument("-s", "--dry-run",
-                        action="store_true",
-                        help="simulation mode")
+    parser.add_argument("-s", "--dry-run", action="store_true", help="simulation mode")
 
-    parser.add_argument("-e", "--escape",
-                        action="store_true",
-                        help="expand escapes in OLD-TEXT and NEW-TEXT [deprecated]")
+    parser.add_argument(
+        "-e",
+        "--escape",
+        action="store_true",
+        help="expand escapes in OLD-TEXT and NEW-TEXT [deprecated]",
+    )
 
-    parser.add_argument("-F", "--fixed-strings",
-                        action="store_true",
-                        help="treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions")
+    parser.add_argument(
+        "-F",
+        "--fixed-strings",
+        action="store_true",
+        help="treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions",
+    )
 
-    parser.add_argument("--files",
-                        action="store_true",
-                        help="OLD-TEXT and NEW-TEXT are file names to read patterns from")
+    parser.add_argument(
+        "--files",
+        action="store_true",
+        help="OLD-TEXT and NEW-TEXT are file names to read patterns from",
+    )
 
-    parser.add_argument("-x", "--glob",
-                        action="append",
-                        help="modify only files matching the given glob (may be given more than once)")
+    parser.add_argument(
+        "-x",
+        "--glob",
+        action="append",
+        help="modify only files matching the given glob (may be given more than once)",
+    )
 
-    parser.add_argument("-R", "--recursive",
-                        action="store_true",
-                        help="search recursively")
+    parser.add_argument(
+        "-R", "--recursive", action="store_true", help="search recursively"
+    )
 
-    parser.add_argument("-p", "--prompt",
-                        action="store_true",
-                        help="prompt before modifying each file")
+    parser.add_argument(
+        "-p", "--prompt", action="store_true", help="prompt before modifying each file"
+    )
 
-    parser.add_argument("-f", "--force",
-                        action="store_true",
-                        help="ignore errors when trying to preserve attributes")
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="ignore errors when trying to preserve attributes",
+    )
 
-    parser.add_argument("-d", "--keep-times",
-                        action="store_true",
-                        help="keep the modification times on modified files")
+    parser.add_argument(
+        "-d",
+        "--keep-times",
+        action="store_true",
+        help="keep the modification times on modified files",
+    )
 
-    parser.add_argument('old_str', metavar='OLD-TEXT')
-    parser.add_argument('new_str', metavar='NEW-TEXT')
-    parser.add_argument('file', metavar='FILE', nargs='*',
-                        help="`-' or no FILE argument means standard input")
+    parser.add_argument("old_str", metavar="OLD-TEXT")
+    parser.add_argument("new_str", metavar="NEW-TEXT")
+    parser.add_argument(
+        "file",
+        metavar="FILE",
+        nargs="*",
+        help="`-' or no FILE argument means standard input",
+    )
 
     return parser
 
-def main(argv: List[str]=sys.argv[1:]) -> None: # pylint: disable=dangerous-default-value
+
+def main(  # pylint: disable=dangerous-default-value
+    argv: List[str] = sys.argv[1:],
+) -> None:
     args = get_parser().parse_args(argv)
 
     files = args.file
 
     # If no --glob arguments given, use a match-all glob
     if args.glob is None:
-        args.glob = ['*']
+        args.glob = ["*"]
 
     # If no files given, assume stdin
     if len(files) == 0:
@@ -273,14 +327,19 @@ def main(argv: List[str]=sys.argv[1:]) -> None: # pylint: disable=dangerous-defa
 
     # Tell the user what is going to happen
     if not args.quiet:
-        warn('{} "{}" with "{}" ({}; {})'.format(
-            "Simulating replacement of" if args.dry_run else "Replacing",
-            old_str,
-            new_str,
-            "ignoring case" if args.ignore_case is True else
-            ("matching case" if args.ignore_case == "match" else "case sensitive"),
-            "whole words only" if args.whole_words else "partial words matched",
-        ))
+        warn(
+            '{} "{}" with "{}" ({}; {})'.format(
+                "Simulating replacement of" if args.dry_run else "Replacing",
+                old_str,
+                new_str,
+                "ignoring case"
+                if args.ignore_case is True
+                else (
+                    "matching case" if args.ignore_case == "match" else "case sensitive"
+                ),
+                "whole words only" if args.whole_words else "partial words matched",
+            )
+        )
 
     if args.dry_run and not args.quiet:
         warn("The files listed below would be modified in a replace operation")
@@ -295,7 +354,7 @@ def main(argv: List[str]=sys.argv[1:]) -> None: # pylint: disable=dangerous-defa
 
     if args.fixed_strings:
         old_str = regex.escape(old_str)
-        new_str = new_str.replace('\\', r'\\')
+        new_str = new_str.replace("\\", r"\\")
 
     regex_str = old_str
     if args.whole_words:
@@ -337,7 +396,7 @@ def main(argv: List[str]=sys.argv[1:]) -> None: # pylint: disable=dangerous-defa
 
             # Open the input file
             try:
-                f = open(filename, "rb") # pylint: disable=consider-using-with
+                f = open(filename, "rb")  # pylint: disable=consider-using-with
             except IOError as e:
                 warn(f"Skipping {filename}: cannot open for reading; error: {e}")
                 continue
@@ -374,13 +433,13 @@ def main(argv: List[str]=sys.argv[1:]) -> None: # pylint: disable=dangerous-defa
             warn(f"Processing: {filename}")
 
         # If we don't have an explicit encoding, guess
-        block = b''
+        block = b""
         if encoding is None:
             detector = UniversalDetector()
             scanned_bytes = 0
             # Scan at most 1MB, so we don't give up too soon, but don't slurp a
             # large file.
-            while scanned_bytes < 1024*1024:
+            while scanned_bytes < 1024 * 1024:
                 next_block = f.read(io.DEFAULT_BUFFER_SIZE)
                 if len(next_block) == 0:
                     break
@@ -393,7 +452,7 @@ def main(argv: List[str]=sys.argv[1:]) -> None: # pylint: disable=dangerous-defa
 
             detector.close()
             if detector.done:
-                encoding = detector.result['encoding']
+                encoding = detector.result["encoding"]
                 if args.verbose:
                     if encoding is not None:
                         warn(f"Guessed encoding '{encoding}'")
@@ -438,7 +497,7 @@ def main(argv: List[str]=sys.argv[1:]) -> None: # pylint: disable=dangerous-defa
             continue
 
         if args.prompt:
-            print(f"\nSave \"{filename}\"? ([Y]/N) ", file=sys.stderr, end='')
+            print(f'\nSave "{filename}"? ([Y]/N) ', file=sys.stderr, end="")
 
             line = ""
             while line == "" or line[0] not in "Yy\nnN":
@@ -480,10 +539,12 @@ def main(argv: List[str]=sys.argv[1:]) -> None: # pylint: disable=dangerous-defa
 
     # We're about to exit, give a summary
     if not args.quiet:
-        warn("{} matches {} in {} out of {} file{}".format(
-            total_matches,
-            "found" if args.dry_run else "replaced",
-            matched_files,
-            total_files,
-            "s" if total_files != 1 else "",
-        ))
+        warn(
+            "{} matches {} in {} out of {} file{}".format(
+                total_matches,
+                "found" if args.dry_run else "replaced",
+                matched_files,
+                total_files,
+                "s" if total_files != 1 else "",
+            )
+        )
