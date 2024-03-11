@@ -64,6 +64,14 @@ def test_utf_8(datafiles: Path) -> None:
         assert re.search("amèt", f.read())
 
 
+@pytest.mark.datafiles(FIXTURE_DIR / "utf-8-sig.txt")
+def test_utf_8_sig(datafiles: Path) -> None:
+    test_file = str(datafiles / "utf-8-sig.txt")
+    main(["BOM mark", "BOM", test_file])
+    with open(test_file, encoding="utf-8") as f:
+        assert not re.search("\uFEFF at", f.read())
+
+
 def test_version(capsys: CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as e:
         main(["--version"])
