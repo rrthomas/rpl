@@ -463,6 +463,11 @@ def main(  # pylint: disable=dangerous-default-value
                 if args.verbose:
                     warn(f"Could not guess encoding; using locale default '{encoding}'")
 
+            # Disable special handling of BOM in UTF-8 files, otherwise it would be
+            # inserted after each replacement
+            if encoding.upper() == "UTF-8-SIG":
+                encoding = "UTF-8"
+
         # Do the actual work now
         try:
             num_matches = replace(f, o, old_regex, new_str, encoding, args.ignore_case)
