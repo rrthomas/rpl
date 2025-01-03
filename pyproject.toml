@@ -47,6 +47,9 @@ exclude = [
 ]
 strict = true
 
+[tool.pylint.MASTER]
+init-import = "yes"
+
 [tool.pylint.main]
 # Use multiple processes to speed up Pylint: 0 = auto-detect.
 jobs = 0
