@@ -44,7 +44,7 @@ from chainstream import ChainStream
 
 VERSION = importlib.metadata.version("rpl")
 
-prog: str
+PROG: str
 
 
 def simple_warning(  # pylint: disable=too-many-arguments
@@ -55,7 +55,7 @@ def simple_warning(  # pylint: disable=too-many-arguments
     file: Optional[TextIO] = sys.stderr,
     line: Optional[str] = None,  # pylint: disable=unused-argument
 ) -> None:
-    print(f"\n{prog}: {message}", file=file or sys.stderr)
+    print(f"\n{PROG}: {message}", file=file or sys.stderr)
 
 
 warnings.showwarning = simple_warning
@@ -169,8 +169,8 @@ def get_parser() -> argparse.ArgumentParser:
         description="Search and replace text in files.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    global prog
-    prog = parser.prog
+    global PROG
+    PROG = parser.prog
     parser.add_argument(
         "--version",
         action="version",
