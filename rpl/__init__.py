@@ -13,34 +13,24 @@
 
 from __future__ import annotations
 
-import importlib.metadata
-import locale
 import argparse
-import os
+import importlib.metadata
 import io
+import locale
+import os
 import shutil
-from stat import S_ISDIR, S_ISREG
-from pathlib import Path
 import sys
 import tempfile
 import warnings
+from pathlib import Path
+from stat import S_ISDIR, S_ISREG
+from typing import BinaryIO, List, NoReturn, Optional, TextIO, Type, Union, cast
 from warnings import warn
-from typing import (
-    List,
-    Optional,
-    Union,
-    Type,
-    NoReturn,
-    cast,
-    BinaryIO,
-    TextIO,
-)
 
 import regex
-from regex import RegexFlag
-from chardet.universaldetector import UniversalDetector
 from chainstream import ChainStream
-
+from chardet.universaldetector import UniversalDetector
+from regex import RegexFlag
 
 VERSION = importlib.metadata.version("rpl")
 
@@ -330,10 +320,14 @@ def main(argv: List[str] = sys.argv[1:]) -> None:
                 "Simulating replacement of" if args.dry_run else "Replacing",
                 old_str,
                 new_str,
-                "ignoring case"
-                if args.ignore_case is True
-                else (
-                    "matching case" if args.ignore_case == "match" else "case sensitive"
+                (
+                    "ignoring case"
+                    if args.ignore_case is True
+                    else (
+                        "matching case"
+                        if args.ignore_case == "match"
+                        else "case sensitive"
+                    )
                 ),
                 "whole words only" if args.whole_words else "partial words matched",
             )
