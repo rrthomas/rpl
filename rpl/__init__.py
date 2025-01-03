@@ -74,37 +74,38 @@ def unescape(s: str) -> str:
 
 class Case(Enum):
     LOWER = auto()
-    MIXED = auto()
     UPPER = auto()
+    CAPITALIZED = auto()
+    MIXED = auto()
 
 
 def casetype(string: str) -> Case:
-    # Starts with lower case
-    case = Case.LOWER
+    if string.upper() == string:
+        return Case.UPPER
+    if string.lower() == string:
+        return Case.LOWER
 
-    # Capitalized?
-    if len(string) >= 1 and string[0].isupper():
-        case = Case.MIXED
+    if string[0].isupper():
+        # Could be capitalized
+        all_lower = True
 
-        # All upper case?
-        all_upper = True
-        for i in range(1, len(string)):
-            if not string[i].isupper():
-                all_upper = False
-                break
-        if all_upper:
-            case = Case.UPPER
-
-    return case
+        for c in string[1:]:
+            if not c.islower():
+                all_lower = False
+        if all_lower:
+            return Case.CAPITALIZED
+    return Case.MIXED
 
 
 def caselike(model: str, string: str) -> str:
     if len(string) > 0:
-        case = casetype(model)
-        if case == Case.MIXED:
-            string = string[0].upper() + string[1:]
-        elif case == Case.UPPER:
+        case_type = casetype(model)
+        if case_type == Case.LOWER:
+            string = string.lower()
+        elif case_type == Case.UPPER:
             string = string.upper()
+        elif case_type == Case.CAPITALIZED:
+            string = string[0].upper() + string[1:].lower()
     return string
 
 
