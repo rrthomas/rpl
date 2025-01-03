@@ -177,7 +177,7 @@ def get_parser() -> argparse.ArgumentParser:
         version="%(prog)s "
         + VERSION
         + """
-Copyright (C) 2018-2023 Reuben Thomas <rrt@sc3d.org>
+Copyright (C) 2018-2025 Reuben Thomas <rrt@sc3d.org>
 Copyright (C) 2017 Jochen Kupperschmidt <homework@nwsnet.de>
 Copyright (C) 2016 Kevin Coyner <kcoyner@debian.org>
 Copyright (C) 2004-2005 Göran Weinholt <weinholt@debian.org>
