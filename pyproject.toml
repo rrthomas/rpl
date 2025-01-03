@@ -59,6 +59,7 @@ good-names = "e,f,i,o,r,s,fn"
 disable = [
     "fixme",
     "consider-using-f-string",
+    "missing-class-docstring",
     "missing-function-docstring",
     "missing-module-docstring",
     "too-many-arguments",

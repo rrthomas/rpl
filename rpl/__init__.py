@@ -20,6 +20,7 @@ import shutil
 import sys
 import tempfile
 import warnings
+from enum import Enum, auto
 from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 from typing import BinaryIO, List, NoReturn, Optional, TextIO, Type, Union, cast
@@ -71,13 +72,19 @@ def unescape(s: str) -> str:
     )
 
 
-def casetype(string: str) -> int:
+class Case(Enum):
+    LOWER = auto()
+    MIXED = auto()
+    UPPER = auto()
+
+
+def casetype(string: str) -> Case:
     # Starts with lower case
-    case = 0
+    case = Case.LOWER
 
     # Capitalized?
     if len(string) >= 1 and string[0].isupper():
-        case = 1
+        case = Case.MIXED
 
         # All upper case?
         all_upper = True
@@ -86,7 +93,7 @@ def casetype(string: str) -> int:
                 all_upper = False
                 break
         if all_upper:
-            case = 2
+            case = Case.UPPER
 
     return case
 
@@ -94,9 +101,9 @@ def casetype(string: str) -> int:
 def caselike(model: str, string: str) -> str:
     if len(string) > 0:
         case = casetype(model)
-        if case == 1:
+        if case == Case.MIXED:
             string = string[0].upper() + string[1:]
-        elif case == 2:
+        elif case == Case.UPPER:
             string = string.upper()
     return string
 
@@ -314,7 +321,7 @@ def main(argv: List[str] = sys.argv[1:]) -> None:
     # Tell the user what is going to happen
     if not args.quiet:
         warn(
-            '{} "{}" with "{}" ({}; {})'.format(
+        '{} "{}" with "{}" ({}; {})'.format(
                 "Simulating replacement of" if args.dry_run else "Replacing",
                 old_str,
                 new_str,

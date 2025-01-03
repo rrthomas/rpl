@@ -72,6 +72,14 @@ def test_utf_8_sig(datafiles: Path) -> None:
         assert not re.search("\uFEFF at", f.read())
 
 
+@pytest.mark.datafiles(FIXTURE_DIR / "mixed-input.txt")
+def test_mixed_replace_lower(datafiles: Path) -> None:
+    test_file = str(datafiles / "mixed-input.txt")
+    main(["-m", "MixedInput", "mixedinput", test_file])
+    with open(test_file, encoding="utf-8") as f:
+        assert re.search("^mixedinput MIXEDINPUT Mixedinput Mixedinput$", f.read())
+
+
 def test_version(capsys: CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as e:
         main(["--version"])
