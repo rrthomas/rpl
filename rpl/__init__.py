@@ -289,9 +289,7 @@ There is NO WARRANTY, to the extent permitted by law.""",
     return parser
 
 
-def main(  # pylint: disable=dangerous-default-value
-    argv: List[str] = sys.argv[1:],
-) -> None:
+def main(argv: List[str] = sys.argv[1:]) -> None:
     args = get_parser().parse_args(argv)
 
     files = args.file
