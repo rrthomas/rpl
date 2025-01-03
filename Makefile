@@ -14,9 +14,9 @@ test:
 release:
 	make test
 	make dist
+	version=$$(grep version pyproject.toml | grep -o "[0-9.]\+") && \
 	twine upload dist/* && \
-	git tag v$$(grep version pyproject.toml | grep -o "[0-9.]\+") && \
-	git push --tags
+	gh release create v$$version --title "Release v$$version" dist/*
 
 README.md: rpl README.md.in Makefile
 	cp README.md.in README.md
