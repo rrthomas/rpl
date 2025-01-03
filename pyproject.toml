@@ -1,6 +1,6 @@
 [project]
 name = "rpl"
-version = "1.15.7"
+version = "1.16"
 description = "Replace strings in files"
 license = {text = "GPL v3 or later"}
 authors = [
