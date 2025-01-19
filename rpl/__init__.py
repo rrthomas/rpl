@@ -115,7 +115,7 @@ def replace(
     old_regex: regex.Pattern[str],
     new_pattern: str,
     encoding: str,
-    ignore_case: str,
+    ignore_case: Union[str, bool],
 ) -> int:
     matches = 0
 
@@ -322,7 +322,7 @@ def main(argv: List[str] = sys.argv[1:]) -> None:
     # Tell the user what is going to happen
     if not args.quiet:
         warn(
-        '{} "{}" with "{}" ({}; {})'.format(
+            '{} "{}" with "{}" ({}; {})'.format(
                 "Simulating replacement of" if args.dry_run else "Replacing",
                 old_str,
                 new_str,
