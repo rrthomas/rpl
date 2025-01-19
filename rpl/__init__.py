@@ -114,6 +114,7 @@ def replace(
     outstream: BinaryIO,
     old_regex: regex.Pattern[str],
     new_pattern: str,
+    split_regex: regex.Pattern[str],
     encoding: str,
     ignore_case: Union[str, bool],
 ) -> int:
@@ -138,12 +139,12 @@ def replace(
             else:
                 raise e
 
-        parts = old_regex.split(tonext + block_str)
-        matches += len(parts) // (1 + old_regex.groups)
+        parts = split_regex.split(tonext + block_str)
+        matches += len(parts) // (1 + split_regex.groups)
         tonext = parts[-1] or ""
 
         results = []
-        for i in range(0, len(parts) - old_regex.groups, 1 + old_regex.groups):
+        for i in range(0, len(parts) - split_regex.groups, 1 + split_regex.groups):
             results.append(parts[i])
             if parts[i + 1] != "":
                 replacement = old_regex.sub(new_pattern, parts[i + 1])
@@ -362,7 +363,8 @@ def main(argv: List[str] = sys.argv[1:]) -> None:
     if args.ignore_case:
         opts += RegexFlag.IGNORECASE
     try:
-        old_regex = regex.compile(f"({regex_str})", opts)
+        old_regex = regex.compile(regex_str, opts)
+        split_regex = regex.compile(f"({regex_str})", opts)
     except regex.error as e:
         die(1, f"Bad regex {old_str} ({e})")
 
@@ -468,7 +470,9 @@ def main(argv: List[str] = sys.argv[1:]) -> None:
 
         # Do the actual work now
         try:
-            num_matches = replace(f, o, old_regex, new_str, encoding, args.ignore_case)
+            num_matches = replace(
+                f, o, old_regex, new_str, split_regex, encoding, args.ignore_case
+            )
         except UnicodeDecodeError as e:
             warn(f"{filename}: decoding error ({e.reason})")
             warn("You can specify the encoding with --encoding")

@@ -1,5 +1,5 @@
-from pathlib import Path
 import re
+from pathlib import Path
 
 import pytest
 from pytest import CaptureFixture
@@ -69,7 +69,7 @@ def test_utf_8_sig(datafiles: Path) -> None:
     test_file = str(datafiles / "utf-8-sig.txt")
     main(["BOM mark", "BOM", test_file])
     with open(test_file, encoding="utf-8") as f:
-        assert not re.search("\uFEFF at", f.read())
+        assert not re.search("\ufeff at", f.read())
 
 
 @pytest.mark.datafiles(FIXTURE_DIR / "mixed-input.txt")
@@ -80,6 +80,14 @@ def test_mixed_replace_lower(datafiles: Path) -> None:
         text = f.read()
         print(text)
         assert re.search("^mixedoutput MIXEDOUTPUT Mixedoutput MixedOutput$", text)
+
+
+@pytest.mark.datafiles(FIXTURE_DIR / "aba.txt")
+def test_backreference_numbering(datafiles: Path) -> None:
+    test_file = str(datafiles / "aba.txt")
+    main(["a(b)a", r"\1", test_file])
+    with open(test_file, encoding="ascii") as f:
+        assert f.read().strip() == "b"
 
 
 def test_version(capsys: CaptureFixture[str]) -> None:
