@@ -93,6 +93,6 @@ def test_backreference_numbering(datafiles: Path) -> None:
 def test_version(capsys: CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as e:
         main(["--version"])
-    assert e.type == SystemExit
+    assert e.type is SystemExit
     assert e.value.code == 0
     assert re.search("NO WARRANTY, to the extent", capsys.readouterr().out)
