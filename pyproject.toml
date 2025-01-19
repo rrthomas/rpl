@@ -39,36 +39,12 @@ manpages = [
     "rpl.1:module=rpl:function=get_parser:manual_title=User Commands:include=man-include.1",
 ]
 
-[tool.mypy]
-exclude = [
-    '^dist',
-    '^build',
-    '^tests-output',
-]
-strict = true
+[tool.pyright]
+include = ["rpl"]
 
-[tool.pylint.MASTER]
-init-import = "yes"
+[tool.ruff.lint]
+select = ["D", "E", "F", "I", "UP"]
+ignore = ["D1", "D401", "E501"]
 
-[tool.pylint.main]
-# Use multiple processes to speed up Pylint: 0 = auto-detect.
-jobs = 0
-
-[tool.pylint.format]
-good-names = "e,f,i,o,r,s,fn"
-disable = [
-    "fixme",
-    "consider-using-f-string",
-    "missing-class-docstring",
-    "missing-function-docstring",
-    "missing-module-docstring",
-    "too-many-arguments",
-    "too-many-locals",
-    "too-many-branches",
-    "too-many-positional-arguments",
-    "too-many-statements",
-    "global-statement",
-]
-enable = [
-    "useless-suppression",
-]
+[tool.ruff.lint.isort]
+lines-after-imports = 2

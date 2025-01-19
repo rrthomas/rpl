@@ -23,7 +23,7 @@ import warnings
 from enum import Enum, auto
 from pathlib import Path
 from stat import S_ISDIR, S_ISREG
-from typing import BinaryIO, List, NoReturn, Optional, TextIO, Type, Union, cast
+from typing import BinaryIO, NoReturn, Optional, TextIO, Union, cast
 from warnings import warn
 
 import regex
@@ -31,18 +31,19 @@ from chainstream import ChainStream
 from chardet.universaldetector import UniversalDetector
 from regex import RegexFlag
 
+
 VERSION = importlib.metadata.version("rpl")
 
 PROG: str
 
 
-def simple_warning(  # pylint: disable=too-many-arguments
+def simple_warning(
     message: Union[Warning, str],
-    category: Type[Warning],  # pylint: disable=unused-argument
-    filename: str,  # pylint: disable=unused-argument
-    lineno: int,  # pylint: disable=unused-argument
+    category: type[Warning],
+    filename: str,
+    lineno: int,
     file: Optional[TextIO] = sys.stderr,
-    line: Optional[str] = None,  # pylint: disable=unused-argument
+    line: Optional[str] = None,
 ) -> None:
     print(f"\n{PROG}: {message}", file=file or sys.stderr)
 
@@ -59,14 +60,13 @@ def slurp(filename: str) -> str:
     """Read a file into a string, aborting on error."""
     try:
         return Path(filename).read_text("utf-8")
-    except IOError:
+    except OSError:
         die(os.EX_DATAERR, f"Could not read file {filename}")
 
 
 def unescape(s: str) -> str:
     r = regex.compile(r"\\([0-7]{1,3}|x[0-9a-fA-F]{2}|[nrtvafb\\])")
     return r.sub(
-        # pylint: disable=eval-used
         lambda match: cast(str, eval(f'"{match.group()}"')),
         s,
     )
@@ -286,7 +286,7 @@ There is NO WARRANTY, to the extent permitted by law.""",
     return parser
 
 
-def main(argv: List[str] = sys.argv[1:]) -> None:
+def main(argv: list[str] = sys.argv[1:]) -> None:
     args = get_parser().parse_args(argv)
 
     files = args.file
@@ -301,7 +301,7 @@ def main(argv: List[str] = sys.argv[1:]) -> None:
             die(1, "Cannot use --recursive with no file arguments!")
         files = ["-"]
     else:
-        expanded_files: List[Path] = []
+        expanded_files: list[Path] = []
         for file in files:
             for glob in args.glob:
                 if args.recursive and os.path.isdir(file):
@@ -396,8 +396,8 @@ def main(argv: List[str] = sys.argv[1:]) -> None:
 
             # Open the input file
             try:
-                f = open(filename, "rb")  # pylint: disable=consider-using-with
-            except IOError as e:
+                f = open(filename, "rb")
+            except OSError as e:
                 warn(f"Skipping {filename}: cannot open for reading; error: {e}")
                 continue
 

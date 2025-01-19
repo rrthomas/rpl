@@ -6,6 +6,7 @@ from pytest import CaptureFixture
 
 from rpl import main
 
+
 FIXTURE_DIR = Path(__file__).parent.resolve()
 
 
