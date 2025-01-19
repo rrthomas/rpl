@@ -20,6 +20,7 @@ jobs:
       - name: Build
         run: |
           tox --skip-missing-interpreters
+          make build
           PYTHONPATH=. python -m rpl --help
           pip install .
           rpl --help
