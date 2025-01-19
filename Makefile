@@ -26,3 +26,5 @@ README.md: rpl README.md.in Makefile
 	printf '\n```\n' >> README.md
 	PYTHONPATH=. python -m rpl --help >> README.md
 	printf '```\n' >> README.md
+
+.PHONY: build dist
