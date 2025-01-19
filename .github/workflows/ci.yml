@@ -1,6 +1,6 @@
 name: CI
 
-on: [ push, pull_request ]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -9,13 +9,17 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
-    - name: Install dependencies (macOS)
-      if: ${{ matrix.os == 'macos-latest' }}
-      run: |
-        # Prepend optional brew binary directories to PATH
-        echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
-    - name: Build
-      run: |
-        pip install tox
-        tox --skip-missing-interpreters
+      - uses: actions/checkout@v4
+      - name: Install dependencies (macOS)
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          # Prepend optional brew binary directories to PATH
+          echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
+      - name: Install Python dependencies
+        run: pip install tox build setuptools argparse-manpage pytest-datafiles regex chardet chainstream
+      - name: Build
+        run: |
+          tox --skip-missing-interpreters
+          PYTHONPATH=. python -m rpl --help
+          pip install .
+          rpl --help
