@@ -489,7 +489,7 @@ def main(argv: List[str] = sys.argv[1:]) -> None:
             else:
                 try:
                     fn = os.path.realpath(filename)
-                except OSError as e:
+                except OSError:
                     fn = filename
                 os.unlink(tmp_path)
 
