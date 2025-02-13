@@ -116,18 +116,21 @@ def caselike(model: str, string: str) -> str:
             string = string[0].upper() + string[1:].lower()
     return string
 
-categ_pattern = regex.compile(r'\\p{[A-Za-z_]+}')
+
+categ_pattern = regex.compile(r"\\p{[A-Za-z_]+}")
+
 
 def get_regexp_max_width(expr: str) -> int:
     # Since `sre_parse` cannot deal with Unicode categories of the form `\p{Mn}`, we replace these with
     # a simple letter, which makes no difference as we are only trying to get the possible lengths of the regex
     # match here below.
-    regexp_final = regex.sub(categ_pattern, 'A', expr)
+    regexp_final = regex.sub(categ_pattern, "A", expr)
     try:
         return sre_parse.parse(regexp_final).getwidth()[1]
     except sre_constants.error:
         # sre_parse does not support the new features in regex. Assume the worst.
         return int(sre_constants.MAXREPEAT)
+
 
 def replace(
     instream: BinaryIO,
@@ -167,7 +170,7 @@ def replace(
         tonext = parts[-1] or ""
         if len(tonext) > patlen:
             tonext = tonext[-patlen:]
-            parts[-1] = tonext[:-len(tonext)]
+            parts[-1] = tonext[: -len(tonext)]
 
         results = []
         for i in range(0, len(parts) - split_regex.groups, 1 + split_regex.groups):
