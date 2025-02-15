@@ -115,19 +115,21 @@ def replace(
     regex_str: str,
     regex_opts: int,
     new_pattern: str,
-    split_regex: regex.Pattern[str],
     encoding: str,
     ignore_case: Union[str, bool],
 ) -> int:
-    old_regex = regex.compile(regex_str, regex_opts)
-    matches = 0
+    try:
+        old_regex = regex.compile(regex_str, regex_opts)
+    except regex.error as e:
+        die(1, f"Bad regex {regex_str} ({e})")
+
+    num_matches = 0
+    buflen = io.DEFAULT_BUFFER_SIZE
 
     tonext = ""
     retry_prefix = b""
     while True:
-        block = retry_prefix + instream.read(io.DEFAULT_BUFFER_SIZE)
-        if len(block) == 0:
-            break
+        block = retry_prefix + instream.read(buflen)
 
         try:
             block_str = block.decode(encoding=encoding)
@@ -141,25 +143,38 @@ def replace(
             else:
                 raise e
 
-        parts = split_regex.split(tonext + block_str)
-        matches += len(parts) // (1 + split_regex.groups)
-        tonext = parts[-1] or ""
-
+        search_str = tonext + block_str
+        if len(search_str) == 0:
+            break
         results = []
-        for i in range(0, len(parts) - split_regex.groups, 1 + split_regex.groups):
-            results.append(parts[i])
-            if parts[i + 1] != "":
-                replacement = old_regex.sub(new_pattern, parts[i + 1])
+        matches = list(old_regex.finditer(search_str, partial=len(block) > 0))
+        matching_from = 0
+        for i, match in enumerate(matches):
+            results.append(search_str[matching_from : match.start()])
+            if not match.partial and (match.end() < len(search_str) or len(block_str) == 0):
+                num_matches += 1
+                replacement = match.expand(new_pattern)
                 if ignore_case == "match":
-                    replacement = caselike(parts[i + 1], replacement)
+                    replacement = caselike(match.group(), replacement)
                 results.append(replacement)
+                matching_from = match.end()
+            elif matches[i].start() < len(search_str):
+                tonext = search_str[matches[i].start() :]
+                buflen *= 2
+                break
+        else:
+            tonext = ""
+            if len(matches) >= 1:
+                results.append(search_str[matches[-1].end(): ])
+            else:
+                results.append(search_str)
 
         joined_parts = "".join(results)
         outstream.write(joined_parts.encode(encoding=encoding))
 
     outstream.write(tonext.encode(encoding=encoding))
 
-    return matches
+    return num_matches
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -364,10 +379,6 @@ def main(argv: list[str] = sys.argv[1:]) -> None:
     opts = RegexFlag.VERSION1 + RegexFlag.MULTILINE
     if args.ignore_case:
         opts += RegexFlag.IGNORECASE
-    try:
-        split_regex = regex.compile(f"({regex_str})", opts)
-    except regex.error as e:
-        die(1, f"Bad regex {old_str} ({e})")
 
     total_files = 0
     matched_files = 0
@@ -472,7 +483,7 @@ def main(argv: list[str] = sys.argv[1:]) -> None:
         # Do the actual work now
         try:
             num_matches = replace(
-                f, o, regex_str, opts, new_str, split_regex, encoding, args.ignore_case
+                f, o, regex_str, opts, new_str, encoding, args.ignore_case
             )
         except UnicodeDecodeError as e:
             warn(f"{filename}: decoding error ({e.reason})")
