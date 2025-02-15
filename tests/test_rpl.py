@@ -1,5 +1,7 @@
+import io
 import re
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pytest
 from pytest import CaptureFixture
@@ -89,6 +91,16 @@ def test_backreference_numbering(datafiles: Path) -> None:
     main(["a(b)a", r"\1", test_file])
     with open(test_file, encoding="ascii") as f:
         assert f.read().strip() == "b"
+
+
+def test_multi_buffer_matches() -> None:
+    with TemporaryDirectory() as d:
+        filename = Path(d) / "tmp.txt"
+        with open(filename, "w") as f:
+            f.write("a" * io.DEFAULT_BUFFER_SIZE * 2)
+        main(["a+", "b", str(filename)])
+        with open(filename, encoding="ascii") as f:
+            assert f.read()== "b"
 
 
 def test_version(capsys: CaptureFixture[str]) -> None:
