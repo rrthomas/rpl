@@ -93,6 +93,14 @@ def test_backreference_numbering(datafiles: Path) -> None:
         assert f.read().strip() == "b"
 
 
+@pytest.mark.datafiles(FIXTURE_DIR / "abc.txt")
+def test_file_not_truncated(datafiles: Path) -> None:
+    test_file = str(datafiles / "abc.txt")
+    main(["AAA", "XYZ", test_file])
+    with open(test_file, encoding="ascii") as f:
+        assert f.read() == "XYZ\nBBB\nCCC\n"
+
+
 def test_multi_buffer_matches() -> None:
     with TemporaryDirectory() as d:
         filename = Path(d) / "tmp.txt"
