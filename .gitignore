@@ -46,9 +46,6 @@ coverage.xml
 *,cover
 .hypothesis/
 
-# Test outputs
-tests-output
-
 # Translations
 *.mo
 *.pot
