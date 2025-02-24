@@ -32,7 +32,7 @@ namespace IConv {
         public static IConv open (string to_codeset, string from_codeset);
 
         [CCode (cname = "g_iconv")]
-        public size_t iconv (ref char* inbuf, ref size_t inbytes_left, ref char* outbuf, ref size_t outbytes_left);
+        public size_t iconv ([CCode (array_length = false)] ref unowned char[] inbuf, ref size_t inbytes_left, [CCode (array_length = false)] ref unowned char[] outbuf, ref size_t outbytes_left);
         public int close ();
     }
 }
