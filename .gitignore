@@ -3,6 +3,7 @@
 *.c
 *.o
 *_vala.stamp
+*_vala.stamp-t
 *.trs
 *.log
 /Makefile
