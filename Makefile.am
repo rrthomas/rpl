@@ -67,3 +67,9 @@ CLOC = cloc
 
 loc:
 	$(CLOC) *.vala $(VAPIS) Makefile.am configure.ac
+
+release: distcheck
+	git diff --exit-code && \
+	git tag -a -m "Release tag" "v$(VERSION)" && \
+	git push && git push --tags && \
+	gh release create v$(VERSION) --title "Release v$(VERSION)" $(DIST_ARCHIVES)
