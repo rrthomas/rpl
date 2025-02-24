@@ -14,7 +14,8 @@ EXTRA_DIST = \
 	man-extras.1 \
 	rpl.1 \
 	cmdline-vala.h \
-	README.md.in
+	README.md.in \
+	build-aux/rpl-help2man-wrapper
 
 # Ignore built files that are part of the distribution (specifically, rpl.1).
 distcleancheck_listfiles = \
@@ -57,10 +58,10 @@ README.md: $(builddir)/rpl$(EXEEXT) $(srcdir)/README.md.in Makefile
 	$(builddir)/rpl$(EXEEXT) --help >> $(builddir)/README.md
 	printf '```\n' >> $(builddir)/README.md
 
-rpl.1: man-extras.1 configure.ac $(builddir)/rpl$(EXEEXT)
+rpl.1: man-extras.1 configure.ac $(builddir)/rpl$(EXEEXT) build-aux/rpl-help2man-wrapper
 ## Exit gracefully if rpl.1 is not writeable, such as during distcheck!
 	$(AM_V_GEN)if ( touch $@.w && rm -f $@.w; ) >/dev/null 2>&1; then \
-	  $(srcdir)/build-aux/missing --run $(HELP2MAN) --output=$@ --no-info --include $(srcdir)/man-extras.1 $(builddir)/rpl$(EXEEXT); \
+	  $(srcdir)/build-aux/missing --run $(HELP2MAN) --output=$@ --no-info --include $(srcdir)/man-extras.1 $(top_srcdir)/build-aux/rpl-help2man-wrapper; \
 	fi
 
 CLOC = cloc

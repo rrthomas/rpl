@@ -1,0 +1,9 @@
+#! /bin/sh
+# Wrap rpl for help2man
+# Remove group heading and space before it.
+
+if test "$1" = "--help"; then
+  ./rpl $1 | perl -0777 -pe 's/\n Group: case\n  Treatment [^\n]+\n//s'
+else
+  ./rpl $1
+fi
