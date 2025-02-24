@@ -1,3 +1,0 @@
-include man-include.1
-include tox.ini
-include tests/*.txt

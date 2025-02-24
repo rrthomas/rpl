@@ -1,0 +1,27 @@
+# gengetopt for rpl
+purpose "Search and replace text in files."
+usage " [OPTION]... OLD-TEXT NEW-TEXT [FILE ...]"
+
+versiontext "Copyright (C) 2025 Reuben Thomas <rrt@sc3d.org>
+
+Licence GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law."
+
+option "encoding"      - "specify character set encoding"                             string typestr="ENCODING" optional
+option "whole-words"   w "whole words (OLD-TEXT matches on word boundaries only)"     flag off
+option "backup"        b "rename original FILE to FILE~ before replacing"             flag off
+option "quiet"         q "quiet mode"                                                 flag off
+option "verbose"       v "verbose mode"                                               flag off
+option "dry-run"       s "simulation mode"                                            flag off
+option "fixed-strings" F "treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions" flag off
+option "files"         - "OLD-TEXT and NEW-TEXT are file names to read patterns from" flag off
+option "glob"          x "modify only files matching the given glob (may be given more than once)" string typestr="GLOB" multiple default="*" optional
+option "recursive"     R "search recursively"                                         flag off
+option "prompt"        p "prompt before modifying each file"                          flag off
+option "force"         f "ignore errors when trying to preserve attributes"           flag off
+option "keep-times"    d "keep the modification times on modified files"              flag off
+
+defgroup "case" groupdesc="Treatment of upper and lower case"
+groupoption "ignore-case"   i "search case-insensitively"                             group="case"
+groupoption "match-case"    m "ignore case when searching, but try to match case of replacement to case of original, either capitalized, all upper-case, or mixed" group="case"

@@ -10,17 +10,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install dependencies (Ubuntu)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get -y install valac libpcre2-dev libuchardet-dev gengetopt help2man
       - name: Install dependencies (macOS)
         if: ${{ matrix.os == 'macos-latest' }}
+        run: brew install autoconf automake vala pcre2 uchardet gengetopt help2man
+      - name: Build and test
         run: |
-          # Prepend optional brew binary directories to PATH
-          echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
-      - name: Install Python dependencies
-        run: pip install tox build setuptools argparse-manpage pytest-datafiles regex chardet chainstream
-      - name: Build
-        run: |
-          tox --skip-missing-interpreters
-          make build
-          PYTHONPATH=. python -m rpl --help
-          pip install .
+          autoreconf -fi
+          ./configure && make check
+          sudo make install
           rpl --help

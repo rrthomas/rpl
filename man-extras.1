@@ -1,0 +1,20 @@
+/Search and replace/
+Text matching the pattern \fIOLD-TEXT\fR is replaced by \fINEW-TEXT\fR in each \fIFILE\fR. The pattern may match multiple lines.
+
+[examples]
+Replace all occurrences of the word \[oq]funny\[cq] with \[oq]annoying\[cq]
+in all files with extension \fI.txt\fR under the
+.I reports/
+directory:
+.PP
+.nf
+.RS
+rpl \--glob '*.txt' \-R \-w funny annoying reports
+.RE
+
+[see also]
+.BR find (1) ,
+.BR sed (1) .
+
+[author]
+Written by G\[:o]ran Weinholt and Reuben Thomas.
