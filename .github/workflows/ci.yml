@@ -6,12 +6,12 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, ubuntu-22.04, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies (Ubuntu)
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ contains(matrix.os, 'ubuntu') }}
         run: sudo apt-get -y install valac libpcre2-dev libuchardet-dev gengetopt help2man
       - name: Install dependencies (macOS)
         if: ${{ matrix.os == 'macos-latest' }}
