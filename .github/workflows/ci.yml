@@ -15,9 +15,7 @@ jobs:
         run: sudo apt-get -y install valac libpcre2-dev libuchardet-dev gengetopt help2man
       - name: Install dependencies (macOS)
         if: ${{ matrix.os == 'macos-latest' }}
-        run: |
-          brew install autoconf automake vala pcre2 uchardet gengetopt help2man
-          echo "CC=gcc-14" >> $GITHUB_ENV
+        run: brew install autoconf automake vala pcre2 uchardet gengetopt help2man
       - name: Build and test
         run: |
           autoreconf -fi
