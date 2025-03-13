@@ -186,8 +186,8 @@ ssize_t replace (int input_fd,
 					return -1;
 				}
 				start_pos = match.group_start (0);
+				result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (start_pos - end_pos));
 				end_pos = match.group_end (0);
-				result.append_len ((string) ((uint8*) search_str.data + matching_from), (ssize_t) (start_pos - matching_from));
 				num_matches += 1;
 
 				var new_pattern_str = new StringBuilder.sized (new_pattern.len);

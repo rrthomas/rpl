@@ -238,6 +238,19 @@ class TestRplLoremBackreference : TestRplFile {
 	}
 }
 
+class TestRplEmptyMatches : TestRplFile {
+	public TestRplEmptyMatches(string bin_dir, string test_files_dir) {
+		base(bin_dir, test_files_dir, "abc-123.txt");
+		add_test("test_empty_matches", test_empty_matches);
+	}
+
+	public void test_empty_matches() {
+		run({ "^", "#", tmp_file.get_path() });
+		print(test_result().str);
+		assert_true(test_result().str == "#abc 123\n#def 456\n#ghi 789\n");
+	}
+}
+
 public int main(string[] args) {
 	var test_files_dir = Environment.get_variable("TEST_FILES_DIR");
 	var bin_dir = Path.get_dirname(args[0]);
@@ -249,6 +262,7 @@ public int main(string[] args) {
 	TestSuite.get_root().add_suite(new TestRplUtf8Sig(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new TestRplMixedCase(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new TestRplLoremBackreference(bin_dir, test_files_dir).get_suite());
+	TestSuite.get_root().add_suite(new TestRplEmptyMatches(bin_dir, test_files_dir).get_suite());
 
 	return Test.run();
 }

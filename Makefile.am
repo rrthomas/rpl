@@ -30,6 +30,7 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' TEST_FILES_DIR=$(top_srcdir)/test-files $(S
 				$(top_srcdir)/build-aux/tap-driver.sh
 TEST_FILES = \
 	test-files/aba.txt \
+	test-files/abc-123.txt \
 	test-files/lorem.txt \
 	test-files/mixed-case.txt \
 	test-files/lorem-iso-8859-1.txt \
