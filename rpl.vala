@@ -376,7 +376,7 @@ int main (string[] args) {
 	int errorcode;
 	size_t erroroffset;
 	var regex = Pcre2.Regex.compile (old_text.data, opts, out errorcode, out erroroffset);
-	if (errorcode < 0) {
+	if (regex == null) {
 		die (1, "bad regex %.*s (%s)".printf ((int) old_text.len, old_text.str, get_error_message (errorcode)));
 	}
 
