@@ -1,6 +1,6 @@
 # gengetopt for rpl
 purpose "Search and replace text in files."
-usage " [OPTION]... OLD-TEXT NEW-TEXT [FILE ...]"
+usage " [OPTION...] OLD-TEXT NEW-TEXT [FILE...]"
 
 versiontext "Copyright (C) 2025 Reuben Thomas <rrt@sc3d.org>
 
