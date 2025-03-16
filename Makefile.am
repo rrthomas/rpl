@@ -14,7 +14,6 @@ EXTRA_DIST = \
 	man-extras.1 \
 	rpl.1 \
 	cmdline-vala.h \
-	README.md.in \
 	build-aux/rpl-help2man-wrapper
 
 # Ignore built files that are part of the distribution (specifically, rpl.1).
@@ -52,13 +51,6 @@ test_SOURCES = test.vala testcase.vala slurp.vala
 test_CFLAGS = --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) -Wno-incompatible-function-pointer-types
 test_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg gio-2.0 --pkg gio-unix-2.0 --pkg pcre2 --pkg posix
 test_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
-
-README.md: $(builddir)/rpl$(EXEEXT) $(srcdir)/README.md.in Makefile
-	cp $(srcdir)/README.md.in $(builddir)/README.md
-	chmod +w $(builddir)/README.md
-	printf '\n```\n' >> $(builddir)/README.md
-	$(builddir)/rpl$(EXEEXT) --help >> $(builddir)/README.md
-	printf '```\n' >> $(builddir)/README.md
 
 rpl.1: man-extras.1 configure.ac $(builddir)/rpl$(EXEEXT) build-aux/rpl-help2man-wrapper
 ## Exit gracefully if rpl.1 is not writeable, such as during distcheck!
