@@ -104,6 +104,7 @@ ssize_t replace (int input_fd,
 	size_t buf_size = 1024 * 1024;
 
 	var tonext = new StringBuilder ();
+	size_t tonext_offset = 0;
 	var retry_prefix = new StringBuilder ();
 	IConv.IConv? iconv_in = null;
 	IConv.IConv? iconv_out = null;
@@ -158,7 +159,7 @@ ssize_t replace (int input_fd,
 
 		var search_str = new StringBuilder.sized (buf_size * 2);
 
-		search_str.append_len (tonext.str, tonext.len);
+		search_str.append_len ((string) ((char *) tonext.str + tonext_offset), (ssize_t) (tonext.len - tonext_offset));
 		search_str.append_len (buf.str, buf.len);
 		if (search_str.len == 0) {
 			break;
@@ -174,6 +175,7 @@ ssize_t replace (int input_fd,
 			match = old_regex.match (search_str, matching_from, do_partial, out rc);
 			if (rc != Pcre2.Error.NOMATCH) {
 				if (rc == Pcre2.Error.PARTIAL) {
+					tonext_offset = matching_from;
 					tonext = (owned) search_str;
 					buf_size *= 2;
 					break;
@@ -218,6 +220,7 @@ ssize_t replace (int input_fd,
 		}
 		if (match != null && rc != Pcre2.Error.PARTIAL) {
 			tonext = new StringBuilder ();
+			tonext_offset = 0;
 			result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (search_str.len - end_pos));
 		}
 
