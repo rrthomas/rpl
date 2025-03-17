@@ -95,7 +95,7 @@ class TestRplNoFile : TestRpl {
 		add_test("multi_buffer_matches", multi_buffer_matches);
 	}
 
-	public void test_version() {
+	void test_version() {
 		var output = run({ "--version" });
 		assert_true(output.stdout.contains("NO WARRANTY, to the extent"));
 	}
@@ -147,12 +147,12 @@ class TestRplLorem8859_1 : TestRplFile {
 		add_test("test_explicit_encoding", test_explicit_encoding);
 	}
 
-	public void test_bad_encoding() {
+	void test_bad_encoding() {
 		var output = run({ "--encoding=utf-8", "Lorem", "L-O-R-E-M", test_file });
 		assert_true(output.stderr.contains("error decoding"));
 	}
 
-	public void test_explicit_encoding() {
+	void test_explicit_encoding() {
 		run({ "--encoding=iso-8859-1", "Lorem", "L-O-R-E-M", test_result_file.get_path() });
 		assert_true(result_matches("lorem-iso-8859-1_explicit-encoding_expected.txt"));
 	}
@@ -161,30 +161,50 @@ class TestRplLorem8859_1 : TestRplFile {
 class TestRplLorem : TestRplFile {
 	public TestRplLorem(string bin_dir, string test_files_dir) {
 		base(bin_dir, test_files_dir, "lorem.txt");
-		add_test("test_ignore_case", test_ignore_case);
+		add_test("test_ignore_case", test_ignore_case_verbose);
 		add_test("test_match_case", test_match_case);
 		add_test("test_no_flags", test_no_flags);
 		add_test("test_use_regexp", test_use_regexp);
+		add_test("test_dry_run", test_dry_run);
+		add_test("test_quiet", test_quiet);
+		add_test("test_ignores_dash_E", test_ignores_dash_E);
 	}
 
-	public void test_ignore_case() {
-		run({ "-iv", "Lorem", "L-O-R-E-M", test_result_file.get_path() });
+	void test_ignore_case_verbose() {
+		var output = run({ "-iv", "Lorem", "L-O-R-E-M", test_result_file.get_path() });
+		assert_true(output.stderr.contains("processing: "));
 		assert_true(result_matches("lorem_ignore-case_expected.txt"));
 	}
 
-	public void test_match_case() {
+	void test_match_case() {
 		run({ "lorem", "loReM", test_result_file.get_path() });
 		assert_true(result_matches("lorem_match-case_expected.txt"));
 	}
 
-	public void test_no_flags() {
+	void test_no_flags() {
 		run({ "Lorem", "L-O-R-E-M", test_result_file.get_path() });
 		assert_true(result_matches("lorem_no-flags_expected.txt"));
 	}
 
-	public void test_use_regexp() {
+	void test_use_regexp() {
 		run({ "a[a-z]+", "coffee", test_result_file.get_path() });
 		assert_true(result_matches("lorem_use-regexp_expected.txt"));
+	}
+
+	void test_dry_run() {
+		run({ "--dry-run", "Lorem", "L-O-R-E-M", test_result_file.get_path() });
+		assert_true(result_matches("lorem.txt"));
+	}
+
+	void test_quiet() {
+		var output = run({ "--quiet", "Lorem", "L-O-R-E-M", test_result_file.get_path() });
+		assert_true(output.stderr.length == 0);
+		assert_true(result_matches("lorem_no-flags_expected.txt"));
+	}
+
+	void test_ignores_dash_E() {
+		run({ "-E", "Lorem", "L-O-R-E-M", test_result_file.get_path() });
+		assert_true(result_matches("lorem_no-flags_expected.txt"));
 	}
 }
 
@@ -194,7 +214,7 @@ class TestRplLoremUtf8 : TestRplFile {
 		add_test("test_utf_8", test_utf_8);
 	}
 
-	public void test_utf_8() {
+	void test_utf_8() {
 		run({ "amét", "amèt", test_result_file.get_path() });
 		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
 	}
@@ -206,7 +226,7 @@ class TestRplUtf8Sig : TestRplFile {
 		add_test("test_utf_8_sig", test_utf_8_sig);
 	}
 
-	public void test_utf_8_sig() {
+	void test_utf_8_sig() {
 		run({ "BOM mark", "BOM", test_result_file.get_path() });
 		assert_true(result_matches("utf-8-sig_utf-8-sig_expected.txt"));
 	}
@@ -218,7 +238,7 @@ class TestRplMixedCase : TestRplFile {
 		add_test("test_mixed_replace_lower", test_mixed_replace_lower);
 	}
 
-	public void test_mixed_replace_lower() {
+	void test_mixed_replace_lower() {
 		run({ "-m", "MixedInput", "MixedOutput", test_result_file.get_path() });
 		assert_true(result_matches("mixed-case_mixed-replace-lower_expected.txt"));
 	}
@@ -230,7 +250,7 @@ class TestRplLoremBackreference : TestRplFile {
 		add_test("test_backreference_numbering", test_backreference_numbering);
 	}
 
-	public void test_backreference_numbering() {
+	void test_backreference_numbering() {
 		run({ "a(b)a", "$1", test_result_file.get_path() });
 		assert_true(result_matches("aba_backreference-numbering_expected.txt"));
 	}
@@ -242,7 +262,7 @@ class TestRplEmptyMatches : TestRplFile {
 		add_test("test_empty_matches", test_empty_matches);
 	}
 
-	public void test_empty_matches() {
+	void test_empty_matches() {
 		run({ "^", "#", test_result_file.get_path() });
 		assert_true(result_matches("abc-123_empty-matches_expected.txt"));
 	}
