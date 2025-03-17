@@ -244,7 +244,6 @@ class TestRplEmptyMatches : TestRplFile {
 
 	public void test_empty_matches() {
 		run({ "^", "#", test_result_file.get_path() });
-		print(test_result().str);
 		assert_true(result_matches("abc-123_empty-matches_expected.txt"));
 	}
 }
