@@ -23,10 +23,33 @@ struct Output {
 	public string stderr;
 }
 
+Output run_prog(string prog, string[] args) {
+	string[] cmd = { prog };
+	foreach (var arg in args) {
+		cmd += arg;
+	}
+	string stdout;
+	string stderr;
+	int status;
+	try {
+		assert_true(Process.spawn_sync(null, cmd, null, SpawnFlags.SEARCH_PATH, null, out stdout, out stderr, out status));
+	} catch (SpawnError e) {
+		Test.fail_printf(@"error running $prog\n");
+	}
+	try {
+		Process.check_wait_status(status);
+	} catch (GLib.Error e) {
+		Test.fail_printf(@"$prog: $(e.message)\n");
+	}
+	return Output() {
+		stdout = stdout, stderr = stderr
+	};
+}
+
 class TestRpl : GeeTestCase {
 	private string rpl;
 	protected string test_files_dir;
-	protected File tmp_file;
+	public File test_result_file;
 	protected IOStream tmp_ios;
 
 	public TestRpl(string bin_dir, string test_files_dir) {
@@ -36,23 +59,12 @@ class TestRpl : GeeTestCase {
 	}
 
 	public Output run(string[] args) {
-		string[] cmd = { rpl };
-		foreach (var arg in args) {
-			cmd += arg;
-		}
-		string stdout;
-		string stderr;
-		try {
-			assert_true(Process.spawn_sync(null, cmd, null, 0, null, out stdout, out stderr));
-		} catch (SpawnError e) {
-			Test.fail_printf("error running rpl\n");
-		}
-		return Output() { stdout = stdout, stderr = stderr };
+		return run_prog(rpl, args);
 	}
 
 	public override void set_up() {
 		try {
-			tmp_file = File.new_tmp("rpl.test.XXXXXX", out tmp_ios);
+			test_result_file = File.new_tmp("rpl.test.XXXXXX", out tmp_ios);
 		} catch (GLib.Error e) {
 			Test.fail_printf("error creating temporary file\n");
 		}
@@ -60,14 +72,14 @@ class TestRpl : GeeTestCase {
 
 	public override void tear_down() {
 		try {
-			tmp_file.@delete();
+			test_result_file.@delete();
 		} catch (Error e) {
 			Test.fail_printf("error deleting test file\n");
 		}
 	}
 
 	public StringBuilder test_result() {
-		var result = slurp(tmp_file);
+		var result = slurp(test_result_file);
 		if (result == null) {
 			Test.fail_printf("error reading test result");
 		}
@@ -95,7 +107,7 @@ class TestRplNoFile : TestRpl {
 		} catch (GLib.Error e) {
 			Test.fail_printf("error writing to temporary file");
 		}
-		run({ "a+", "b", tmp_file.get_path() });
+		run({ "a+", "b", test_result_file.get_path() });
 		assert_true(test_result().str == "b");
 	}
 }
@@ -115,30 +127,16 @@ abstract class TestRplFile : TestRpl {
 		try {
 			var src = File.new_for_path(test_file);
 			tmp_ios.close();
-			assert_true(src.copy(tmp_file, FileCopyFlags.OVERWRITE, null));
+			assert_true(src.copy(test_result_file, FileCopyFlags.OVERWRITE, null));
 		} catch (Error e) {
 			Test.fail_printf("error copying test file");
 		}
 	}
 
-	private bool matches_result(string pattern, Pcre2.CompileFlags options = 0) {
-		int error_code;
-		size_t error_offset;
-		var regex = Pcre2.Regex.compile(pattern.data, options, out error_code, out error_offset);
-		if (error_code < 0) {
-			Test.fail_printf(@"bad regex in test: $(Pcre2.get_error_message(error_code))");
-		}
-		int rc;
-		regex.match(test_result(), 0, 0, out rc);
-		return rc > 0;
-	}
-
-	public void assert_match(string pattern, Pcre2.CompileFlags options = 0) {
-		assert_true(matches_result(pattern, options));
-	}
-
-	public void assert_no_match(string pattern, Pcre2.CompileFlags options = 0) {
-		assert_false(matches_result(pattern, options));
+	public bool result_matches(string file) {
+		var result_file = Path.build_filename(test_files_dir, file);
+		var result = run_prog("diff", { result_file, test_result_file.get_path() });
+		return true;
 	}
 }
 
@@ -155,8 +153,8 @@ class TestRplLorem8859_1 : TestRplFile {
 	}
 
 	public void test_explicit_encoding() {
-		run({ "--encoding=iso-8859-1", "Lorem", "L-O-R-E-M", tmp_file.get_path() });
-		assert_match("L-O-R-E-M");
+		run({ "--encoding=iso-8859-1", "Lorem", "L-O-R-E-M", test_result_file.get_path() });
+		assert_true(result_matches("lorem-iso-8859-1_explicit-encoding_expected.txt"));
 	}
 }
 
@@ -170,23 +168,23 @@ class TestRplLorem : TestRplFile {
 	}
 
 	public void test_ignore_case() {
-		run({ "-iv", "Lorem", "L-O-R-E-M", tmp_file.get_path() });
-		assert_match("L-O-R-E-M");
+		run({ "-iv", "Lorem", "L-O-R-E-M", test_result_file.get_path() });
+		assert_true(result_matches("lorem_ignore-case_expected.txt"));
 	}
 
 	public void test_match_case() {
-		run({ "lorem", "loReM", tmp_file.get_path() });
-		assert_match("lorem", Pcre2.CompileFlags.CASELESS);
+		run({ "lorem", "loReM", test_result_file.get_path() });
+		assert_true(result_matches("lorem_match-case_expected.txt"));
 	}
 
 	public void test_no_flags() {
-		run({ "Lorem", "L-O-R-E-M", tmp_file.get_path() });
-		assert_match("L-O-R-E-M");
+		run({ "Lorem", "L-O-R-E-M", test_result_file.get_path() });
+		assert_true(result_matches("lorem_no-flags_expected.txt"));
 	}
 
 	public void test_use_regexp() {
-		run({ "a[a-z]+", "coffee", tmp_file.get_path() });
-		assert_match("coffee elit", Pcre2.CompileFlags.CASELESS);
+		run({ "a[a-z]+", "coffee", test_result_file.get_path() });
+		assert_true(result_matches("lorem_use-regexp_expected.txt"));
 	}
 }
 
@@ -197,8 +195,8 @@ class TestRplLoremUtf8 : TestRplFile {
 	}
 
 	public void test_utf_8() {
-		run({ "amét", "amèt", tmp_file.get_path() });
-		assert_match("amèt");
+		run({ "amét", "amèt", test_result_file.get_path() });
+		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
 	}
 }
 
@@ -209,8 +207,8 @@ class TestRplUtf8Sig : TestRplFile {
 	}
 
 	public void test_utf_8_sig() {
-		run({ "BOM mark", "BOM", tmp_file.get_path() });
-		assert_no_match("\ufeff at");
+		run({ "BOM mark", "BOM", test_result_file.get_path() });
+		assert_true(result_matches("utf-8-sig_utf-8-sig_expected.txt"));
 	}
 }
 
@@ -221,8 +219,8 @@ class TestRplMixedCase : TestRplFile {
 	}
 
 	public void test_mixed_replace_lower() {
-		run({ "-m", "MixedInput", "MixedOutput", tmp_file.get_path() });
-		assert_match("^mixedoutput MIXEDOUTPUT Mixedoutput MixedOutput$");
+		run({ "-m", "MixedInput", "MixedOutput", test_result_file.get_path() });
+		assert_true(result_matches("mixed-case_mixed-replace-lower_expected.txt"));
 	}
 }
 
@@ -233,8 +231,8 @@ class TestRplLoremBackreference : TestRplFile {
 	}
 
 	public void test_backreference_numbering() {
-		run({ "a(b)a", "$1", tmp_file.get_path() });
-		assert_true(test_result().str == "b\n");
+		run({ "a(b)a", "$1", test_result_file.get_path() });
+		assert_true(result_matches("aba_backreference-numbering_expected.txt"));
 	}
 }
 
@@ -245,9 +243,9 @@ class TestRplEmptyMatches : TestRplFile {
 	}
 
 	public void test_empty_matches() {
-		run({ "^", "#", tmp_file.get_path() });
+		run({ "^", "#", test_result_file.get_path() });
 		print(test_result().str);
-		assert_true(test_result().str == "#abc 123\n#def 456\n#ghi 789\n");
+		assert_true(result_matches("abc-123_empty-matches_expected.txt"));
 	}
 }
 
