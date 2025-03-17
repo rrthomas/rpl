@@ -173,14 +173,13 @@ namespace Pcre2 {
 		   released, the numbers must not be changed. */
 
 		BADDATA,
-		MIXEDTABLES,                                                                        /* Name was changed */
+		MIXEDTABLES,
 		BADMAGIC,
 		BADMODE,
 		BADOFFSET,
 		BADOPTION,
 		BADREPLACEMENT,
 		BADUTFOFFSET,
-		CALLOUT,                                                                            /* Never used by PCRE2 itself */
 		DFA_BADRESTART,
 		DFA_RECURSE,
 		DFA_UCOND,
@@ -197,7 +196,6 @@ namespace Pcre2 {
 		NULL,
 		RECURSELOOP,
 		DEPTHLIMIT,
-		RECURSIONLIMIT,                                                                     /* Obsolete synonym */
 		UNAVAILABLE,
 		UNSET,
 		BADOFFSETLIMIT,
@@ -220,7 +218,7 @@ namespace Pcre2 {
 		public string DATE;
 	}
 
-	[CCode (cname = "int", cprefix = "PCRE2_", has_type_id = false)]
+	[CCode (cname = "uint32_t", cprefix = "PCRE2_", has_type_id = false)]
 	[Flags]
 	public enum CompileFlags {
 		ANCHORED,
@@ -253,26 +251,31 @@ namespace Pcre2 {
 		EXTENDED_MORE,
 		LITERAL,
 		MATCH_INVALID_UTF,
-
-		/* An additional compile options word is available in the compile context. */
-
-		EXTRA_ALLOW_SURROGATE_ESCAPES,
-		EXTRA_BAD_ESCAPE_IS_LITERAL,
-		EXTRA_MATCH_WORD,
-		EXTRA_MATCH_LINE,
-		EXTRA_ESCAPED_CR_IS_LF,
-		EXTRA_ALT_BSUX,
-		EXTRA_ALLOW_LOOKAROUND_BSK,
-
-		/* These are for pcre2_jit_compile(). */
-
-		JIT_COMPLETE,
-		JIT_PARTIAL_SOFT,
-		JIT_PARTIAL_HARD,
-		JIT_INVALID_UTF,
 	}
 
-	[CCode (cname = "int", cprefix = "PCRE2_", has_type_id = false)]
+	[CCode (cname = "uint32_t", cprefix = "PCRE2_EXTRA_", has_type_id = false)]
+	[Flags]
+	public enum ExtraCompileFlags {
+		ALLOW_SURROGATE_ESCAPES,
+		BAD_ESCAPE_IS_LITERAL,
+		MATCH_WORD,
+		MATCH_LINE,
+		ESCAPED_CR_IS_LF,
+		ALT_BSUX,
+		ALLOW_LOOKAROUND_BSK,
+	}
+
+
+	[CCode (cname = "uint32_t", cprefix = "PCRE2_JIT_", has_type_id = false)]
+	[Flags]
+	public enum JitCompileFlags {
+		COMPLETE,
+		PARTIAL_SOFT,
+		PARTIAL_HARD,
+		INVALID_UTF,
+	}
+
+	[CCode (cname = "uint32_t", cprefix = "PCRE2_", has_type_id = false)]
 	[Flags]
 	public enum MatchFlags {
 		ANCHORED,
@@ -353,7 +356,7 @@ namespace Pcre2 {
 	[Compact]
 	[CCode (cprefix = "pcre2_", cname = "pcre2_code", free_function = "pcre2_code_free")]
 	public class Regex {
-		public static Regex? compile ([CCode (array_length_type = "size_t")] uint8[] pattern, uint32 options, out int errorcode, out size_t error_offset, void *ccontext = null);
+		public static Regex? compile ([CCode (array_length_type = "size_t")] uint8[] pattern, CompileFlags options, out int errorcode, out size_t error_offset, CompileContext? ccontext = null);
 
 		[CCode (cname = "pcre2_copy_code")]
 		public Regex dup ();
@@ -373,7 +376,7 @@ namespace Pcre2 {
 		private Match? create_match (void *gcontext = null);
 
 		[CCode (cname = "pcre2_match")]
-		private int _match (uint8* subject, size_t subject_len, size_t startoffset, MatchFlags options, Match match_data, void *ccontext = null);
+		private int _match (uint8* subject, size_t subject_len, size_t startoffset, MatchFlags options, Match match_data, void *mcontext = null);
 
 		[CCode (cname = "_vala_pcre2_match")]
 		public Match? match (GLib.StringBuilder subject, size_t startoffset, uint32 options, out int rc) {
@@ -382,7 +385,7 @@ namespace Pcre2 {
 				rc = Error.NOMEMORY;
 				return null;
 			}
-			rc = _match (subject.data, subject.len, startoffset, options, match, null);
+			rc = _match (subject.data, subject.len, startoffset, options, match);
 			return match;
 		}
 
@@ -416,17 +419,50 @@ namespace Pcre2 {
 		// TODO:
 		//  #define PCRE2_JIT_FUNCTIONS \
 		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
-		//    pcre2_jit_compile(pcre2_code *, uint32_t); \
+		//    pcre2_jit_compile(pcre2_code *, JitCompileFlags); \
 		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
 		//    pcre2_jit_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE, \
 		//      uint32_t, pcre2_match_data *, pcre2_match_context *); \
 	}
 
 	[Compact]
+	[CCode (cprefix = "pcre2_", cname = "pcre2_compile_context", free_function = "pcre2_compile_context_free")]
+	public class CompileContext {
+		[CCode (cname = "pcre2_compile_context_create")]
+		public CompileContext (void *gcontext = null);
+
+		// TODO:
+		// #define PCRE2_COMPILE_CONTEXT_FUNCTIONS			   \
+		// PCRE2_EXP_DECL pcre2_compile_context *PCRE2_CALL_CONVENTION	\
+		//   pcre2_compile_context_copy(pcre2_compile_context *);		\
+		// PCRE2_EXP_DECL void PCRE2_CALL_CONVENTION					\
+		//   pcre2_compile_context_free(pcre2_compile_context *);		\
+		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
+		//   pcre2_set_bsr(pcre2_compile_context *, uint32_t);			\
+		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
+		//   pcre2_set_character_tables(pcre2_compile_context *, const uint8_t *); \
+
+		[CCode (cname = "pcre2_set_compile_extra_options")]
+		public int set_extra_options (ExtraCompileFlags options);
+
+		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
+		//   pcre2_set_compile_extra_options(pcre2_compile_context *, uint32_t); \
+		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
+		//   pcre2_set_max_pattern_length(pcre2_compile_context *, PCRE2_SIZE); \
+		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
+		//   pcre2_set_newline(pcre2_compile_context *, uint32_t);		\
+		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
+		//   pcre2_set_parens_nest_limit(pcre2_compile_context *, uint32_t); \
+		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
+		//   pcre2_set_compile_recursion_guard(pcre2_compile_context *, \
+		//     int (*)(uint32_t, void *), void *);
+	}
+
+	[Compact]
 	[CCode (cprefix = "pcre2_", cname = "pcre2_match_data", free_function = "pcre2_match_data_free")]
 	public class Match {
 		[CCode (cname = "pcre2_match_data_create")]
-		public Match (uint32 ovecsize = 0, void *ccontext = null);
+		public Match (uint32 ovecsize = 0, CompileContext? ccontext = null);
 
 		[CCode (cname = "pcre2_get_ovector_count")]
 		private uint32 ovector_count ();

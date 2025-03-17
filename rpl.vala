@@ -366,19 +366,21 @@ int main (string[] args) {
 
 	string encoding = args_info.encoding_arg;
 
+	var ccontext = new Pcre2.CompileContext ();
+	if (args_info.whole_words_given) {
+		ccontext.set_extra_options (Pcre2.ExtraCompileFlags.MATCH_WORD);
+	}
+
 	var opts = Pcre2.CompileFlags.MULTILINE;
 	if (args_info.fixed_strings_given) {
 		opts |= Pcre2.CompileFlags.LITERAL;
-	}
-	if (args_info.whole_words_given) {
-		opts |= Pcre2.CompileFlags.EXTRA_MATCH_WORD;
 	}
 	if (args_info.ignore_case_given || args_info.match_case_given) {
 		opts |= Pcre2.CompileFlags.CASELESS;
 	}
 	int errorcode;
 	size_t erroroffset;
-	var regex = Pcre2.Regex.compile (old_text.data, opts, out errorcode, out erroroffset);
+	var regex = Pcre2.Regex.compile (old_text.data, opts, out errorcode, out erroroffset, ccontext);
 	if (regex == null) {
 		die (1, "bad regex %.*s (%s)".printf ((int) old_text.len, old_text.str, get_error_message (errorcode)));
 	}

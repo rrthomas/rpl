@@ -135,7 +135,7 @@ abstract class TestRplFile : TestRpl {
 
 	public bool result_matches(string file) {
 		var result_file = Path.build_filename(test_files_dir, file);
-		var result = run_prog("diff", { result_file, test_result_file.get_path() });
+		run_prog("diff", { result_file, test_result_file.get_path() });
 		return true;
 	}
 }
@@ -212,11 +212,17 @@ class TestRplLoremUtf8 : TestRplFile {
 	public TestRplLoremUtf8(string bin_dir, string test_files_dir) {
 		base(bin_dir, test_files_dir, "lorem-utf-8.txt");
 		add_test("test_utf_8", test_utf_8);
+		add_test("test_whole_words", test_whole_words);
 	}
 
 	void test_utf_8() {
 		run({ "amét", "amèt", test_result_file.get_path() });
 		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
+	}
+
+	void test_whole_words() {
+		run({ "--whole-words", "in", "out", test_result_file.get_path() });
+		assert_true(result_matches("lorem-utf-8_whole-words_expected.txt"));
 	}
 }
 
