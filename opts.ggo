@@ -22,6 +22,9 @@ option "prompt"        p "prompt before modifying each file"                    
 option "force"         f "ignore errors when trying to preserve attributes"           flag off
 option "keep-times"    d "keep the modification times on modified files"              flag off
 
+# Flag ignored for backwards compatibility
+option "extended-regex" E "use extended regex syntax [IGNORED]" flag off hidden
+
 defgroup "case" groupdesc="Treatment of upper and lower case"
 groupoption "ignore-case"   i "search case-insensitively"                             group="case"
 groupoption "match-case"    m "ignore case when searching, but try to match case of replacement to case of original, either capitalized, all upper-case, or mixed" group="case"
