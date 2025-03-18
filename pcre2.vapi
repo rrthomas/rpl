@@ -26,6 +26,181 @@
 
 [CCode (cprefix = "PCRE2_", lower_case_cprefix = "pcre2_", cheader_filename = "pcre2.h")]
 namespace Pcre2 {
+	[CCode (cprefix = "PCRE2_")]
+	namespace Version {
+		public const int MAJOR;
+		public const int MINOR;
+		public const string PRERELEASE;
+		public const string DATE;
+	}
+
+	[CCode (cname = "uint32_t", cprefix = "PCRE2_", has_type_id = false)]
+	[Flags]
+	public enum CompileFlags {
+		ANCHORED,
+		NO_UTF_CHECK,
+		ENDANCHORED,
+
+		ALLOW_EMPTY_CLASS,
+		ALT_BSUX,
+		AUTO_CALLOUT,
+		CASELESS,
+		DOLLAR_ENDONLY,
+		DOTALL,
+		DUPNAMES,
+		EXTENDED,
+		FIRSTLINE,
+		MATCH_UNSET_BACKREF,
+		MULTILINE,
+		NEVER_UCP,
+		NEVER_UTF,
+		NO_AUTO_CAPTURE,
+		NO_AUTO_POSSESS,
+		NO_DOTSTAR_ANCHOR,
+		NO_START_OPTIMIZE,
+		UCP,
+		UNGREEDY,
+		UTF,
+		NEVER_BACKSLASH_C,
+		ALT_CIRCUMFLEX,
+		ALT_VERBNAMES,
+		USE_OFFSET_LIMIT,
+		EXTENDED_MORE,
+		LITERAL,
+		MATCH_INVALID_UTF,
+	}
+
+	[CCode (cname = "uint32_t", cprefix = "PCRE2_EXTRA_", has_type_id = false)]
+	[Flags]
+	public enum ExtraCompileFlags {
+		ALLOW_SURROGATE_ESCAPES,
+		BAD_ESCAPE_IS_LITERAL,
+		MATCH_WORD,
+		MATCH_LINE,
+		ESCAPED_CR_IS_LF,
+		ALT_BSUX,
+		ALLOW_LOOKAROUND_BSK,
+	}
+
+	[CCode (cname = "uint32_t", cprefix = "PCRE2_JIT_", has_type_id = false)]
+	[Flags]
+	public enum JitCompileFlags {
+		COMPLETE,
+		PARTIAL_SOFT,
+		PARTIAL_HARD,
+		INVALID_UTF,
+	}
+
+	[CCode (cname = "uint32_t", cprefix = "PCRE2_", has_type_id = false)]
+	[Flags]
+	public enum MatchFlags {
+		ANCHORED,
+		NO_UTF_CHECK,
+		ENDANCHORED,
+
+		NOTBOL,
+		NOTEOL,
+		NOTEMPTY,
+		NOTEMPTY_ATSTART,
+		PARTIAL_SOFT,
+		PARTIAL_HARD,
+		COPY_MATCHED_SUBJECT,
+
+		// dfa_match only
+		DFA_RESTART,
+		DFA_SHORTEST,
+
+		// substitute only
+		SUBSTITUTE_GLOBAL,
+		SUBSTITUTE_EXTENDED,
+		SUBSTITUTE_UNSET_EMPTY,
+		SUBSTITUTE_UNKNOWN_UNSET,
+		SUBSTITUTE_OVERFLOW_LENGTH,
+		SUBSTITUTE_LITERAL,
+		SUBSTITUTE_MATCHED,
+		SUBSTITUTE_REPLACEMENT_ONLY,
+
+		// not dfa_match
+		NO_JIT,
+	}
+
+	// TODO:
+	// /* Options for pcre2_pattern_convert(). */
+
+	// PCRE2_CONVERT_UTF
+	// PCRE2_CONVERT_NO_UTF_CHECK
+	// PCRE2_CONVERT_POSIX_BASIC
+	// PCRE2_CONVERT_POSIX_EXTENDED
+	// PCRE2_CONVERT_GLOB
+	// PCRE2_CONVERT_GLOB_NO_WILD_SEPARATOR
+	// PCRE2_CONVERT_GLOB_NO_STARSTAR
+
+	// /* Newline and \R settings, for use in compile contexts. The newline values
+	// must be kept in step with values set in config.h and both sets must all be
+	// greater than zero. */
+
+	// PCRE2_NEWLINE_CR
+	// PCRE2_NEWLINE_LF
+	// PCRE2_NEWLINE_CRLF
+	// PCRE2_NEWLINE_ANY
+	// PCRE2_NEWLINE_ANYCRLF
+	// PCRE2_NEWLINE_NUL
+
+	// PCRE2_BSR_UNICODE
+	// PCRE2_BSR_ANYCRLF
+
+	/* Request types for pcre2_pattern_info() */
+	[CCode (cprefix = "PCRE2_INFO_", has_type_id = false)]
+	public enum PatternInfo {
+		ALLOPTIONS,
+		ARGOPTIONS,
+		BACKREFMAX,
+		BSR,
+		CAPTURECOUNT,
+		FIRSTCODEUNIT,
+		FIRSTCODETYPE,
+		FIRSTBITMAP,
+		HASCRORLF,
+		JCHANGED,
+		JITSIZE,
+		LASTCODEUNIT,
+		LASTCODETYPE,
+		MATCHEMPTY,
+		MATCHLIMIT,
+		MAXLOOKBEHIND,
+		MINLENGTH,
+		NAMECOUNT,
+		NAMEENTRYSIZE,
+		NAMETABLE,
+		NEWLINE,
+		DEPTHLIMIT,
+		SIZE,
+		HASBACKSLASHC,
+		FRAMESIZE,
+		HEAPLIMIT,
+		EXTRAOPTIONS,
+	}
+
+	/* Request types for pcre2_config(). */
+	[CCode (cprefix = "PCRE2_CONFIG_", has_type_id = false)]
+	public enum Config {
+		BSR,
+		JIT,
+		JITTARGET,
+		LINKSIZE,
+		MATCHLIMIT,
+		NEWLINE,
+		PARENSLIMIT,
+		DEPTHLIMIT,
+		UNICODE,
+		UNICODE_VERSION,
+		VERSION,
+		HEAPLIMIT,
+		NEVER_BACKSLASH_C,
+		COMPILED_WIDTHS,
+		TABLES_LENGTH,
+	}
+
 	[CCode (cprefix = "PCRE2_ERROR_", has_type_id = false)]
 	public enum Error {
 		END_BACKSLASH,
@@ -211,148 +386,6 @@ namespace Pcre2 {
 		DFA_UINVALID_UTF,
 	}
 
-	namespace VersionInfo {
-		public const int MAJOR;
-		public const int MINOR;
-		public string PRERELEASE;
-		public string DATE;
-	}
-
-	[CCode (cname = "uint32_t", cprefix = "PCRE2_", has_type_id = false)]
-	[Flags]
-	public enum CompileFlags {
-		ANCHORED,
-		NO_UTF_CHECK,
-		ENDANCHORED,
-		ALLOW_EMPTY_CLASS,
-		ALT_BSUX,
-		AUTO_CALLOUT,
-		CASELESS,
-		DOLLAR_ENDONLY,
-		DOTALL,
-		DUPNAMES,
-		EXTENDED,
-		FIRSTLINE,
-		MATCH_UNSET_BACKREF,
-		MULTILINE,
-		NEVER_UCP,
-		NEVER_UTF,
-		NO_AUTO_CAPTURE,
-		NO_AUTO_POSSESS,
-		NO_DOTSTAR_ANCHOR,
-		NO_START_OPTIMIZE,
-		UCP,
-		UNGREEDY,
-		UTF,
-		NEVER_BACKSLASH_C,
-		ALT_CIRCUMFLEX,
-		ALT_VERBNAMES,
-		USE_OFFSET_LIMIT,
-		EXTENDED_MORE,
-		LITERAL,
-		MATCH_INVALID_UTF,
-	}
-
-	[CCode (cname = "uint32_t", cprefix = "PCRE2_EXTRA_", has_type_id = false)]
-	[Flags]
-	public enum ExtraCompileFlags {
-		ALLOW_SURROGATE_ESCAPES,
-		BAD_ESCAPE_IS_LITERAL,
-		MATCH_WORD,
-		MATCH_LINE,
-		ESCAPED_CR_IS_LF,
-		ALT_BSUX,
-		ALLOW_LOOKAROUND_BSK,
-	}
-
-
-	[CCode (cname = "uint32_t", cprefix = "PCRE2_JIT_", has_type_id = false)]
-	[Flags]
-	public enum JitCompileFlags {
-		COMPLETE,
-		PARTIAL_SOFT,
-		PARTIAL_HARD,
-		INVALID_UTF,
-	}
-
-	[CCode (cname = "uint32_t", cprefix = "PCRE2_", has_type_id = false)]
-	[Flags]
-	public enum MatchFlags {
-		ANCHORED,
-		NO_UTF_CHECK,
-		ENDANCHORED,
-		NOTBOL,
-		NOTEOL,
-		NOTEMPTY,
-		NOTEMPTY_ATSTART,
-		PARTIAL_SOFT,
-		PARTIAL_HARD,
-		DFA_RESTART,
-		DFA_SHORTEST,
-		SUBSTITUTE_GLOBAL,
-		SUBSTITUTE_EXTENDED,
-		SUBSTITUTE_UNSET_EMPTY,
-		SUBSTITUTE_UNKNOWN_UNSET,
-		SUBSTITUTE_OVERFLOW_LENGTH,
-		NO_JIT,
-		COPY_MATCHED_SUBJECT,
-		SUBSTITUTE_LITERAL,
-		SUBSTITUTE_MATCHED,
-		SUBSTITUTE_REPLACEMENT_ONLY,
-	}
-
-	/* Request types for pcre2_pattern_info() */
-	[CCode (cprefix = "PCRE2_INFO_", has_type_id = false)]
-	public enum PatternInfo {
-		ALLOPTIONS,
-		ARGOPTIONS,
-		BACKREFMAX,
-		BSR,
-		CAPTURECOUNT,
-		FIRSTCODEUNIT,
-		FIRSTCODETYPE,
-		FIRSTBITMAP,
-		HASCRORLF,
-		JCHANGED,
-		JITSIZE,
-		LASTCODEUNIT,
-		LASTCODETYPE,
-		MATCHEMPTY,
-		MATCHLIMIT,
-		MAXLOOKBEHIND,
-		MINLENGTH,
-		NAMECOUNT,
-		NAMEENTRYSIZE,
-		NAMETABLE,
-		NEWLINE,
-		DEPTHLIMIT,
-		SIZE,
-		HASBACKSLASHC,
-		FRAMESIZE,
-		HEAPLIMIT,
-		EXTRAOPTIONS,
-	}
-
-	/* Request types for pcre2_config(). */
-	[CCode (cprefix = "PCRE2_CONFIG_", has_type_id = false)]
-	public enum Config {
-		BSR,
-		JIT,
-		JITTARGET,
-		LINKSIZE,
-		MATCHLIMIT,
-		NEWLINE,
-		PARENSLIMIT,
-		DEPTHLIMIT,
-		UNICODE,
-		UNICODE_VERSION,
-		VERSION,
-		HEAPLIMIT,
-		NEVER_BACKSLASH_C,
-		COMPILED_WIDTHS,
-		TABLES_LENGTH,
-	}
-
 	[Compact]
 	[CCode (cprefix = "pcre2_", cname = "pcre2_code", free_function = "pcre2_code_free")]
 	public class Regex {
@@ -496,14 +529,14 @@ namespace Pcre2 {
 
 		// TODO:
 		//    PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
-		//  	pcre2_dfa_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE, \
-		//  	  uint32_t, pcre2_match_data *, pcre2_match_context *, int *, PCRE2_SIZE); \
+		//		pcre2_dfa_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE, \
+		//		  uint32_t, pcre2_match_data *, pcre2_match_context *, int *, PCRE2_SIZE); \
 		//    PCRE2_EXP_DECL PCRE2_SPTR PCRE2_CALL_CONVENTION \
-		//  	pcre2_get_mark(pcre2_match_data *); \
+		//		pcre2_get_mark(pcre2_match_data *); \
 		//    PCRE2_EXP_DECL PCRE2_SIZE PCRE2_CALL_CONVENTION \
-		//  	pcre2_get_match_data_size(pcre2_match_data *); \
+		//		pcre2_get_match_data_size(pcre2_match_data *); \
 		//    PCRE2_EXP_DECL PCRE2_SIZE PCRE2_CALL_CONVENTION \
-		//  	pcre2_get_startchar(pcre2_match_data *);
+		//		pcre2_get_startchar(pcre2_match_data *);
 	}
 
 	[CCode (cname = "pcre2_get_error_message")]
