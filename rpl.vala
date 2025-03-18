@@ -97,7 +97,6 @@ ssize_t replace (int input_fd,
                  string input_filename,
                  int output_fd,
                  Pcre2.Regex old_regex,
-                 int regex_opts,
                  StringBuilder new_pattern,
                  string? encoding) {
 	ssize_t num_matches = 0;
@@ -504,7 +503,7 @@ int main (string[] args) {
 
 		// Process the file
 		ssize_t num_matches = 0;
-		num_matches = replace (input_fd, (owned) buf, filename, output_fd, regex, 0, new_text, encoding);
+		num_matches = replace (input_fd, (owned) buf, filename, output_fd, regex, new_text, encoding);
 
 		if (Posix.close (input_fd) < 0) {
 			warn (@"error closing $filename: $(GLib.strerror(errno))\n");
