@@ -220,6 +220,7 @@ class TestRplLoremUtf8 : TestRplFile {
 		base(bin_dir, test_files_dir, "lorem-utf-8.txt");
 		add_test("test_utf_8", test_utf_8);
 		add_test("test_whole_words", test_whole_words);
+		add_test("fixed_strings", test_fixed_strings);
 	}
 
 	void test_utf_8() {
@@ -230,6 +231,11 @@ class TestRplLoremUtf8 : TestRplFile {
 	void test_whole_words() {
 		run({ "--whole-words", "in", "out", test_result_file.get_path() });
 		assert_true(result_matches("lorem-utf-8_whole-words_expected.txt"));
+	}
+
+	void test_fixed_strings() {
+		run({ "--fixed-strings", "t.", "t$$", test_result_file.get_path() });
+		assert_true(result_matches("lorem-utf-8_fixed-strings_expected.txt"));
 	}
 }
 

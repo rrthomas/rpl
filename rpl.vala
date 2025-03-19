@@ -97,6 +97,7 @@ ssize_t replace (int input_fd,
                  string input_filename,
                  int output_fd,
                  Pcre2.Regex old_regex,
+				 Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
                  string? encoding) {
 	ssize_t num_matches = 0;
@@ -195,7 +196,7 @@ ssize_t replace (int input_fd,
 				new_pattern_str.append_len (new_pattern.str, new_pattern.len);
 				var output = old_regex.substitute (
 				                                   search_str, matching_from,
-				                                   Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
+				                                   replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
 				                                   match,
 				                                   new_pattern_str,
 				                                   out rc
@@ -371,8 +372,12 @@ int main (string[] args) {
 	}
 
 	var opts = Pcre2.CompileFlags.MULTILINE;
+	Pcre2.MatchFlags replace_opts = 0;
 	if (args_info.fixed_strings_given) {
-		opts |= Pcre2.CompileFlags.LITERAL;
+		opts = Pcre2.CompileFlags.LITERAL; // Override default options,
+										   // which are incompatible with
+										   // LITERAL.
+		replace_opts |= Pcre2.MatchFlags.SUBSTITUTE_LITERAL;
 	}
 	if (args_info.ignore_case_given || args_info.match_case_given) {
 		opts |= Pcre2.CompileFlags.CASELESS;
@@ -503,7 +508,7 @@ int main (string[] args) {
 
 		// Process the file
 		ssize_t num_matches = 0;
-		num_matches = replace (input_fd, (owned) buf, filename, output_fd, regex, new_text, encoding);
+		num_matches = replace (input_fd, (owned) buf, filename, output_fd, regex, replace_opts, new_text, encoding);
 
 		if (Posix.close (input_fd) < 0) {
 			warn (@"error closing $filename: $(GLib.strerror(errno))\n");
