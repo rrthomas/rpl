@@ -34,12 +34,14 @@ Output run_prog(string prog, string[] args) {
 	try {
 		assert_true(Process.spawn_sync(null, cmd, null, SpawnFlags.SEARCH_PATH, null, out stdout, out stderr, out status));
 	} catch (SpawnError e) {
-		Test.fail_printf(@"error running $prog\n");
+		print(@"error running $prog\n");
+		assert_no_error(e);
 	}
 	try {
 		Process.check_wait_status(status);
 	} catch (GLib.Error e) {
-		Test.fail_printf(@"$prog: $(e.message)\n");
+		print(@"$prog: $(e.message)\n");
+		assert_no_error(e);
 	}
 	return Output() {
 		stdout = stdout, stderr = stderr
@@ -66,7 +68,8 @@ class TestRpl : GeeTestCase {
 		try {
 			test_result_file = File.new_tmp("rpl.test.XXXXXX", out tmp_ios);
 		} catch (GLib.Error e) {
-			Test.fail_printf("error creating temporary file\n");
+			print("error creating temporary file\n");
+			assert_no_error(e);
 		}
 	}
 
@@ -74,14 +77,16 @@ class TestRpl : GeeTestCase {
 		try {
 			test_result_file.@delete();
 		} catch (Error e) {
-			Test.fail_printf("error deleting test file\n");
+			print("error deleting test file\n");
+			assert_no_error(e);
 		}
 	}
 
 	public StringBuilder test_result() {
 		var result = slurp(test_result_file);
 		if (result == null) {
-			Test.fail_printf("error reading test result");
+			print("error reading test result");
+			assert_nonnull(result);
 		}
 		return result;
 	}
@@ -105,7 +110,8 @@ class TestRplNoFile : TestRpl {
 			tmp_ios.output_stream.write(string.nfill(1024 * 1024, 'a').data);
 			tmp_ios.close();
 		} catch (GLib.Error e) {
-			Test.fail_printf("error writing to temporary file");
+			print("error writing to temporary file");
+			assert_no_error(e);
 		}
 		run({ "a+", "b", test_result_file.get_path() });
 		assert_true(test_result().str == "b");
@@ -129,7 +135,8 @@ abstract class TestRplFile : TestRpl {
 			tmp_ios.close();
 			assert_true(src.copy(test_result_file, FileCopyFlags.OVERWRITE, null));
 		} catch (Error e) {
-			Test.fail_printf("error copying test file");
+			print("error copying test file");
+			assert_no_error(e);
 		}
 	}
 
