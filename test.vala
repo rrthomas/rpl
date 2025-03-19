@@ -96,8 +96,20 @@ class TestRpl : GeeTestCase {
 class TestRplNoFile : TestRpl {
 	public TestRplNoFile(string bin_dir, string test_files_dir) {
 		base(bin_dir, test_files_dir);
+		add_test("test_help", test_help);
+		add_test("test_full_help", test_full_help);
 		add_test("test_version", test_version);
 		add_test("multi_buffer_matches", multi_buffer_matches);
+	}
+
+	void test_help() {
+		var output = run({ "--help" });
+		assert_true(output.stdout.contains("Search and replace text in files."));
+	}
+
+	void test_full_help() {
+		var output = run({ "--full-help" });
+		assert_true(output.stdout.contains("use extended regex syntax [IGNORED]"));
 	}
 
 	void test_version() {
