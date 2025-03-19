@@ -25,16 +25,10 @@ bin_PROGRAMS = rpl
 man_MANS = rpl.1
 check_PROGRAMS = test
 TESTS = test
-LOG_DRIVER = env AM_TAP_AWK='$(AWK)' TEST_FILES_DIR=$(top_srcdir)/test-files $(SHELL) \
-				$(top_srcdir)/build-aux/tap-driver.sh
-TEST_FILES = \
-	test-files/aba.txt \
-	test-files/abc-123.txt \
-	test-files/lorem.txt \
-	test-files/mixed-case.txt \
-	test-files/lorem-iso-8859-1.txt \
-	test-files/lorem-utf-8.txt \
-	test-files/utf-8-sig.txt
+LOG_DRIVER = \
+	env AM_TAP_AWK='$(AWK)' TEST_FILES_DIR=$(top_srcdir)/test-files $(SHELL) \
+	$(top_srcdir)/build-aux/tap-driver.sh
+TEST_FILES = $(wildcard test-files/*.txt)
 
 rpl_SOURCES = rpl.vala slurp.vala cmdline.c cmdline.h
 rpl_CFLAGS = --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS)
