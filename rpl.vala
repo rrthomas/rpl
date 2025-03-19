@@ -313,7 +313,11 @@ int main (string[] args) {
 		if (args_info.recursive_given) {
 			var expanded_files = new List<string> ();
 			foreach (var file in files) {
-				expanded_files.concat (get_dir_tree (File.new_for_path (file)));
+				if (FileUtils.test (file, FileTest.IS_DIR)) {
+					expanded_files.concat (get_dir_tree (File.new_for_path (file)));
+				} else {
+					expanded_files.append (file);
+				}
 			}
 			files = (owned) expanded_files;
 		}
