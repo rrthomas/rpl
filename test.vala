@@ -321,15 +321,21 @@ class EmptyMatchesTests : TestRplFile {
 	}
 }
 
-class RecursiveTests : TestRplFile {
-	public RecursiveTests(string bin_dir, string test_files_dir) {
+class DirTests : TestRplFile {
+	public DirTests(string bin_dir, string test_files_dir) {
 		base(bin_dir, test_files_dir, "test-dir");
 		add_test("test_recursive", test_recursive);
+		add_test("test_backup", test_backup);
 	}
 
 	void test_recursive() {
 		run({ "--recursive", "foo", "bar", test_result_root });
 		assert_true(result_matches("test-dir-expected"));
+	}
+
+	void test_backup() {
+		run({ "--backup", "--recursive", "foo", "bar", test_result_root });
+		assert_true(result_matches("test-dir-backup-expected"));
 	}
 }
 
@@ -358,7 +364,7 @@ public int main(string[] args) {
 	TestSuite.get_root().add_suite(new MixedCaseTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new BackreferenceTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new EmptyMatchesTests(bin_dir, test_files_dir).get_suite());
-	TestSuite.get_root().add_suite(new RecursiveTests(bin_dir, test_files_dir).get_suite());
+	TestSuite.get_root().add_suite(new DirTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new GlobTests(bin_dir, test_files_dir).get_suite());
 
 	return Test.run();
