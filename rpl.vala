@@ -403,8 +403,7 @@ int main (string[] args) {
 	size_t total_matches = 0;
 	foreach (var filename in files) {
 		bool have_perms = false;
-		Posix.Stat perms = Posix.Stat () {
-		};
+		Posix.Stat perms = Posix.Stat () {};
 		int input_fd;
 		int output_fd;
 		string tmp_path = null;
@@ -418,6 +417,7 @@ int main (string[] args) {
 				warn (@"skipping $filename: unable to read permissions; error: $(GLib.strerror(errno))");
 				continue;
 			}
+			have_perms = true;
 			if (S_ISDIR (perms.st_mode)) {
 				if (args_info.verbose_given) {
 					warn (@"skipping directory $filename");
@@ -447,17 +447,15 @@ int main (string[] args) {
 			output_fd = fd;
 
 			// Set permissions and owner
-			if (have_perms) {
-				if (Posix.chown (tmp_path, perms.st_uid, perms.st_gid) != 0
-				    || Posix.chmod (tmp_path, perms.st_mode) != 0) {
-					warn (@"unable to set attributes of $filename; error: $(GLib.strerror(errno))");
-					if (args_info.force_given) {
-						warn ("new file attributes may not match!");
-					} else {
-						warn (@"skipping $filename!");
-						remove_temp_file (tmp_path);
-						continue;
-					}
+			if (Posix.chown (tmp_path, perms.st_uid, perms.st_gid) != 0
+				|| Posix.chmod (tmp_path, perms.st_mode) != 0) {
+				warn (@"unable to set attributes of $filename; error: $(GLib.strerror(errno))");
+				if (args_info.force_given) {
+					warn ("new file attributes may not match!");
+				} else {
+					warn (@"skipping $filename!");
+					remove_temp_file (tmp_path);
+					continue;
 				}
 			}
 		}
