@@ -45,7 +45,7 @@ Output run_prog(string prog, string[] args) {
 		assert_no_error(e);
 	}
 	return Output() {
-		stdout = stdout, stderr = stderr
+			   stdout = stdout, stderr = stderr
 	};
 }
 
@@ -195,6 +195,7 @@ class LoremTests : TestRplFile {
 		add_test("test_dry_run", test_dry_run);
 		add_test("test_quiet", test_quiet);
 		add_test("test_ignores_dash_E", test_ignores_dash_E);
+		add_test("test_bad_replacement", test_bad_replacement);
 	}
 
 	void test_ignore_case_verbose() {
@@ -232,6 +233,11 @@ class LoremTests : TestRplFile {
 	void test_ignores_dash_E() {
 		run({ "-E", "Lorem", "L-O-R-E-M", test_result_root });
 		assert_true(result_matches("lorem_no-flags_expected.txt"));
+	}
+
+	void test_bad_replacement() {
+		var output = run({ "Lorem", "$input", test_result_root });
+		assert_true(output.stderr.contains("error in replacement"));
 	}
 }
 

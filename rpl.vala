@@ -201,6 +201,10 @@ ssize_t replace (int input_fd,
 				                                   new_pattern_str,
 				                                   out rc
 				);
+				if (rc < 0) {
+					warn (@"error in replacement: $(get_error_message(rc))");
+					return -1;
+				}
 
 				if (args_info.match_case_given) {
 					var model_len = (ssize_t) (match.group_end (0) - match.group_start (0));
