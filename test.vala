@@ -333,6 +333,18 @@ class RecursiveTests : TestRplFile {
 	}
 }
 
+class GlobTests : TestRplFile {
+	public GlobTests(string bin_dir, string test_files_dir) {
+		base(bin_dir, test_files_dir, "test-tree");
+		add_test("test_globs", test_globs);
+	}
+
+	void test_globs() {
+		run({ "--recursive", "--glob=*.txt", "foo", "bar", test_result_root });
+		assert_true(result_matches("test-tree-expected"));
+	}
+}
+
 public int main(string[] args) {
 	var test_files_dir = Environment.get_variable("TEST_FILES_DIR");
 	var bin_dir = Path.get_dirname(args[0]);
@@ -347,6 +359,7 @@ public int main(string[] args) {
 	TestSuite.get_root().add_suite(new BackreferenceTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new EmptyMatchesTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new RecursiveTests(bin_dir, test_files_dir).get_suite());
+	TestSuite.get_root().add_suite(new GlobTests(bin_dir, test_files_dir).get_suite());
 
 	return Test.run();
 }
