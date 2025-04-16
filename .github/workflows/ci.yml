@@ -19,6 +19,6 @@ jobs:
       - name: Build and test
         run: |
           autoreconf -fi
-          ./configure && make check
+          ./configure && make check || ( cat test.log && exit 1 )
           sudo make install
           rpl --help
