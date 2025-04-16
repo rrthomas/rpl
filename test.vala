@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg config --pkg pcre2 testcase.vala
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix testcase.vala
 // rpl tests
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <https://www.gnu.org/licenses/>.
 
-using GLib;
+using Posix;
 
 struct Output {
 	public string stdout;
@@ -248,6 +248,8 @@ class LoremUtf8Tests : TestRplFile {
 		add_test("test_whole_words", test_whole_words);
 		add_test("test_patterns_in_files", test_patterns_in_files);
 		add_test("test_fixed_strings", test_fixed_strings);
+		add_test("test_keep_times", test_keep_times);
+		add_test("test_without_keep_times", test_without_keep_times);
 	}
 
 	void test_utf_8() {
@@ -270,6 +272,26 @@ class LoremUtf8Tests : TestRplFile {
 	void test_fixed_strings() {
 		run({ "--fixed-strings", "t.", "t$$", test_result_root });
 		assert_true(result_matches("lorem-utf-8_fixed-strings_expected.txt"));
+	}
+
+	void test_keep_times() {
+		run({ "--keep-times", "in", "out", test_result_root });
+		Posix.Stat perms = Posix.Stat () {};
+		assert_true(Posix.lstat(test_data_root, out perms) == 0);
+		var orig_mtim = perms.st_mtim;
+		assert_true(Posix.lstat(test_result_root, out perms) == 0);
+		assert_true(perms.st_mtim.tv_sec == orig_mtim.tv_sec &&
+					perms.st_mtim.tv_nsec == orig_mtim.tv_nsec);
+	}
+
+	void test_without_keep_times() {
+		run({ "in", "out", test_result_root });
+		Posix.Stat perms = Posix.Stat () {};
+		assert_true(Posix.lstat(test_data_root, out perms) == 0);
+		var orig_mtim = perms.st_mtim;
+		assert_true(Posix.lstat(test_result_root, out perms) == 0);
+		assert_true(!(perms.st_mtim.tv_sec == orig_mtim.tv_sec &&
+					  perms.st_mtim.tv_nsec == orig_mtim.tv_nsec));
 	}
 }
 

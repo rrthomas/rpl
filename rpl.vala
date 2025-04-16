@@ -589,10 +589,8 @@ int main (string[] args) {
 
 			// Restore the times
 			if (args_info.keep_times_given && have_perms) {
-				var times = UTimBuf () {
-					actime = perms.st_atime, modtime = perms.st_mtime
-				};
-				var rc2 = FileUtils.utime (filename, times);
+				timespec times[] = {perms.st_atim, perms.st_mtim};
+				var rc2 = utimensat (AT_FDCWD, filename, times);
 				if (rc2 < 0) {
 					warn (@"error setting timestamps of $filename: $(GLib.strerror(errno))");
 				}
