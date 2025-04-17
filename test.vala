@@ -45,7 +45,7 @@ Output run_prog(string prog, string[] args) {
 		assert_no_error(e);
 	}
 	return Output() {
-			   stdout = stdout, stderr = stderr
+		stdout = stdout, stderr = stderr
 	};
 }
 
@@ -377,6 +377,7 @@ public int main(string[] args) {
 	var test_files_dir = Environment.get_variable("TEST_FILES_DIR");
 	var bin_dir = Path.get_dirname(args[0]);
 	Test.init(ref args);
+	Test.set_nonfatal_assertions();
 	TestSuite.get_root().add_suite(new NoFileTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new OutputFileTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new TestRplLorem8859_1(bin_dir, test_files_dir).get_suite());
