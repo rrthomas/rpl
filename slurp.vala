@@ -19,16 +19,16 @@
 using Posix;
 
 public StringBuilder ? slurp (File filename) {
-    StringBuilder contents = null;
-    int fd = open(filename.get_path (), O_RDONLY);
-    var len = lseek (fd, 0, Posix.SEEK_END);
-    lseek (fd, 0, Posix.SEEK_SET);
-    contents = new StringBuilder.sized((size_t) (len + 1));
-    ssize_t bytes_read = read(fd, contents.data, len);
-    if (bytes_read < 0) {
-        return null;
-    }
-    contents.data[bytes_read] = '\0';
-    contents.len = bytes_read;
-    return contents;
+	StringBuilder contents = null;
+	int fd = open (filename.get_path (), O_RDONLY);
+	var len = lseek (fd, 0, Posix.SEEK_END);
+	lseek (fd, 0, Posix.SEEK_SET);
+	contents = new StringBuilder.sized ((size_t) (len + 1));
+	ssize_t bytes_read = read (fd, contents.data, len);
+	if (bytes_read < 0) {
+		return null;
+	}
+	contents.data[bytes_read] = '\0';
+	contents.len = bytes_read;
+	return contents;
 }
