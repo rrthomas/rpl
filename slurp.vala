@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix
+#! /usr/bin/env -S vala --pkg posix
 // Slurp a file.
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
