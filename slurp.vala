@@ -18,17 +18,26 @@
 
 using Posix;
 
-public StringBuilder ? slurp (File filename) {
-	StringBuilder contents = null;
-	int fd = open (filename.get_path (), O_RDONLY);
-	var len = lseek (fd, 0, Posix.SEEK_END);
-	lseek (fd, 0, Posix.SEEK_SET);
-	contents = new StringBuilder.sized ((size_t) (len + 1));
-	ssize_t bytes_read = read (fd, contents.data, len);
-	if (bytes_read < 0) {
-		return null;
+public string slurp (InputStream stream) throws Error {
+	uint8[] data = {};
+	ulong buf_size = 65536;
+	uint8[] buf = new uint8[buf_size];
+	ssize_t bytes;
+	ulong total = 0;
+	while (true) {
+		bytes = stream.read (buf);
+		if (bytes <= 0)
+			break;
+		ulong size = (ulong) (total + bytes);
+		if (size > data.length) {
+			ulong new_len = buf_size * 2;
+			uint8[] prev = data;
+			data = new uint8[new_len];
+			Memory.copy (&data[0], &prev[0], total);
+			prev = null;
+		}
+		Memory.copy (&data[0] + total, &buf[0], bytes);
+		total += (ulong) bytes;
 	}
-	contents.data[bytes_read] = '\0';
-	contents.len = bytes_read;
-	return contents;
+	return total == 0 ? "" : (string) data[0 : total];
 }

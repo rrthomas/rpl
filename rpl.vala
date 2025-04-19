@@ -288,6 +288,19 @@ private List<string> get_dir_tree (File file) {
 	return results;
 }
 
+StringBuilder slurp_patterns (string filename) {
+	var input = "";
+	try {
+		var fstream = FileStream.open (filename, "rb");
+		var fd = fstream.fileno ();
+		var stream = new UnixInputStream (fd, false);
+		input = slurp (stream);
+	} catch (GLib.Error e) {
+		die (1, "error reading patterns file $(filename)");
+	}
+	return new StringBuilder (input);
+}
+
 int main (string[] args) {
 	GLib.Log.set_always_fatal (LEVEL_CRITICAL);
 	program_name = args[0];
@@ -350,8 +363,8 @@ int main (string[] args) {
 	StringBuilder old_text;
 	StringBuilder new_text;
 	if (args_info.files_given) {
-		old_text = slurp (File.new_for_commandline_arg (args_info.inputs[0]));
-		new_text = slurp (File.new_for_commandline_arg (args_info.inputs[1]));
+		old_text = slurp_patterns (args_info.inputs[0]);
+		new_text = slurp_patterns (args_info.inputs[1]);
 	} else {
 		old_text = new StringBuilder (args_info.inputs[0]);
 		new_text = new StringBuilder (args_info.inputs[1]);

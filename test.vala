@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix testcase.vala
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix testcase.vala slurp.vala
 // rpl tests
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -29,24 +29,24 @@ Output run_prog(string prog, string[] args) {
 		cmd += arg;
 	}
 	var cmd_string = string.joinv(" ", cmd);
-	string stdout;
-	string stderr;
-	int status;
 	try {
-		assert_true(Process.spawn_sync(null, cmd, null, SpawnFlags.SEARCH_PATH, null, out stdout, out stderr, out status));
-	} catch (SpawnError e) {
-		print(@"error running $cmd_string\n");
+		var proc = new Subprocess.newv(cmd,
+									   SubprocessFlags.SEARCH_PATH_FROM_ENVP
+									   | SubprocessFlags.STDOUT_PIPE
+									   | SubprocessFlags.STDERR_PIPE);
+		proc.wait_check(null);
+		var stdout_pipe = proc.get_stdout_pipe();
+		var stderr_pipe = proc.get_stderr_pipe();
+		var stdout = slurp(stdout_pipe);
+		var stderr = slurp(stderr_pipe);
+		return Output() {
+			stdout = stdout, stderr = stderr
+		};
+	} catch (Error e) {
+		print(@"error running $cmd_string: $(e.message)\n");
 		assert_no_error(e);
 	}
-	try {
-		Process.check_wait_status(status);
-	} catch (GLib.Error e) {
-		print(@"$cmd_string: $(e.message)\n");
-		assert_no_error(e);
-	}
-	return Output() {
-		stdout = stdout, stderr = stderr
-	};
+	return Output() {};	// placate compiler
 }
 
 // Base class for rpl tests
@@ -276,7 +276,7 @@ class LoremUtf8Tests : TestRplFile {
 
 	void test_keep_times() {
 		run({ "--keep-times", "in", "out", test_result_root });
-		Posix.Stat perms = Posix.Stat () {};
+		Posix.Stat perms = Posix.Stat() {};
 		assert_true(Posix.lstat(test_data_root, out perms) == 0);
 		var orig_mtim = perms.st_mtim;
 		assert_true(Posix.lstat(test_result_root, out perms) == 0);
@@ -286,7 +286,7 @@ class LoremUtf8Tests : TestRplFile {
 
 	void test_without_keep_times() {
 		run({ "in", "out", test_result_root });
-		Posix.Stat perms = Posix.Stat () {};
+		Posix.Stat perms = Posix.Stat() {};
 		assert_true(Posix.lstat(test_data_root, out perms) == 0);
 		var orig_mtim = perms.st_mtim;
 		assert_true(Posix.lstat(test_result_root, out perms) == 0);

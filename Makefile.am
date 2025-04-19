@@ -40,7 +40,7 @@ rpl.c: cmdline.h
 cmdline.h cmdline.c: $(top_srcdir)/opts.ggo
 	gengetopt < $(top_srcdir)/opts.ggo --unamed-opts="OLD-TEXT NEW-TEXT [FILE...]"
 
-test_SOURCES = test.vala testcase.vala
+test_SOURCES = test.vala testcase.vala slurp.vala
 # -W flag in next line is to work around https://gitlab.gnome.org/GNOME/vala/-/issues/1413
 test_CFLAGS = --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) -Wno-incompatible-function-pointer-types
 test_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg gio-2.0 --pkg gio-unix-2.0 --pkg pcre2 --pkg posix
