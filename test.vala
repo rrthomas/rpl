@@ -273,6 +273,8 @@ class LoremUtf8Tests : TestRplFile {
 		add_test("test_prompt_yes", test_prompt_yes);
 		add_test("test_prompt_no", test_prompt_no);
 		add_test("test_prompt_empty", test_prompt_empty);
+		add_test("test_force", test_force);
+		add_test("test_force_fail", test_force_fail);
 	}
 
 	void test_utf_8() {
@@ -346,6 +348,59 @@ class LoremUtf8Tests : TestRplFile {
 	void test_prompt_empty() {
 		prompt_test("\n", "Updated");
 		assert_true(result_matches("lorem-utf-8_whole-words_expected.txt"));
+	}
+
+	void test_force () {
+		if (Posix.chown(test_result_root, 0, 0) != 0) {
+			Test.skip();
+			print(@"need root to run test_force\n");
+		}
+		run({ "--force", "amét", "amèt", test_result_root });
+		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
+	}
+
+	private uint64 getenv_int(string name) {
+		string val = Environment.get_variable(name);
+		if (val == null) {
+			print(@"environment variable $name not found\n");
+			return -1;
+		}
+		uint64 res;
+		if (!int64.try_parse(val, out res, null, 10)) {
+			print(@"error converting $name to integer\n");
+			return -1;
+		}
+		return res;
+	}
+
+	private uid_t get_real_uid() {
+		uid_t uid = getuid();
+		if (uid == 0) {
+			uid = (uid_t) getenv_int("SUDO_UID");
+		}
+		return uid;
+	}
+
+	void test_force_fail () {
+		if (Posix.chown(test_result_root, 0, 0) != 0) {
+			Test.skip();
+			print(@"need root to run test_force_fail\n");
+			return;
+		}
+		assert_true(Posix.chmod(test_result_root, 0777) == 0);
+		assert_true(Posix.chmod(test_result_dir, 0755) == 0);
+		uid_t real_uid = get_real_uid();
+		if (seteuid(real_uid) != 0) {
+			perror(@"setuid to uid $((uint64) real_uid)");
+			Test.fail();
+		}
+		var output = run({ "--force", "amét", "amèt", test_result_root });
+		if (seteuid(0) != 0) {
+			perror("setuid to root");
+			Test.fail();
+		}
+		assert_true(output.stderr.contains("unable to set attributes"));
+		assert_true(output.stderr.contains("new file attributes may not match"));
 	}
 }
 
