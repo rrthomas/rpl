@@ -18,40 +18,56 @@
 
 using Posix;
 
+Subprocess start_prog(string prog, string[] args) {
+	string[] cmd = { prog };
+	foreach (var arg in args) {
+		cmd += arg;
+	}
+	Subprocess proc = null;
+	try {
+		proc = new Subprocess.newv(cmd,
+									   SubprocessFlags.SEARCH_PATH_FROM_ENVP
+									   | SubprocessFlags.STDIN_PIPE
+									   | SubprocessFlags.STDOUT_PIPE
+									   | SubprocessFlags.STDERR_PIPE);
+	} catch (Error e) {
+		print(@"error starting command $(string.joinv(" ", cmd)): $(e.message)\n");
+		assert_no_error(e);
+	}
+	return proc;
+}
+
 struct Output {
 	public string stdout;
 	public string stderr;
 }
 
+Subprocess check_prog(string prog, string[] args) throws Error {
+	var proc = start_prog(prog, args);
+	proc.wait_check(null);
+	return proc;
+}
+
 Output run_prog(string prog, string[] args) {
-	string[] cmd = { prog };
-	foreach (var arg in args) {
-		cmd += arg;
-	}
-	var cmd_string = string.joinv(" ", cmd);
+	string stdout = "";
+	string stderr = "";
 	try {
-		var proc = new Subprocess.newv(cmd,
-									   SubprocessFlags.SEARCH_PATH_FROM_ENVP
-									   | SubprocessFlags.STDOUT_PIPE
-									   | SubprocessFlags.STDERR_PIPE);
+		var proc = check_prog(prog, args);
 		proc.wait_check(null);
 		var stdout_pipe = proc.get_stdout_pipe();
 		var stderr_pipe = proc.get_stderr_pipe();
-		var stdout = slurp(stdout_pipe);
-		var stderr = slurp(stderr_pipe);
-		return Output() {
-			stdout = stdout, stderr = stderr
-		};
+		stdout = slurp(stdout_pipe);
+		stderr = slurp(stderr_pipe);
 	} catch (Error e) {
-		print(@"error running $cmd_string: $(e.message)\n");
+		print(@"error in command $prog $(string.joinv(" ", args)): $(e.message)\n");
 		assert_no_error(e);
 	}
-	return Output() {};	// placate compiler
+	return Output() { stdout = stdout, stderr = stderr };
 }
 
 // Base class for rpl tests
 class TestRpl : GeeTestCase {
-	private string rpl;
+	protected string rpl;
 	protected string test_files_dir;
 	public string test_result_dir;
 
@@ -93,7 +109,11 @@ class TestRplOutputFile : TestRpl {
 
 	public bool result_matches(string file) {
 		var result_file = Path.build_filename(test_files_dir, file);
-		run_prog("diff", { "-r", result_file, test_result_root });
+		try {
+			check_prog("diff", { "-r", result_file, test_result_root });
+		} catch (Error e) {
+			return false;
+		}
 		return true;
 	}
 }
@@ -250,6 +270,8 @@ class LoremUtf8Tests : TestRplFile {
 		add_test("test_fixed_strings", test_fixed_strings);
 		add_test("test_keep_times", test_keep_times);
 		add_test("test_without_keep_times", test_without_keep_times);
+		add_test("test_prompt_yes", test_prompt_yes);
+		add_test("test_prompt_no", test_prompt_no);
 	}
 
 	void test_utf_8() {
@@ -292,6 +314,40 @@ class LoremUtf8Tests : TestRplFile {
 		assert_true(Posix.lstat(test_result_root, out perms) == 0);
 		assert_true(!(perms.st_mtim.tv_sec == orig_mtim.tv_sec &&
 					  perms.st_mtim.tv_nsec == orig_mtim.tv_nsec));
+	}
+
+	void test_prompt_yes() {
+		var proc = start_prog(rpl, { "--whole-words", "--prompt", "in", "out", test_result_root });
+		var stdin_pipe = proc.get_stdin_pipe();
+		var stderr_pipe = proc.get_stderr_pipe();
+		try {
+			stdin_pipe.write("y\n".data);
+			stdin_pipe.close();
+			var stderr = slurp(stderr_pipe);
+			assert_true(stderr.contains("? [Y/n] "));
+			assert_true(stderr.contains("Updated"));
+		} catch (Error e) {
+			print("error communicating with rpl\n");
+			assert_no_error(e);
+		}
+		assert_true(result_matches("lorem-utf-8_whole-words_expected.txt"));
+	}
+
+	void test_prompt_no() {
+		var proc = start_prog(rpl, { "--whole-words", "--prompt", "in", "out", test_result_root });
+		var stdin_pipe = proc.get_stdin_pipe();
+		var stderr_pipe = proc.get_stderr_pipe();
+		try {
+			stdin_pipe.write("n\n".data);
+			stdin_pipe.close();
+			var stderr = slurp(stderr_pipe);
+			assert_true(stderr.contains("? [Y/n] "));
+			assert_true(stderr.contains("Not updated"));
+		} catch (Error e) {
+			print("error communicating with rpl\n");
+			assert_no_error(e);
+		}
+		assert_true(!result_matches("lorem-utf-8_whole-words_expected.txt"));
 	}
 }
 

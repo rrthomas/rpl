@@ -564,22 +564,22 @@ int main (string[] args) {
 		}
 
 		if (args_info.prompt_given) {
-			GLib.stderr.printf (@"\nSave \"$filename\"? ([Y]/N) ");
+			GLib.stderr.printf (@"\nUpdate \"$filename\"? [Y/n] ");
 
 			string line = "";
-			while (line == "" || !"Yy\nNn".contains (line[0].to_string ())) {
+			while (line == "" || !"YyNn".contains (line[0].to_string ())) {
 				line = GLib.stdin.read_line ();
 			}
 
 			if (line[0] == 'n' || line[0] == 'N') {
-				info ("Not saved");
+				info ("Not updated");
 				if (tmp_path != null) {
 					remove_temp_file (tmp_path);
 				}
 				continue;
 			}
 
-			info ("Saved");
+			info ("Updated");
 		}
 
 		if (tmp_path != null) {
