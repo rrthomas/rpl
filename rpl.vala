@@ -373,7 +373,7 @@ int main (string[] args) {
 	// # Tell the user what is going to happen
 	if (!args_info.quiet_given) {
 		warn ("%s \"%.*s\" with \"%.*s\" (%s; %s)".printf (
-		                                                   args_info.dry_run_given ? "Simulating replacement of" : "Replacing",
+		                                                   args_info.dry_run_given ? "simulating replacement of" : "replacing",
 		                                                   (int) old_text.len, old_text.str,
 		                                                   (int) new_text.len, new_text.str,
 		                                                   (args_info.ignore_case_given ? "ignoring case" : (args_info.match_case_given ? "matching case" : "case sensitive")),
