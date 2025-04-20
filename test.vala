@@ -272,6 +272,7 @@ class LoremUtf8Tests : TestRplFile {
 		add_test("test_without_keep_times", test_without_keep_times);
 		add_test("test_prompt_yes", test_prompt_yes);
 		add_test("test_prompt_no", test_prompt_no);
+		add_test("test_prompt_empty", test_prompt_empty);
 	}
 
 	void test_utf_8() {
@@ -316,38 +317,35 @@ class LoremUtf8Tests : TestRplFile {
 					  perms.st_mtim.tv_nsec == orig_mtim.tv_nsec));
 	}
 
-	void test_prompt_yes() {
+	private void prompt_test(string input, string expected) {
 		var proc = start_prog(rpl, { "--whole-words", "--prompt", "in", "out", test_result_root });
 		var stdin_pipe = proc.get_stdin_pipe();
 		var stderr_pipe = proc.get_stderr_pipe();
 		try {
-			stdin_pipe.write("y\n".data);
+			stdin_pipe.write(input.data);
 			stdin_pipe.close();
 			var stderr = slurp(stderr_pipe);
 			assert_true(stderr.contains("? [Y/n] "));
-			assert_true(stderr.contains("Updated"));
+			assert_true(stderr.contains(expected));
 		} catch (Error e) {
 			print("error communicating with rpl\n");
 			assert_no_error(e);
 		}
+	}
+
+	void test_prompt_yes() {
+		prompt_test("y\n", "Updated");
 		assert_true(result_matches("lorem-utf-8_whole-words_expected.txt"));
 	}
 
 	void test_prompt_no() {
-		var proc = start_prog(rpl, { "--whole-words", "--prompt", "in", "out", test_result_root });
-		var stdin_pipe = proc.get_stdin_pipe();
-		var stderr_pipe = proc.get_stderr_pipe();
-		try {
-			stdin_pipe.write("n\n".data);
-			stdin_pipe.close();
-			var stderr = slurp(stderr_pipe);
-			assert_true(stderr.contains("? [Y/n] "));
-			assert_true(stderr.contains("Not updated"));
-		} catch (Error e) {
-			print("error communicating with rpl\n");
-			assert_no_error(e);
-		}
+		prompt_test("n\n", "Not updated");
 		assert_true(!result_matches("lorem-utf-8_whole-words_expected.txt"));
+	}
+
+	void test_prompt_empty() {
+		prompt_test("\n", "Updated");
+		assert_true(result_matches("lorem-utf-8_whole-words_expected.txt"));
 	}
 }
 
