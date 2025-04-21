@@ -6,6 +6,7 @@
 *_vala.stamp-t
 *.trs
 *.log
+/INSTALL
 /Makefile
 /Makefile.in
 /README
@@ -22,6 +23,7 @@
 /configure
 /depcomp
 /install-sh
+/m4/gnulib-cache.m4
 /missing
 /stamp-h1
 /rpl

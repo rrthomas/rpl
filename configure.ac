@@ -10,6 +10,7 @@ AM_INIT_AUTOMAKE([-Wall std-options foreign])
 
 # Checks for programs
 AM_PROG_CC_C_O
+gl_EARLY
 AM_PROG_AR
 AC_PROG_RANLIB
 PKG_PROG_PKG_CONFIG
@@ -24,6 +25,9 @@ AC_PATH_PROG([GENGETOPT], [gengetopt], [gengetopt])
 AM_PROG_VALAC(0.52,,[AC_MSG_WARN([valac not found or too old: cannot compile Vala sources])])
 PKG_CHECK_MODULES(GLIB, [glib-2.0 gio-2.0 gio-unix-2.0])
 
+# Initialize gnulib
+gl_INIT
+
 # Extra libraries
 PKG_CHECK_MODULES(PCRE2, [libpcre2-8])
 AC_DEFINE([PCRE2_CODE_UNIT_WIDTH], [8], [Define to select code unit width for libpcre2])
@@ -31,5 +35,5 @@ PKG_CHECK_MODULES(UCHARDET, [uchardet])
 
 # Generate output
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile lib/Makefile])
 AC_OUTPUT

@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix testcase.vala slurp.vala
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg gnu testcase.vala slurp.vala
 // rpl tests
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -303,20 +303,22 @@ class LoremUtf8Tests : TestRplFile {
 		run({ "--keep-times", "in", "out", test_result_root });
 		Posix.Stat perms = Posix.Stat() {};
 		assert_true(Posix.lstat(test_data_root, out perms) == 0);
-		var orig_mtim = perms.st_mtim;
+		var orig_mtime = (timespec) Gnu.get_stat_mtime(perms);
 		assert_true(Posix.lstat(test_result_root, out perms) == 0);
-		assert_true(perms.st_mtim.tv_sec == orig_mtim.tv_sec &&
-					perms.st_mtim.tv_nsec == orig_mtim.tv_nsec);
+		var new_mtime = (timespec) Gnu.get_stat_mtime(perms);
+		assert_true(orig_mtime.tv_sec == new_mtime.tv_sec &&
+					orig_mtime.tv_nsec == new_mtime.tv_nsec);
 	}
 
 	void test_without_keep_times() {
 		run({ "in", "out", test_result_root });
 		Posix.Stat perms = Posix.Stat() {};
 		assert_true(Posix.lstat(test_data_root, out perms) == 0);
-		var orig_mtim = perms.st_mtim;
+		var orig_mtime = (timespec) Gnu.get_stat_mtime(perms);
 		assert_true(Posix.lstat(test_result_root, out perms) == 0);
-		assert_true(!(perms.st_mtim.tv_sec == orig_mtim.tv_sec &&
-					  perms.st_mtim.tv_nsec == orig_mtim.tv_nsec));
+		var new_mtime = (timespec) Gnu.get_stat_mtime(perms);
+		assert_true(!(orig_mtime.tv_sec == new_mtime.tv_sec &&
+					  orig_mtime.tv_nsec == new_mtime.tv_nsec));
 	}
 
 	private void prompt_test(string input, string expected) {

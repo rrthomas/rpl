@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet --pkg iconv slurp.vala
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet --pkg iconv slurp.vala
 // rpl: search and replace text in files
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -97,7 +97,7 @@ ssize_t replace (int input_fd,
                  string input_filename,
                  int output_fd,
                  Pcre2.Regex old_regex,
-				 Pcre2.MatchFlags replace_opts,
+                 Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
                  string? encoding) {
 	ssize_t num_matches = 0;
@@ -159,7 +159,7 @@ ssize_t replace (int input_fd,
 
 		var search_str = new StringBuilder.sized (buf_size * 2);
 
-		search_str.append_len ((string) ((char *) tonext.str + tonext_offset), (ssize_t) (tonext.len - tonext_offset));
+		search_str.append_len ((string) ((char*) tonext.str + tonext_offset), (ssize_t) (tonext.len - tonext_offset));
 		search_str.append_len (buf.str, buf.len);
 		if (search_str.len == 0) {
 			break;
@@ -395,9 +395,9 @@ int main (string[] args) {
 	var opts = Pcre2.CompileFlags.MULTILINE;
 	Pcre2.MatchFlags replace_opts = 0;
 	if (args_info.fixed_strings_given) {
-		opts = Pcre2.CompileFlags.LITERAL; // Override default options,
-										   // which are incompatible with
-										   // LITERAL.
+		opts = Pcre2.CompileFlags.LITERAL;         // Override default options,
+		// which are incompatible with
+		// LITERAL.
 		replace_opts |= Pcre2.MatchFlags.SUBSTITUTE_LITERAL;
 	}
 	if (args_info.ignore_case_given || args_info.match_case_given) {
@@ -416,7 +416,8 @@ int main (string[] args) {
 	size_t total_matches = 0;
 	foreach (var filename in files) {
 		bool have_perms = false;
-		Posix.Stat perms = Posix.Stat () {};
+		Posix.Stat perms = Posix.Stat () {
+		};
 		int input_fd;
 		int output_fd;
 		string tmp_path = null;
@@ -461,7 +462,7 @@ int main (string[] args) {
 
 			// Set permissions and owner
 			if (Posix.chown (tmp_path, perms.st_uid, perms.st_gid) != 0
-				|| Posix.chmod (tmp_path, perms.st_mode) != 0) {
+			    || Posix.chmod (tmp_path, perms.st_mode) != 0) {
 				warn (@"unable to set attributes of $filename; error: $(GLib.strerror(errno))");
 				if (args_info.force_given) {
 					warn ("new file attributes may not match!");
@@ -568,7 +569,7 @@ int main (string[] args) {
 
 			string line = null;
 			do {
-				line = GLib.stdin.read_line ();		  
+				line = GLib.stdin.read_line ();
 			} while (line != "" && !"YyNn".contains (line[0].to_string ()));
 
 			if (line != "" && "Nn".contains (line[0].to_string ())) {
@@ -602,7 +603,7 @@ int main (string[] args) {
 
 			// Restore the times
 			if (args_info.keep_times_given && have_perms) {
-				timespec times[] = {perms.st_atim, perms.st_mtim};
+				timespec times[] = { (timespec) Gnu.get_stat_atime (perms), (timespec) Gnu.get_stat_mtime (perms) };
 				var rc2 = utimensat (AT_FDCWD, filename, times);
 				if (rc2 < 0) {
 					warn (@"error setting timestamps of $filename: $(GLib.strerror(errno))");

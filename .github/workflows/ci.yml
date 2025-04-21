@@ -15,10 +15,12 @@ jobs:
         run: sudo apt-get -y install valac libpcre2-dev libuchardet-dev gengetopt help2man
       - name: Install dependencies (macOS)
         if: ${{ matrix.os == 'macos-latest' }}
-        run: brew install autoconf automake vala pcre2 uchardet gengetopt help2man
+        run: |
+          brew install autoconf automake vala pcre2 uchardet gengetopt help2man
+          echo "$(brew --prefix m4)/bin" >> $GITHUB_PATH
       - name: Build and test
         run: |
-          autoreconf -fi
+          ./bootstrap
           ./configure && sudo make check || ( cat test.log && exit 1 )
           sudo make install
           rpl --help

@@ -1,6 +1,15 @@
 /ar-lib
 /compile
+/config.guess
+/config.sub
 /depcomp
 /install-sh
+/mdate-sh
 /missing
 /test-driver
+/bootstrap.in
+/extract-trace
+/funclib.sh
+/inline-source
+/options-parser
+/texinfo.tex
