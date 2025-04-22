@@ -24,3 +24,9 @@ jobs:
           ./configure && sudo make check || ( cat test.log && exit 1 )
           sudo make install
           rpl --help
+      - name: Code coverage
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt-get -y install lcov gcovr
+          ./configure --enable-code-coverage && make clean && make check-code-coverage
+          gcovr --gcov-ignore-errors source_not_found --filter rpl.vala --fail-under-line 100 .
