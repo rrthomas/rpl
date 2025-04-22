@@ -65,6 +65,8 @@ CODE_COVERAGE_OUTPUT_DIRECTORY = coverage
 CODE_COVERAGE_GENHTML_OPTIONS = --synthesize-missing --ignore-errors source
 clean-local: code-coverage-clean
 distclean-local: code-coverage-dist-clean
+assert-full-coverage:
+	gcovr --gcov-ignore-errors source_not_found --filter rpl.vala --fail-under-line 100 .
 
 CLOC = cloc
 
