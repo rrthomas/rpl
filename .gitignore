@@ -6,11 +6,15 @@
 *_vala.stamp-t
 *.trs
 *.log
+*.gcov
+*.gcda
+*.gcno
 /INSTALL
 /Makefile
 /Makefile.in
 /README
 /aclocal.m4
+/aminclude_static.am
 /autom4te.cache
 /cmdline.h
 /compile
@@ -21,6 +25,7 @@
 /config.status
 /config.sub
 /configure
+/coverage/
 /depcomp
 /install-sh
 /m4/gnulib-cache.m4
@@ -28,6 +33,7 @@
 /stamp-h1
 /rpl
 /rpl.1
+/rpl.info
 /rpl-*.tar.gz
 /test
 /TAGS
