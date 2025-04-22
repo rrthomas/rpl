@@ -30,7 +30,7 @@ PKG_CHECK_MODULES(GLIB, [glib-2.0 gio-2.0 gio-unix-2.0])
 gl_INIT
 
 # Extra libraries
-PKG_CHECK_MODULES(PCRE2, [libpcre2-8])
+PKG_CHECK_MODULES(PCRE2, [libpcre2-8 >= 10.35])
 AC_DEFINE([PCRE2_CODE_UNIT_WIDTH], [8], [Define to select code unit width for libpcre2])
 PKG_CHECK_MODULES(UCHARDET, [uchardet])
 
