@@ -68,28 +68,25 @@ requires (str.len > 0)
 }
 
 private StringBuilder caselike (StringBuilder model, StringBuilder str) {
+	var res = new StringBuilder ();
 	if (str.len > 0) {
 		switch (casetype (model)) {
 		case Case.LOWER:
-			var res = new StringBuilder ();
 			res.append_len (str.str.down (str.len), str.len);
-			return res;
+			break;
 		case Case.UPPER:
-			var res = new StringBuilder ();
 			res.append_len (str.str.up (str.len), str.len);
-			return res;
+			break;
 		case Case.CAPITALIZED:
-			var res = new StringBuilder ();
 			res.append_len (str.str.down (str.len), str.len);
 			res.str.data[0] = res.str[0].toupper ();
-			return res;
+			break;
 		case Case.MIXED:
-			var res = new StringBuilder ();
 			res.append_len (str.str, str.len);
-			return res;
+			break;
 		}
 	}
-	return new StringBuilder ();
+	return res;
 }
 
 ssize_t replace (int input_fd,
