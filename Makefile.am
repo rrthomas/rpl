@@ -6,11 +6,13 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = lib
 
+include $(top_srcdir)/aminclude_static.am
+
 AM_VALAFLAGS = --debug --vapidir=$(srcdir)
 VAPIS =	config.vapi cmdline.vapi gnu.vapi pcre2.vapi uchardet.vapi iconv.vapi
 
-LDADD = $(top_builddir)/lib/libgnu.a
-AM_CPPFLAGS = -I$(top_srcdir)/lib -I$(top_builddir)/lib
+LDADD = $(top_builddir)/lib/libgnu.a $(CODE_COVERAGE_LDFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)/lib -I$(top_builddir)/lib $(CODE_COVERAGE_CPPFLAGS)
 
 MAINTAINERCLEANFILES = rpl.1
 EXTRA_DIST = \
@@ -37,7 +39,7 @@ LOG_DRIVER = \
 TEST_FILES = $(wildcard test-files/*.txt)
 
 rpl_SOURCES = rpl.vala slurp.vala cmdline.c cmdline.h
-rpl_CFLAGS = --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS)
+rpl_CFLAGS = --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 rpl_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg cmdline --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg gnu --pkg pcre2 --pkg uchardet --pkg iconv
 rpl_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
 
@@ -57,6 +59,12 @@ rpl.1: man-extras.1 configure.ac $(builddir)/rpl$(EXEEXT) build-aux/rpl-help2man
 	$(AM_V_GEN)if ( touch $@.w && rm -f $@.w; ) >/dev/null 2>&1; then \
 	  $(srcdir)/build-aux/missing --run $(HELP2MAN) --output=$@ --no-info --include $(srcdir)/man-extras.1 $(top_srcdir)/build-aux/rpl-help2man-wrapper; \
 	fi
+
+CODE_COVERAGE_OUTPUT_FILE = rpl.info
+CODE_COVERAGE_OUTPUT_DIRECTORY = coverage
+CODE_COVERAGE_GENHTML_OPTIONS = --synthesize-missing --ignore-errors source
+clean-local: code-coverage-clean
+distclean-local: code-coverage-dist-clean
 
 CLOC = cloc
 

@@ -15,6 +15,7 @@ AM_PROG_AR
 AC_PROG_RANLIB
 PKG_PROG_PKG_CONFIG
 AX_CHECK_GNU_MAKE(,[AC_MSG_WARN([GNU make is required to build from Vala sources])])
+AX_CODE_COVERAGE
 
 # help2man and gengetopt
 # Set a value even if not found, so that an invocation via build-aux/missing works
