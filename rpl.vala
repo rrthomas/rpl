@@ -105,7 +105,7 @@ ssize_t replace (int input_fd,
 	var retry_prefix = new StringBuilder ();
 	IConv.IConv? iconv_in = null;
 	IConv.IConv? iconv_out = null;
-	if (encoding != null && encoding != "ASCII" && encoding != "UTF-8") {
+	if (encoding != null && encoding != "UTF-8") {
 		iconv_in = IConv.IConv.open ("UTF-8", encoding);
 		iconv_out = IConv.IConv.open (encoding, "UTF-8");
 	}

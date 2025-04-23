@@ -272,6 +272,7 @@ class LoremTests : TestRplFile {
 		add_test("test_dry_run_on_stdin", test_dry_run_on_stdin);
 		add_test("test_recursive_used_with_file", test_recursive_used_with_file);
 		add_test("test_bad_output_encoding", test_bad_output_encoding);
+		add_test("test_bad_ASCII_output", test_bad_ascii_output);
 	}
 
 	void test_ignore_case_verbose() {
@@ -355,6 +356,11 @@ class LoremTests : TestRplFile {
 
 	void test_bad_output_encoding() {
 		var output = run({ "--encoding=iso-8859-1", "amet", "amαt", test_result_root }, 0);
+		assert_true(output.stderr.contains("output encoding error"));
+	}
+
+	void test_bad_ascii_output() {
+		var output = run({ "--encoding=ascii", "amet", "amαt", test_result_root }, 0);
 		assert_true(output.stderr.contains("output encoding error"));
 	}
 }
