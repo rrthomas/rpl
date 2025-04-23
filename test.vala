@@ -385,6 +385,56 @@ class LoremUtf8Tests : TestRplFile {
 		add_test("test_backup_file_exists", test_backup_file_exists);
 	}
 
+	private uint64 getenv_int(string name) {
+		string val = Environment.get_variable(name);
+		if (val == null) {
+			print(@"environment variable $name not found\n");
+			return -1;
+		}
+		uint64 res;
+		if (!int64.try_parse(val, out res, null, 10)) {
+			print(@"error converting $name to integer\n");
+			return -1;
+		}
+		return res;
+	}
+
+	private uid_t get_real_uid() {
+		uid_t uid = getuid();
+		if (uid == 0) {
+			uid = (uid_t) getenv_int("SUDO_UID");
+		}
+		return uid;
+	}
+
+	private bool check_root() {
+		return getuid() == 0;
+	}
+
+	private bool require_root() {
+		if (!check_root()) {
+			Test.skip();
+			print("need root to run this test\n");
+			return false;
+		}
+		return true;
+	}
+
+	private void drop_root() {
+		uid_t real_uid = get_real_uid();
+		if (seteuid(real_uid) != 0) {
+			perror(@"setuid to uid $((uint64) real_uid)");
+			Test.fail();
+		}
+	}
+
+	private void regain_root() {
+		if (seteuid(0) != 0) {
+			perror("setuid to root");
+			Test.fail();
+		}
+	}
+
 	void test_utf_8() {
 		run({ "amét", "amèt", test_result_root });
 		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
@@ -467,56 +517,6 @@ class LoremUtf8Tests : TestRplFile {
 		assert_true(Posix.chown(test_result_root, 0, 0) == 0);
 		run({ "--force", "amét", "amèt", test_result_root });
 		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
-	}
-
-	private uint64 getenv_int(string name) {
-		string val = Environment.get_variable(name);
-		if (val == null) {
-			print(@"environment variable $name not found\n");
-			return -1;
-		}
-		uint64 res;
-		if (!int64.try_parse(val, out res, null, 10)) {
-			print(@"error converting $name to integer\n");
-			return -1;
-		}
-		return res;
-	}
-
-	private uid_t get_real_uid() {
-		uid_t uid = getuid();
-		if (uid == 0) {
-			uid = (uid_t) getenv_int("SUDO_UID");
-		}
-		return uid;
-	}
-
-	private bool check_root() {
-		return getuid() == 0;
-	}
-
-	private bool require_root() {
-		if (!check_root()) {
-			Test.skip();
-			print("need root to run this test\n");
-			return false;
-		}
-		return true;
-	}
-
-	private void drop_root() {
-		uid_t real_uid = get_real_uid();
-		if (seteuid(real_uid) != 0) {
-			perror(@"setuid to uid $((uint64) real_uid)");
-			Test.fail();
-		}
-	}
-
-	private void regain_root() {
-		if (seteuid(0) != 0) {
-			perror("setuid to root");
-			Test.fail();
-		}
 	}
 
 	void test_force_fail () {
