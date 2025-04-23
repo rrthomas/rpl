@@ -30,7 +30,7 @@ void warn (string msg) {
 	info (@"$program_name: $msg");
 }
 
-void die (int code, string msg) {
+void die (int code, string msg) { // GCOVR_EXCL_LINE
 	warn (msg);
 	exit (code);
 }
@@ -115,10 +115,10 @@ ssize_t replace (int input_fd,
 		if (buf.len == 0) {
 			Memory.copy (buf.data, retry_prefix.data, retry_prefix.len);
 			n_read = Posix.read (input_fd, ((uint8*) buf.data) + retry_prefix.len, buf_size - retry_prefix.len);
-			if (n_read < 0) {
-				warn (@"error reading $input_filename: $(GLib.strerror(errno))\n");
+			if (n_read < 0) { // GCOVR_EXCL_START
+				warn (@"error reading $input_filename: $(GLib.strerror(errno))");
 				break;
-			}
+			} // GCOVR_EXCL_STOP
 			buf.len = retry_prefix.len + n_read;
 		}
 
@@ -176,13 +176,13 @@ ssize_t replace (int input_fd,
 					tonext = (owned) search_str;
 					buf_size *= 2;
 					break;
-				} else if (rc < 0) {
+				} else if (rc < 0) { // GCOVR_EXCL_START
 					if (iconv_in != null) {
 						iconv_in.close ();
 						iconv_out.close ();
 					}
 					warn (@"$input_filename: $(get_error_message(rc))");
-					return -1;
+					return -1; // GCOVR_EXCL_STOP
 				}
 				start_pos = match.group_start (0);
 				result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (start_pos - end_pos));
@@ -226,13 +226,15 @@ ssize_t replace (int input_fd,
 		}
 
 		ssize_t write_res = 0;
-		if (iconv_out != null) {
+		if (args_info.dry_run_given) {
+			write_res = Posix.write (output_fd, buf.data, buf.len);
+		} else if (iconv_out != null) {
 			try {
 				size_t bytes_written;
 				string output = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
 				write_res = Posix.write (output_fd, output, bytes_written);
 			} catch (ConvertError e) {
-				warn (@"output encoding error: $(GLib.strerror(errno))\n");
+ 				warn (@"output encoding error: $(GLib.strerror(errno))");
 				iconv_in.close ();
 				iconv_out.close ();
 				return -1;
@@ -240,9 +242,9 @@ ssize_t replace (int input_fd,
 		} else {
 			write_res = Posix.write (output_fd, result.data, result.len);
 		}
-		if (write_res < 0) {
-			warn (@"write error: $(GLib.strerror(errno))\n");
-		}
+		if (write_res < 0) { // GCOVR_EXCL_START
+			warn (@"write error: $(GLib.strerror(errno))");
+		} // GCOVR_EXCL_STOP
 
 		// Reset buffer for next iteration
 		buf = new StringBuilder.sized (buf_size + 16);
@@ -256,9 +258,9 @@ ArgsInfo args_info;
 
 void remove_temp_file (string tmp_path) {
 	int rc = FileUtils.remove (tmp_path);
-	if (rc < 0) {
-		warn (@"Error removing temporary file $tmp_path: $(GLib.strerror(errno))\n");
-	}
+	if (rc < 0) { // GCOVR_EXCL_START
+		warn (@"Error removing temporary file $tmp_path: $(GLib.strerror(errno))");
+	} // GCOVR_EXCL_STOP
 }
 
 // Adapted from https://valadoc.org/gio-2.0/GLib.File.enumerate_children.html
@@ -279,19 +281,16 @@ private List<string> get_dir_tree (File file) {
 				results.append (child.get_path ());
 			}
 		}
-	} catch (GLib.Error e) {
+	} catch (GLib.Error e) { // GCOVR_EXCL_START
 		warn (@"error while recursively examining $(file.get_path()): $(e.message)");
-	}
+	} // GCOVR_EXCL_STOP
 	return results;
 }
 
 StringBuilder slurp_patterns (string filename) {
-	var input = "";
+	string input = null;
 	try {
-		var fstream = FileStream.open (filename, "rb");
-		var fd = fstream.fileno ();
-		var stream = new UnixInputStream (fd, false);
-		input = slurp (stream);
+		input = slurp_file (filename);
 	} catch (GLib.Error e) {
 		die (1, "error reading patterns file $(filename)");
 	}
@@ -304,9 +303,8 @@ int main (string[] args) {
 
 	// Process command-line options
 	args_info = {};
-	if (ArgsInfo.parser (args, ref args_info) != 0) {
-		exit (EXIT_FAILURE);
-	}
+	// gengetopt parser always returns 0 or calls exit() itself.
+	GLib.assert (ArgsInfo.parser (args, ref args_info) == 0);
 	if (args_info.inputs.length < 2) {
 		ArgsInfo.parser_print_help ();
 		exit (EXIT_FAILURE);
@@ -425,42 +423,39 @@ int main (string[] args) {
 		} else {
 			// Check `filename` is a regular file, and get its permissions
 			if (Posix.lstat (filename, out perms) != 0) {
-				warn (@"skipping $filename: unable to read permissions; error: $(GLib.strerror(errno))");
+				warn (@"skipping $filename: $(GLib.strerror(errno))");
 				continue;
 			}
 			have_perms = true;
 			if (S_ISDIR (perms.st_mode)) {
-				if (args_info.verbose_given) {
-					warn (@"skipping directory $filename");
-					continue;
-				}
-			}
-			if (!S_ISREG (perms.st_mode)) {
-				warn (@"skipping: $filename (not a regular file)");
+				warn (@"skipping directory $filename");
+				continue;
+			} else if (!S_ISREG (perms.st_mode)) {
+				warn (@"skipping $filename: not a regular file");
 				continue;
 			}
 
 			// Open the input file
 			var fd = Posix.open (filename, Posix.O_RDONLY);
-			if (fd < 0) {
-				warn (@"skipping $filename: cannot open for reading; error: $(Posix.strerror(errno))\n");
+			if (fd < 0) { // GCOVR_EXCL_START
+				warn (@"skipping $filename: $(Posix.strerror(errno))");
 				continue;
-			}
+			} // GCOVR_EXCL_STOP
 			input_fd = fd;
 
 			// Create the output file
 			tmp_path = ".tmp.rpl-XXXXXX";
 			fd = FileUtils.mkstemp (tmp_path);
-			if (fd == -1) {
-				warn (@"skipping $filename: cannot create temp file; error: $(Posix.strerror(errno))\n");
+			if (fd == -1) { // GCOVR_EXCL_START
+				warn (@"skipping $filename: cannot create temp file: $(Posix.strerror(errno))");
 				continue;
-			}
+			} // GCOVR_EXCL_STOP
 			output_fd = fd;
 
 			// Set permissions and owner
 			if (Posix.chown (tmp_path, perms.st_uid, perms.st_gid) != 0
 			    || Posix.chmod (tmp_path, perms.st_mode) != 0) {
-				warn (@"unable to set attributes of $filename; error: $(GLib.strerror(errno))");
+				warn (@"unable to set attributes of $filename: $(GLib.strerror(errno))");
 				if (args_info.force_given) {
 					warn ("new file attributes may not match!");
 				} else {
@@ -479,7 +474,7 @@ int main (string[] args) {
 		}
 
 		if (args_info.verbose_given && !args_info.dry_run_given) {
-			warn (@"processing: $filename");
+			warn (@"processing $filename");
 		}
 
 		// If we don't have an explicit encoding, guess
@@ -492,10 +487,10 @@ int main (string[] args) {
 			ssize_t n_bytes = 0;
 			while (n_bytes < encoding_buf_size) {
 				ssize_t n_read = Posix.read (input_fd, (uint8*) buf.data + n_bytes, encoding_buf_size);
-				if (n_read < 0) {
-					warn (@"error reading $filename: $(GLib.strerror(errno))\n");
+				if (n_read < 0) { // GCOVR_EXCL_START
+					warn (@"error reading $filename: $(GLib.strerror(errno))");
 					break;
-				}
+				} // GCOVR_EXCL_STOP
 				if (n_read == 0) {
 					break;
 				}
@@ -508,31 +503,31 @@ int main (string[] args) {
 			if (args_info.verbose_given) {
 				if (encoding != "") {
 					warn (@"guessed encoding '$encoding'");
-				} else {
+				} else { // GCOVR_EXCL_START
 					encoding = null;
 					warn ("unable to guess encoding");
-				}
+				} // GCOVR_EXCL_STOP
 			}
 
 			// Use locale encoding if none guessed.
-			if (encoding == null) {
+			if (encoding == null) { // GCOVR_EXCL_START
 				get_charset (out encoding);
 				if (args_info.verbose_given) {
 					warn (@"could not guess encoding; using locale default '$encoding'");
 				}
-			}
+			} // GCOVR_EXCL_STOP
 		}
 
 		// Process the file
 		ssize_t num_matches = 0;
 		num_matches = replace (input_fd, (owned) buf, filename, output_fd, regex, replace_opts, new_text, encoding);
 
-		if (Posix.close (input_fd) < 0) {
-			warn (@"error closing $filename: $(GLib.strerror(errno))\n");
+		if (Posix.close (input_fd) < 0) { // GCOVR_EXCL_START
+			warn (@"error closing $filename: $(GLib.strerror(errno))");
 		}
 		if (Posix.close (output_fd) < 0) {
-			warn (@"error closing $filename: $(GLib.strerror(errno))\n");
-		}
+			warn (@"error closing $filename: $(GLib.strerror(errno))");
+		} // GCOVR_EXCL_STOP
 
 		// Delete temporary file if either we had an error (num_matches < 0)
 		// or nothing changed (num_matches == 0).
@@ -593,7 +588,7 @@ int main (string[] args) {
 			// Rename the file
 			int rc = FileUtils.rename (tmp_path, filename);
 			if (rc == -1) {
-				warn (@"could not replace $tmp_path with $filename: $(GLib.strerror(errno))\n");
+				warn (@"could not replace $tmp_path with $filename: $(GLib.strerror(errno))");
 				remove_temp_file (tmp_path);
 				continue;
 			}
@@ -602,9 +597,9 @@ int main (string[] args) {
 			if (args_info.keep_times_given && have_perms) {
 				timespec times[] = { (timespec) Gnu.get_stat_atime (perms), (timespec) Gnu.get_stat_mtime (perms) };
 				var rc2 = utimensat (AT_FDCWD, filename, times);
-				if (rc2 < 0) {
+				if (rc2 < 0) { // GCOVR_EXCL_START
 					warn (@"error setting timestamps of $filename: $(GLib.strerror(errno))");
-				}
+				} // GCOVR_EXCL_STOP
 			}
 		}
 

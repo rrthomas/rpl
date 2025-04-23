@@ -48,19 +48,23 @@ Subprocess check_prog(string prog, string[] args) throws Error {
 	return proc;
 }
 
-Output run_prog(string prog, string[] args) {
+Output run_prog(string prog, string[] args, int expected_rc = 0) {
 	string stdout = "";
 	string stderr = "";
 	try {
-		var proc = check_prog(prog, args);
-		proc.wait_check(null);
+		var proc = start_prog(prog, args);
+		try {
+			proc.wait();
+		} catch {}
+		if (proc.get_if_exited()) {
+			assert_true(proc.get_exit_status() == expected_rc);
+		}
 		var stdout_pipe = proc.get_stdout_pipe();
 		var stderr_pipe = proc.get_stderr_pipe();
 		stdout = slurp(stdout_pipe);
 		stderr = slurp(stderr_pipe);
 	} catch (Error e) {
 		print(@"error in command $prog $(string.joinv(" ", args)): $(e.message)\n");
-		assert_no_error(e);
 	}
 	return Output() { stdout = stdout, stderr = stderr };
 }
@@ -77,8 +81,8 @@ class TestRpl : GeeTestCase {
 		this.test_files_dir = test_files_dir;
 	}
 
-	public Output run(string[] args) {
-		return run_prog(rpl, args);
+	public Output run(string[] args, int expected_rc = 0) {
+		return run_prog(rpl, args, expected_rc);
 	}
 
 	public override void set_up() {
@@ -108,9 +112,9 @@ class TestRplOutputFile : TestRpl {
 	}
 
 	public bool result_matches(string file) {
-		var result_file = Path.build_filename(test_files_dir, file);
+		var expected_file = Path.build_filename(test_files_dir, file);
 		try {
-			check_prog("diff", { "-r", result_file, test_result_root });
+			check_prog("diff", { "-r", expected_file, test_result_root });
 		} catch (Error e) {
 			return false;
 		}
@@ -137,8 +141,8 @@ abstract class TestRplFile : TestRplOutputFile {
 	}
 }
 
-class TestRplLorem8859_1 : TestRplFile {
-	public TestRplLorem8859_1(string bin_dir, string test_files_dir) {
+class EncodingTests : TestRplFile {
+	public EncodingTests(string bin_dir, string test_files_dir) {
 		base(bin_dir, test_files_dir, "lorem-iso-8859-1.txt");
 		add_test("test_bad_encoding", test_bad_encoding);
 		add_test("test_explicit_encoding", test_explicit_encoding);
@@ -161,9 +165,19 @@ class NoFileTests : TestRpl {
 	public NoFileTests(string bin_dir, string test_files_dir) {
 		base(bin_dir, test_files_dir);
 
+		add_test("test_no_arguments", test_no_arguments);
 		add_test("test_help", test_help);
 		add_test("test_full_help", test_full_help);
 		add_test("test_version", test_version);
+		add_test("test_nonexistent_option", test_nonexistent_option);
+		add_test("test_nonexistent_input", test_nonexistent_input);
+		add_test("test_nonexistent_patterns_file", test_nonexistent_patterns_file);
+		add_test("test_input_is_directory", test_input_is_directory);
+	}
+
+	void test_no_arguments() {
+		var output = run({ }, 1);
+		assert_true(output.stdout.contains("Search and replace text in files."));
 	}
 
 	void test_help() {
@@ -180,6 +194,26 @@ class NoFileTests : TestRpl {
 		var output = run({ "--version" });
 		assert_true(output.stdout.contains("NO WARRANTY, to the extent"));
 	}
+
+	void test_nonexistent_option() {
+		var output = run({ "--foo" }, 1);
+		assert_true(output.stderr.contains("unrecognized option"));
+	}
+
+	void test_nonexistent_input() {
+		var output = run({ "in", "out", "nonexistent.txt" });
+		assert_true(output.stderr.contains("skipping nonexistent.txt: "));
+	}
+
+	void test_nonexistent_patterns_file() {
+		var output = run({ "--files", "in", "out", "nonexistent.txt" }, 1);
+		assert_true(output.stderr.contains("error reading patterns file"));
+	}
+
+	void test_input_is_directory() {
+		var output = run({ "amét", "amèt", test_result_dir });
+		assert_true(output.stderr.contains("skipping directory"));
+	}
 }
 
 // This class contains all the tests that don't use an input file.
@@ -188,6 +222,9 @@ class OutputFileTests : TestRplOutputFile {
 		base(bin_dir, test_files_dir);
 
 		add_test("multi_buffer_matches", multi_buffer_matches);
+		add_test("test_recursive_no_file_arguments", test_recursive_no_file_arguments);
+		add_test("test_bad_regex", test_bad_regex);
+		add_test("test_non_file_input", test_non_file_input);
 	}
 
 	void multi_buffer_matches() {
@@ -203,6 +240,21 @@ class OutputFileTests : TestRplOutputFile {
 		run({ "a+", "b", test_result_root });
 		assert_true(result_matches("one-b.txt"));
 	}
+
+	void test_recursive_no_file_arguments() {
+		var output = run({ "--recursive", "foo", "bar" }, 1);
+		assert_true(output.stderr.contains("cannot use --recursive with no file arguments!"));
+	}
+
+	void test_bad_regex() {
+		var output = run( {"(foo", "bar" }, 1);
+		assert_true(output.stderr.contains("bad regex (foo"));
+	}
+
+	void test_non_file_input() {
+		var output = run( {"foo", "bar", "/dev/null" });
+		assert_true(output.stderr.contains("not a regular file"));
+	}
 }
 
 class LoremTests : TestRplFile {
@@ -216,11 +268,15 @@ class LoremTests : TestRplFile {
 		add_test("test_quiet", test_quiet);
 		add_test("test_ignores_dash_E", test_ignores_dash_E);
 		add_test("test_bad_replacement", test_bad_replacement);
+		add_test("test_input_on_stdin", test_input_on_stdin);
+		add_test("test_dry_run_on_stdin", test_dry_run_on_stdin);
+		add_test("test_recursive_used_with_file", test_recursive_used_with_file);
+		add_test("test_bad_output_encoding", test_bad_output_encoding);
 	}
 
 	void test_ignore_case_verbose() {
 		var output = run({ "-iv", "Lorem", "L-O-R-E-M", test_result_root });
-		assert_true(output.stderr.contains("processing: "));
+		assert_true(output.stderr.contains("processing "));
 		assert_true(result_matches("lorem_ignore-case_expected.txt"));
 	}
 
@@ -259,6 +315,48 @@ class LoremTests : TestRplFile {
 		var output = run({ "Lorem", "$input", test_result_root });
 		assert_true(output.stderr.contains("error in replacement"));
 	}
+
+	void test_input_on_stdin() {
+		var proc = start_prog(rpl, { "Lorem", "L-O-R-E-M" });
+		var stdin_pipe = proc.get_stdin_pipe();
+		var stdout_pipe = proc.get_stdout_pipe();
+		try {
+			stdin_pipe.write(slurp_file(test_result_root).data);
+			stdin_pipe.close();
+			var stdout = slurp(stdout_pipe);
+			var expected_file = Path.build_filename(test_files_dir, "lorem_no-flags_expected.txt");
+			assert_true(stdout == slurp_file(expected_file));
+		} catch (Error e) {
+			print("error communicating with rpl\n");
+			assert_no_error(e);
+		}
+	}
+
+	void test_dry_run_on_stdin() {
+		var proc = start_prog(rpl, { "--dry-run", "Lorem", "L-O-R-E-M", "-" });
+		var stdin_pipe = proc.get_stdin_pipe();
+		var stdout_pipe = proc.get_stdout_pipe();
+		try {
+			stdin_pipe.write(slurp_file(test_result_root).data);
+			stdin_pipe.close();
+			var stdout = slurp(stdout_pipe);
+			var expected_file = Path.build_filename(test_files_dir, "lorem.txt");
+			assert_true(stdout == slurp_file(expected_file));
+		} catch (Error e) {
+			print("error communicating with rpl\n");
+			assert_no_error(e);
+		}
+	}
+
+	void test_recursive_used_with_file() {
+		run({ "--recursive", "Lorem", "L-O-R-E-M", test_result_root });
+		assert_true(result_matches("lorem_no-flags_expected.txt"));
+	}
+
+	void test_bad_output_encoding() {
+		var output = run({ "--encoding=iso-8859-1", "amet", "amαt", test_result_root }, 0);
+		assert_true(output.stderr.contains("output encoding error"));
+	}
 }
 
 class LoremUtf8Tests : TestRplFile {
@@ -275,6 +373,10 @@ class LoremUtf8Tests : TestRplFile {
 		add_test("test_prompt_empty", test_prompt_empty);
 		add_test("test_force", test_force);
 		add_test("test_force_fail", test_force_fail);
+		add_test("test_set_attributes_fail", test_set_attributes_fail);
+		add_test("test_unreadable_input", test_unreadable_input);
+		add_test("test_unwritable_input", test_unwritable_input);
+		add_test("test_backup_file_exists", test_backup_file_exists);
 	}
 
 	void test_utf_8() {
@@ -353,10 +455,10 @@ class LoremUtf8Tests : TestRplFile {
 	}
 
 	void test_force () {
-		if (Posix.chown(test_result_root, 0, 0) != 0) {
-			Test.skip();
-			print(@"need root to run test_force\n");
+		if (!require_root()) {
+			return;
 		}
+		assert_true(Posix.chown(test_result_root, 0, 0) == 0);
 		run({ "--force", "amét", "amèt", test_result_root });
 		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
 	}
@@ -383,26 +485,113 @@ class LoremUtf8Tests : TestRplFile {
 		return uid;
 	}
 
-	void test_force_fail () {
-		if (Posix.chown(test_result_root, 0, 0) != 0) {
+	private bool check_root() {
+		return getuid() == 0;
+	}
+
+	private bool require_root() {
+		if (!check_root()) {
 			Test.skip();
-			print(@"need root to run test_force_fail\n");
-			return;
+			print("need root to run this test\n");
+			return false;
 		}
-		assert_true(Posix.chmod(test_result_root, 0777) == 0);
-		assert_true(Posix.chmod(test_result_dir, 0755) == 0);
+		return true;
+	}
+
+	private void drop_root() {
 		uid_t real_uid = get_real_uid();
 		if (seteuid(real_uid) != 0) {
 			perror(@"setuid to uid $((uint64) real_uid)");
 			Test.fail();
 		}
-		var output = run({ "--force", "amét", "amèt", test_result_root });
+	}
+
+	private void regain_root() {
 		if (seteuid(0) != 0) {
 			perror("setuid to root");
 			Test.fail();
 		}
+	}
+
+	void test_force_fail () {
+		if (!require_root()) {
+			return;
+		}
+		assert_true(Posix.chmod(test_result_root, 0777) == 0);
+		assert_true(Posix.chmod(test_result_dir, 0755) == 0);
+		drop_root();
+		var output = run({ "--force", "amét", "amèt", test_result_root });
+		regain_root();
 		assert_true(output.stderr.contains("unable to set attributes"));
 		assert_true(output.stderr.contains("new file attributes may not match"));
+	}
+
+	void test_set_attributes_fail () {
+		if (!require_root()) {
+			return;
+		}
+		assert_true(Posix.chmod(test_result_root, 0777) == 0);
+		assert_true(Posix.chmod(test_result_dir, 0755) == 0);
+		drop_root();
+		var output = run({ "amét", "amèt", test_result_root });
+		regain_root();
+		assert_true(output.stderr.contains("unable to set attributes"));
+		assert_true(output.stderr.contains("skipping"));
+	}
+
+	void test_unreadable_input () {
+		var root = check_root();
+		assert_true(Posix.chmod(test_result_root, 0000) == 0);
+		if (root) {
+			drop_root();
+		}
+		var output = run({ "amét", "amèt", test_result_root });
+		if (root) {
+			regain_root();
+		}
+		assert_true(output.stderr.contains(@"skipping $test_result_root"));
+	}
+
+	void test_unwritable_input () {
+		var root = check_root();
+		assert_true(Posix.chmod(test_result_dir, 0500) == 0);
+		assert_true(Posix.chmod(test_result_root, 0777) == 0);
+		if (root) {
+			assert_true(Posix.chown(test_result_dir, get_real_uid(), 0) == 0);
+			assert_true(Posix.chown(test_result_root, get_real_uid(), 0) == 0);
+			drop_root();
+		}
+		var output = run({ "amét", "amèt", test_result_root });
+		assert_true(output.stderr.contains("could not replace"));
+		if (root) {
+			regain_root();
+		}
+		// Allow test directory to be deleted.
+		assert_true(Posix.chmod(test_result_dir, 0700) == 0);
+	}
+
+	void test_backup_file_exists () {
+		var root = check_root();
+		if (root) {
+			assert_true(Posix.chown(test_result_dir, get_real_uid(), 0) == 0);
+			assert_true(Posix.chown(test_result_root, get_real_uid(), 0) == 0);
+			drop_root();
+		}
+		var backup_file = @"$test_result_root~";
+		try {
+			assert_true(File.new_for_path(backup_file).create(0).close());
+		} catch (Error e) {
+			print("error creating dummy backup file\n");
+			assert_no_error(e);
+		}
+		assert_true(Posix.chmod(test_result_dir, 0500) == 0);
+		var output = run({ "--backup", "amét", "amèt", test_result_root });
+		assert_true(output.stderr.contains("error renaming"));
+		if (root) {
+			regain_root();
+		}
+		// Allow test directory to be deleted.
+		assert_true(Posix.chmod(test_result_dir, 0700) == 0);
 	}
 }
 
@@ -476,11 +665,17 @@ class GlobTests : TestRplFile {
 	public GlobTests(string bin_dir, string test_files_dir) {
 		base(bin_dir, test_files_dir, "test-tree");
 		add_test("test_globs", test_globs);
+		add_test("test_globs_no_match", test_globs_no_match);
 	}
 
 	void test_globs() {
 		run({ "--recursive", "--glob=*.txt", "foo", "bar", test_result_root });
 		assert_true(result_matches("test-tree-expected"));
+	}
+
+	void test_globs_no_match() {
+		var output = run({ "--recursive", "--glob=*.foo", "foo", "bar", test_result_root }, 1);
+		assert_true(output.stderr.contains("the given filename patterns did not match any files!"));
 	}
 }
 
@@ -491,7 +686,7 @@ public int main(string[] args) {
 	Test.set_nonfatal_assertions();
 	TestSuite.get_root().add_suite(new NoFileTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new OutputFileTests(bin_dir, test_files_dir).get_suite());
-	TestSuite.get_root().add_suite(new TestRplLorem8859_1(bin_dir, test_files_dir).get_suite());
+	TestSuite.get_root().add_suite(new EncodingTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new LoremTests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new LoremUtf8Tests(bin_dir, test_files_dir).get_suite());
 	TestSuite.get_root().add_suite(new Utf8SigTests(bin_dir, test_files_dir).get_suite());
