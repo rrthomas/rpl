@@ -18,6 +18,16 @@
 
 using Posix;
 
+public string slurp_file (string filename) throws Error {
+	var fstream = FileStream.open (filename, "rb");
+	if (fstream == null) {
+		throw IOError.from_errno (errno);
+	}
+	var fd = fstream.fileno ();
+	var stream = new UnixInputStream (fd, false);
+	return slurp (stream);
+}
+
 Subprocess start_prog(string prog, string[] args) {
 	string[] cmd = { prog };
 	foreach (var arg in args) {

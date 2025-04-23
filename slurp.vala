@@ -41,13 +41,3 @@ public string slurp (InputStream stream) throws Error {
 	}
 	return total == 0 ? "" : (string) data[0 : total];
 }
-
-public string slurp_file (string filename) throws Error {
-	var fstream = FileStream.open (filename, "rb");
-	if (fstream == null) {
-		throw IOError.from_errno (errno);
-	}
-	var fd = fstream.fileno ();
-	var stream = new UnixInputStream (fd, false);
-	return slurp (stream);
-}

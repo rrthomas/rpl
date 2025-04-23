@@ -288,13 +288,13 @@ private List<string> get_dir_tree (File file) {
 }
 
 StringBuilder slurp_patterns (string filename) {
-	string input = null;
+	uint8[] input = null;
 	try {
-		input = slurp_file (filename);
+		FileUtils.get_data (filename, out input);
 	} catch (GLib.Error e) {
 		die (1, "error reading patterns file $(filename)");
 	}
-	return new StringBuilder (input);
+	return new StringBuilder.from_buffer ((char[]) input);
 }
 
 int main (string[] args) {
