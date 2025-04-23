@@ -586,10 +586,13 @@ int main (string[] args) {
 				}
 			}
 
-			// Rename the file
-			int rc = FileUtils.rename (tmp_path, filename);
-			if (rc == -1) {
-				warn (@"could not rename $tmp_path to $filename: $(GLib.strerror(errno))");
+			// Overwrite the result
+			try {
+				var src = File.new_for_path (tmp_path);
+				var dst = File.new_for_path (filename);
+				src.move (dst, FileCopyFlags.OVERWRITE);
+			} catch (GLib.Error e) {
+				warn (@"could not move $tmp_path to $filename: $(GLib.strerror(errno))");
 				remove_temp_file (tmp_path);
 				continue;
 			}
