@@ -578,7 +578,7 @@ class LoremUtf8Tests : TestRplFile {
 			drop_root();
 		}
 		var output = run({ "amét", "amèt", test_result_root });
-		assert_true(output.stderr.contains("could not replace"));
+		assert_true(output.stderr.contains("could not rename"));
 		if (root) {
 			regain_root();
 		}

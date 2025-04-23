@@ -589,7 +589,7 @@ int main (string[] args) {
 			// Rename the file
 			int rc = FileUtils.rename (tmp_path, filename);
 			if (rc == -1) {
-				warn (@"could not replace $tmp_path with $filename: $(GLib.strerror(errno))");
+				warn (@"could not rename $tmp_path to $filename: $(GLib.strerror(errno))");
 				remove_temp_file (tmp_path);
 				continue;
 			}
