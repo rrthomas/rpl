@@ -533,7 +533,7 @@ int main (string[] args) {
 		// or nothing changed (num_matches == 0).
 		if (num_matches <= 0) {
 			if (tmp_path != null) {
-				unlink (tmp_path);
+				remove_temp_file (tmp_path);
 			}
 			continue;
 		}
@@ -581,6 +581,7 @@ int main (string[] args) {
 				var rc = FileUtils.rename (filename, backup_name);
 				if (rc < 0) {
 					warn (@"error renaming $filename to $backup_name; error: $(GLib.strerror(errno))");
+					remove_temp_file (tmp_path);
 					continue;
 				}
 			}
