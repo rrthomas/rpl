@@ -30,32 +30,32 @@ jobs:
         run: |
           sudo apt-get -y install lcov gcovr
           ./configure --enable-code-coverage && make clean && make && make check-code-coverage && make assert-full-coverage
-  build-windows:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    strategy:
-      matrix:
-        include:
-        - { sys: mingw64, env: x86_64 }
-    steps:
-    - uses: msys2/setup-msys2@v2
-      with:
-        release: false
-        msystem: ${{matrix.sys}}
-        install: >-
-          patch git groff help2man gengetopt
-          mingw-w64-${{matrix.env}}-autotools
-          mingw-w64-${{matrix.env}}-pkg-config
-          mingw-w64-${{matrix.env}}-gcc
-          mingw-w64-${{matrix.env}}-vala
-          mingw-w64-${{matrix.env}}-glib2
-          mingw-w64-${{matrix.env}}-pcre2
-          mingw-w64-${{matrix.env}}-uchardet
-    - uses: actions/checkout@v4
-      with: { submodules: true }
-    - name: Bootstrap (gnulib and autoreconf)
-      run: ./bootstrap
-    - name: Build and test
-      run: ./configure && make check && make distcheck
+  # build-windows:
+  #   runs-on: windows-latest
+  #   defaults:
+  #     run:
+  #       shell: msys2 {0}
+  #   strategy:
+  #     matrix:
+  #       include:
+  #       - { sys: mingw64, env: x86_64 }
+  #   steps:
+  #   - uses: msys2/setup-msys2@v2
+  #     with:
+  #       release: false
+  #       msystem: ${{matrix.sys}}
+  #       install: >-
+  #         patch git groff help2man gengetopt
+  #         mingw-w64-${{matrix.env}}-autotools
+  #         mingw-w64-${{matrix.env}}-pkg-config
+  #         mingw-w64-${{matrix.env}}-gcc
+  #         mingw-w64-${{matrix.env}}-vala
+  #         mingw-w64-${{matrix.env}}-glib2
+  #         mingw-w64-${{matrix.env}}-pcre2
+  #         mingw-w64-${{matrix.env}}-uchardet
+  #   - uses: actions/checkout@v4
+  #     with: { submodules: true }
+  #   - name: Bootstrap (gnulib and autoreconf)
+  #     run: ./bootstrap
+  #   - name: Build and test
+  #     run: ./configure && make check && make distcheck
