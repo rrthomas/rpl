@@ -343,9 +343,7 @@ namespace Pcre2 {
 		UTF32_ERR2,
 
 		/* Miscellaneous error codes for pcre2[_dfa]_match(), substring extraction
-		   functions, context functions, and serializing functions. They are in numerical
-		   order. Originally they were in alphabetical order too, but now that PCRE2 is
-		   released, the numbers must not be changed. */
+		   functions, context functions, and serializing functions. */
 
 		BADDATA,
 		MIXEDTABLES,
