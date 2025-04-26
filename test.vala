@@ -275,7 +275,13 @@ class OutputFileTests : TestRplOutputFile {
 	}
 
 	void test_non_file_input() {
-		var output = run( {"foo", "bar", "/dev/null" });
+		var output = run( {"foo", "bar",
+#if WINDOWS
+					"nul:"
+#else
+					"/dev/null"
+#endif
+					});
 		assert_true(output.std_err.contains("not a regular file"));
 	}
 }
