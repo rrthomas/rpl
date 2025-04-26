@@ -26,6 +26,17 @@ AC_PATH_PROG([GENGETOPT], [gengetopt], [gengetopt])
 AM_PROG_VALAC(0.56,,[AC_MSG_WARN([valac not found or too old: cannot compile Vala sources])])
 PKG_CHECK_MODULES(GLIB, [glib-2.0 gio-2.0])
 
+# Detect Windows
+AC_MSG_CHECKING([for native Win32])
+native_win32=no
+case "$host" in
+  *-*-mingw*)
+    native_win32=yes
+    ;;
+esac
+AC_MSG_RESULT([$native_win32])
+AM_CONDITIONAL(OS_WIN32, test "$native_win32" = yes)
+
 # Initialize gnulib
 gl_INIT
 

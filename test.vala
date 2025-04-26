@@ -405,7 +405,7 @@ class LoremUtf8Tests : TestRplFile {
 		add_test("test_set_attributes_fail", test_set_attributes_fail);
 		add_test("test_unreadable_input", test_unreadable_input);
 		add_test("test_unwritable_input", test_unwritable_input);
-		add_test("test_backup_file_exists", test_backup_file_exists);
+		add_test("test_backup_file_unwritable", test_backup_file_unwritable);
 	}
 
 	void test_utf_8() {
@@ -518,21 +518,32 @@ class LoremUtf8Tests : TestRplFile {
 	}
 
 	void test_unreadable_input () {
+#if WINDOWS
+		Test.skip();
+#else
 		assert_true(Posix.chmod(test_result_root, 0000) == 0);
 		var output = run({ "amét", "amèt", test_result_root });
 		assert_true(output.std_err.contains(@"skipping $test_result_root"));
+#endif
 	}
 
 	void test_unwritable_input () {
+#if WINDOWS
+		Test.skip();
+#else
 		assert_true(Posix.chmod(test_result_dir, 0500) == 0);
 		assert_true(Posix.chmod(test_result_root, 0777) == 0);
 		var output = run({ "amét", "amèt", test_result_root });
 		assert_true(output.std_err.contains("could not move"));
 		// Allow test directory to be deleted.
 		assert_true(Posix.chmod(test_result_dir, 0700) == 0);
+#endif
 	}
 
-	void test_backup_file_exists () {
+	void test_backup_file_unwritable () {
+#if WINDOWS
+		Test.skip();
+#else
 		var backup_file = @"$test_result_root~";
 		try {
 			assert_true(File.new_for_path(backup_file).create(0).close());
@@ -545,6 +556,7 @@ class LoremUtf8Tests : TestRplFile {
 		assert_true(output.std_err.contains("error renaming"));
 		// Allow test directory to be deleted.
 		assert_true(Posix.chmod(test_result_dir, 0700) == 0);
+#endif
 	}
 }
 
