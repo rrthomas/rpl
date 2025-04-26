@@ -24,12 +24,12 @@ jobs:
           ./configure && make check || ( cat test.log && exit 1 )
           sudo make install
           rpl --help
+          make distcheck
       - name: Code coverage
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           sudo apt-get -y install lcov gcovr
           ./configure --enable-code-coverage && make clean && make && make check-code-coverage && make assert-full-coverage
-          make distcheck
   build-windows:
     runs-on: windows-latest
     defaults:
@@ -57,11 +57,5 @@ jobs:
       with: { submodules: true }
     - name: Bootstrap (gnulib and autoreconf)
       run: ./bootstrap
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make --jobs=`nproc`
-    - name: make check
-      run: make check --jobs=`nproc`
-    - name: make distcheck
-      run: make distcheck --jobs=`nproc`
+    - name: Build and test
+      run: ./configure && make check && make distcheck
