@@ -24,7 +24,11 @@ public string slurp_file (string filename) throws Error {
 	return contents;
 }
 
-Subprocess start_prog(string prog, string[] args) {
+errordomain TestError {
+	TESTERROR;
+}
+
+Subprocess start_prog(string prog, string[] args) throws TestError {
 	var cmd = new Array<string>.take_zero_terminated(args);
 	cmd.prepend_val(prog);
 	Subprocess proc = null;
@@ -36,7 +40,7 @@ Subprocess start_prog(string prog, string[] args) {
 								   | SubprocessFlags.STDERR_PIPE);
 	} catch (Error e) {
 		print(@"error starting command $(string.joinv(" ", cmd.data)): $(e.message)\n");
-		assert_no_error(e);
+		throw new TestError.TESTERROR("could not run command");
 	}
 	return proc;
 }
@@ -337,10 +341,10 @@ class LoremTests : TestRplFile {
 	}
 
 	void test_input_on_stdin() {
-		var proc = start_prog(rpl, { "Lorem", "L-O-R-E-M" });
-		var stdin_pipe = proc.get_stdin_pipe();
-		var stdout_pipe = proc.get_stdout_pipe();
 		try {
+			var proc = start_prog(rpl, { "Lorem", "L-O-R-E-M" });
+			var stdin_pipe = proc.get_stdin_pipe();
+			var stdout_pipe = proc.get_stdout_pipe();
 			stdin_pipe.write(slurp_file(test_result_root).data);
 			stdin_pipe.close();
 			var std_out = slurp(stdout_pipe);
@@ -353,10 +357,10 @@ class LoremTests : TestRplFile {
 	}
 
 	void test_dry_run_on_stdin() {
-		var proc = start_prog(rpl, { "--dry-run", "Lorem", "L-O-R-E-M", "-" });
-		var stdin_pipe = proc.get_stdin_pipe();
-		var stdout_pipe = proc.get_stdout_pipe();
 		try {
+			var proc = start_prog(rpl, { "--dry-run", "Lorem", "L-O-R-E-M", "-" });
+			var stdin_pipe = proc.get_stdin_pipe();
+			var stdout_pipe = proc.get_stdout_pipe();
 			stdin_pipe.write(slurp_file(test_result_root).data);
 			stdin_pipe.close();
 			var std_out = slurp(stdout_pipe);
@@ -450,10 +454,10 @@ class LoremUtf8Tests : TestRplFile {
 	}
 
 	private void prompt_test(string input, string expected) {
-		var proc = start_prog(rpl, { "--whole-words", "--prompt", "in", "out", test_result_root });
-		var stdin_pipe = proc.get_stdin_pipe();
-		var stderr_pipe = proc.get_stderr_pipe();
 		try {
+			var proc = start_prog(rpl, { "--whole-words", "--prompt", "in", "out", test_result_root });
+			var stdin_pipe = proc.get_stdin_pipe();
+			var stderr_pipe = proc.get_stderr_pipe();
 			stdin_pipe.write(input.data);
 			stdin_pipe.close();
 			var std_err = slurp(stderr_pipe);
