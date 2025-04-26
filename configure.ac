@@ -23,7 +23,7 @@ AC_PATH_PROG([HELP2MAN], [help2man], [help2man])
 AC_PATH_PROG([GENGETOPT], [gengetopt], [gengetopt])
 
 # Vala
-AM_PROG_VALAC(0.52,,[AC_MSG_WARN([valac not found or too old: cannot compile Vala sources])])
+AM_PROG_VALAC(0.56,,[AC_MSG_WARN([valac not found or too old: cannot compile Vala sources])])
 PKG_CHECK_MODULES(GLIB, [glib-2.0 gio-2.0 gio-unix-2.0])
 
 # Initialize gnulib
