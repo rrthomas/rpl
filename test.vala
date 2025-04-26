@@ -214,7 +214,9 @@ class NoFileTests : TestRpl {
 
 	void test_nonexistent_option() {
 		var output = run({ "--foo" }, 1);
-		assert_true(output.std_err.contains("unrecognized option"));
+		// The exact message varies by libc (it comes from getopt_long), but
+		// should contain the name of the unrecognized option.
+		assert_true(output.std_err.contains("foo"));
 	}
 
 	void test_nonexistent_input() {
