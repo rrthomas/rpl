@@ -158,7 +158,8 @@ abstract class TestRplFile : TestRplOutputFile {
 	public override void set_up() {
 		base.set_up();
 		this.test_result_root = Path.build_filename(test_result_dir, test_data);
-		run_prog("cp", { "-frp", test_data_root, test_result_dir });
+		run_prog("cp", { "-r", test_data_root, test_result_dir });
+		run_prog("chmod", { "-R", "u+w", test_result_dir });
 	}
 }
 
@@ -429,6 +430,7 @@ class LoremUtf8Tests : TestRplFile {
 	}
 
 	void test_keep_times() {
+		run_prog("touch", { "-r", test_data_root, test_result_root });
 		run({ "--keep-times", "in", "out", test_result_root });
 		Posix.Stat perms = Posix.Stat() {};
 		assert_true(Posix.lstat(test_data_root, out perms) == 0);
