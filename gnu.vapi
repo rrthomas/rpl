@@ -68,6 +68,14 @@ namespace Gnu {
 	[CCode (cheader_filename = "sys/file.h")]
 	public int flock (int fd, FlockOperation operation);
 
+	[CCode (cheader_filename = "binary-io.h")]
+	public int set_binary_mode(int fd, int mode);
+
+	[CCode (cheader_filename = "fcntl.h")]
+	public const int O_BINARY;
+	[CCode (cheader_filename = "fcntl.h")]
+	public const int O_TEXT;
+
 	[CCode (cheader_filename = "stat-time.h")]
 	public long get_stat_atime_ns (Posix.Stat st);
 	[CCode (cheader_filename = "stat-time.h")]

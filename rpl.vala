@@ -419,7 +419,9 @@ int main (string[] args) {
 		if (filename == "-") {
 			filename = "standard input";
 			input_fd = GLib.stdin.fileno ();
+			Gnu.set_binary_mode (input_fd, Gnu.O_BINARY);
 			output_fd = GLib.stdout.fileno ();
+			Gnu.set_binary_mode (output_fd, Gnu.O_BINARY);
 		} else {
 			// Check `filename` is a regular file, and get its permissions
 			if (Posix.lstat (filename, out perms) != 0) {

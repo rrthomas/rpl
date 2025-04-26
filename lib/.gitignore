@@ -218,3 +218,5 @@
 /wmemchr-impl.h
 /wmemchr.c
 /wmempcpy.c
+/binary-io.c
+/binary-io.h
