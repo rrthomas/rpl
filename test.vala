@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg gnu testcase.vala slurp.vala
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu testcase.vala slurp.vala
 // rpl tests
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -19,13 +19,9 @@
 using Posix;
 
 public string slurp_file (string filename) throws Error {
-	var fstream = FileStream.open (filename, "rb");
-	if (fstream == null) {
-		throw IOError.from_errno (errno);
-	}
-	var fd = fstream.fileno ();
-	var stream = new UnixInputStream (fd, false);
-	return slurp (stream);
+	string contents;
+	FileUtils.get_contents(filename, out contents);
+	return contents;
 }
 
 Subprocess start_prog(string prog, string[] args) {

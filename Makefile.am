@@ -44,7 +44,7 @@ TEST_FILES = \
 
 rpl_SOURCES = rpl.vala slurp.vala cmdline.c cmdline.h
 rpl_CFLAGS = --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) $(CODE_COVERAGE_CFLAGS)
-rpl_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg cmdline --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg gnu --pkg pcre2 --pkg uchardet --pkg iconv
+rpl_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg cmdline --pkg gio-2.0 --pkg posix --pkg gnu --pkg pcre2 --pkg uchardet --pkg iconv
 rpl_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
 
 rpl.c: cmdline.h
@@ -55,7 +55,7 @@ cmdline.h cmdline.c: $(top_srcdir)/opts.ggo
 test_SOURCES = test.vala testcase.vala slurp.vala
 # -W flag in next line is to work around https://gitlab.gnome.org/GNOME/vala/-/issues/1413
 test_CFLAGS = --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) -Wno-incompatible-function-pointer-types
-test_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg gio-2.0 --pkg gio-unix-2.0 --pkg pcre2 --pkg posix --pkg gnu
+test_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg gio-2.0 --pkg pcre2 --pkg posix --pkg gnu
 test_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
 
 rpl.1: man-extras.1 configure.ac $(builddir)/rpl$(EXEEXT) build-aux/rpl-help2man-wrapper
