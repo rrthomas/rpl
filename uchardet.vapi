@@ -16,10 +16,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  *
- * As a special exception, if you use inline functions from this file, this
- * file does not by itself cause the resulting executable to be covered by
- * the GNU Lesser General Public License.
- *
  * Author:
  *  Reuben Thomas <rrt@sc3d.org>
  */
@@ -27,14 +23,14 @@
 [Compact]
 [CCode (cprefix = "uchardet_", cheader_filename = "uchardet.h", cname = "uchardet_t", free_function = "uchardet_delete")]
 public class UCharDet {
-    [CCode (cname = "uchardet_new")]
-    public UCharDet ();
+	[CCode (cname = "uchardet_new")]
+	public UCharDet ();
 
-    public int handle_data ([CCode (array_length_type = "size_t")] uint8[] data);
+	public int handle_data ([CCode (array_length_type = "size_t")] uint8[] data);
 
-    public void data_end ();
+	public void data_end ();
 
-    public void data_reset ();
+	public void data_reset ();
 
-    public unowned string get_charset ();
+	public unowned string get_charset ();
 }
