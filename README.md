@@ -40,6 +40,9 @@ make check
 
 Once you’re happy you can run `make install`, possibly with `sudo`.
 
+Some of the tests require `sudo` to run. You will need to use a user or session that can use `sudo` without a password. In many setups, you can run `sudo true` to authenticate, and will then be able to run the tests (with `make check` as usual) for some period of time before the authentication expires. If `sudo` does not work, the tests that require it will be skipped.
+
+The code coverage test target `assert-full-coverage` requires all the tests to have been run.
 
 ### Building from git
 
