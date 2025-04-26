@@ -32,8 +32,10 @@
 /missing
 /stamp-h1
 /rpl
+/rpl.exe
 /rpl.1
 /rpl.info
 /rpl-*.tar.gz
 /test
+/test.exe
 /TAGS
