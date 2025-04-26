@@ -42,8 +42,8 @@ Subprocess start_prog(string prog, string[] args) {
 }
 
 struct Output {
-	public string stdout;
-	public string stderr;
+	public string std_out;
+	public string std_err;
 }
 
 Subprocess check_prog(string prog, string[] args) throws Error {
@@ -66,8 +66,8 @@ bool try_sudo(string[] cmd) {
 }
 
 Output run_prog(string prog, string[] args, int expected_rc = 0) {
-	string stdout = "";
-	string stderr = "";
+	string std_out = "";
+	string std_err = "";
 	try {
 		var proc = start_prog(prog, args);
 		try {
@@ -78,12 +78,12 @@ Output run_prog(string prog, string[] args, int expected_rc = 0) {
 		}
 		var stdout_pipe = proc.get_stdout_pipe();
 		var stderr_pipe = proc.get_stderr_pipe();
-		stdout = slurp(stdout_pipe);
-		stderr = slurp(stderr_pipe);
+		std_out = slurp(stdout_pipe);
+		std_err = slurp(stderr_pipe);
 	} catch (Error e) {
 		print(@"error in command $prog $(string.joinv(" ", args)): $(e.message)\n");
 	}
-	return Output() { stdout = stdout, stderr = stderr };
+	return Output() { std_out = std_out, std_err = std_err };
 }
 
 // Base class for rpl tests
@@ -168,8 +168,7 @@ class EncodingTests : TestRplFile {
 
 	void test_bad_encoding() {
 		var output = run({ "--encoding=utf-8", "Lorem", "L-O-R-E-M", test_result_root });
-		print(@"bad_encoding: $(output.stderr)\n");
-		assert_true(output.stderr.contains("error decoding"));
+		assert_true(output.std_err.contains("error decoding"));
 	}
 
 	void test_explicit_encoding() {
@@ -195,42 +194,42 @@ class NoFileTests : TestRpl {
 
 	void test_no_arguments() {
 		var output = run({ }, 1);
-		assert_true(output.stdout.contains("Search and replace text in files."));
+		assert_true(output.std_out.contains("Search and replace text in files."));
 	}
 
 	void test_help() {
 		var output = run({ "--help" });
-		assert_true(output.stdout.contains("Search and replace text in files."));
+		assert_true(output.std_out.contains("Search and replace text in files."));
 	}
 
 	void test_full_help() {
 		var output = run({ "--full-help" });
-		assert_true(output.stdout.contains("use extended regex syntax [IGNORED]"));
+		assert_true(output.std_out.contains("use extended regex syntax [IGNORED]"));
 	}
 
 	void test_version() {
 		var output = run({ "--version" });
-		assert_true(output.stdout.contains("NO WARRANTY, to the extent"));
+		assert_true(output.std_out.contains("NO WARRANTY, to the extent"));
 	}
 
 	void test_nonexistent_option() {
 		var output = run({ "--foo" }, 1);
-		assert_true(output.stderr.contains("unrecognized option"));
+		assert_true(output.std_err.contains("unrecognized option"));
 	}
 
 	void test_nonexistent_input() {
 		var output = run({ "in", "out", "nonexistent.txt" });
-		assert_true(output.stderr.contains("skipping nonexistent.txt: "));
+		assert_true(output.std_err.contains("skipping nonexistent.txt: "));
 	}
 
 	void test_nonexistent_patterns_file() {
 		var output = run({ "--files", "in", "out", "nonexistent.txt" }, 1);
-		assert_true(output.stderr.contains("error reading patterns file"));
+		assert_true(output.std_err.contains("error reading patterns file"));
 	}
 
 	void test_input_is_directory() {
 		var output = run({ "amét", "amèt", test_result_dir });
-		assert_true(output.stderr.contains("skipping directory"));
+		assert_true(output.std_err.contains("skipping directory"));
 	}
 }
 
@@ -261,17 +260,17 @@ class OutputFileTests : TestRplOutputFile {
 
 	void test_recursive_no_file_arguments() {
 		var output = run({ "--recursive", "foo", "bar" }, 1);
-		assert_true(output.stderr.contains("cannot use --recursive with no file arguments!"));
+		assert_true(output.std_err.contains("cannot use --recursive with no file arguments!"));
 	}
 
 	void test_bad_regex() {
 		var output = run( {"(foo", "bar" }, 1);
-		assert_true(output.stderr.contains("bad regex (foo"));
+		assert_true(output.std_err.contains("bad regex (foo"));
 	}
 
 	void test_non_file_input() {
 		var output = run( {"foo", "bar", "/dev/null" });
-		assert_true(output.stderr.contains("not a regular file"));
+		assert_true(output.std_err.contains("not a regular file"));
 	}
 }
 
@@ -295,7 +294,7 @@ class LoremTests : TestRplFile {
 
 	void test_ignore_case_verbose() {
 		var output = run({ "-iv", "Lorem", "L-O-R-E-M", test_result_root });
-		assert_true(output.stderr.contains("processing "));
+		assert_true(output.std_err.contains("processing "));
 		assert_true(result_matches("lorem_ignore-case_expected.txt"));
 	}
 
@@ -321,7 +320,7 @@ class LoremTests : TestRplFile {
 
 	void test_quiet() {
 		var output = run({ "--quiet", "Lorem", "L-O-R-E-M", test_result_root });
-		assert_true(output.stderr.length == 0);
+		assert_true(output.std_err.length == 0);
 		assert_true(result_matches("lorem_no-flags_expected.txt"));
 	}
 
@@ -332,7 +331,7 @@ class LoremTests : TestRplFile {
 
 	void test_bad_replacement() {
 		var output = run({ "Lorem", "$input", test_result_root });
-		assert_true(output.stderr.contains("error in replacement"));
+		assert_true(output.std_err.contains("error in replacement"));
 	}
 
 	void test_input_on_stdin() {
@@ -342,9 +341,9 @@ class LoremTests : TestRplFile {
 		try {
 			stdin_pipe.write(slurp_file(test_result_root).data);
 			stdin_pipe.close();
-			var stdout = slurp(stdout_pipe);
+			var std_out = slurp(stdout_pipe);
 			var expected_file = Path.build_filename(test_files_dir, "lorem_no-flags_expected.txt");
-			assert_true(stdout == slurp_file(expected_file));
+			assert_true(std_out == slurp_file(expected_file));
 		} catch (Error e) {
 			print("error communicating with rpl\n");
 			assert_no_error(e);
@@ -358,9 +357,9 @@ class LoremTests : TestRplFile {
 		try {
 			stdin_pipe.write(slurp_file(test_result_root).data);
 			stdin_pipe.close();
-			var stdout = slurp(stdout_pipe);
+			var std_out = slurp(stdout_pipe);
 			var expected_file = Path.build_filename(test_files_dir, "lorem.txt");
-			assert_true(stdout == slurp_file(expected_file));
+			assert_true(std_out == slurp_file(expected_file));
 		} catch (Error e) {
 			print("error communicating with rpl\n");
 			assert_no_error(e);
@@ -374,12 +373,12 @@ class LoremTests : TestRplFile {
 
 	void test_bad_output_encoding() {
 		var output = run({ "--encoding=iso-8859-1", "amet", "amαt", test_result_root }, 0);
-		assert_true(output.stderr.contains("output encoding error"));
+		assert_true(output.std_err.contains("output encoding error"));
 	}
 
 	void test_bad_ascii_output() {
 		var output = run({ "--encoding=ascii", "amet", "amαt", test_result_root }, 0);
-		assert_true(output.stderr.contains("output encoding error"));
+		assert_true(output.std_err.contains("output encoding error"));
 	}
 }
 
@@ -455,9 +454,9 @@ class LoremUtf8Tests : TestRplFile {
 		try {
 			stdin_pipe.write(input.data);
 			stdin_pipe.close();
-			var stderr = slurp(stderr_pipe);
-			assert_true(stderr.contains("? [Y/n] "));
-			assert_true(stderr.contains(expected));
+			var std_err = slurp(stderr_pipe);
+			assert_true(std_err.contains("? [Y/n] "));
+			assert_true(std_err.contains(expected));
 		} catch (Error e) {
 			print("error communicating with rpl\n");
 			assert_no_error(e);
@@ -486,8 +485,8 @@ class LoremUtf8Tests : TestRplFile {
 		}
 		var output = run_prog("sudo", { "-n", rpl, "--force", "amét", "amèt", test_result_root });
 		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
-		assert_true(!output.stderr.contains("unable to set attributes"));
-		assert_true(!output.stderr.contains("new file attributes may not match"));
+		assert_true(!output.std_err.contains("unable to set attributes"));
+		assert_true(!output.std_err.contains("new file attributes may not match"));
 	}
 
 	void test_force_fail () {
@@ -497,8 +496,8 @@ class LoremUtf8Tests : TestRplFile {
 			return;
 		}
 		var output = run({ "--force", "amét", "amèt", test_result_root });
-		assert_true(output.stderr.contains("unable to set attributes"));
-		assert_true(output.stderr.contains("new file attributes may not match"));
+		assert_true(output.std_err.contains("unable to set attributes"));
+		assert_true(output.std_err.contains("new file attributes may not match"));
 	}
 
 	void test_set_attributes_fail () {
@@ -508,21 +507,21 @@ class LoremUtf8Tests : TestRplFile {
 			return;
 		}
 		var output = run({ "amét", "amèt", test_result_root });
-		assert_true(output.stderr.contains("unable to set attributes"));
-		assert_true(output.stderr.contains("skipping"));
+		assert_true(output.std_err.contains("unable to set attributes"));
+		assert_true(output.std_err.contains("skipping"));
 	}
 
 	void test_unreadable_input () {
 		assert_true(Posix.chmod(test_result_root, 0000) == 0);
 		var output = run({ "amét", "amèt", test_result_root });
-		assert_true(output.stderr.contains(@"skipping $test_result_root"));
+		assert_true(output.std_err.contains(@"skipping $test_result_root"));
 	}
 
 	void test_unwritable_input () {
 		assert_true(Posix.chmod(test_result_dir, 0500) == 0);
 		assert_true(Posix.chmod(test_result_root, 0777) == 0);
 		var output = run({ "amét", "amèt", test_result_root });
-		assert_true(output.stderr.contains("could not move"));
+		assert_true(output.std_err.contains("could not move"));
 		// Allow test directory to be deleted.
 		assert_true(Posix.chmod(test_result_dir, 0700) == 0);
 	}
@@ -537,7 +536,7 @@ class LoremUtf8Tests : TestRplFile {
 		}
 		assert_true(Posix.chmod(test_result_dir, 0500) == 0);
 		var output = run({ "--backup", "amét", "amèt", test_result_root });
-		assert_true(output.stderr.contains("error renaming"));
+		assert_true(output.std_err.contains("error renaming"));
 		// Allow test directory to be deleted.
 		assert_true(Posix.chmod(test_result_dir, 0700) == 0);
 	}
@@ -623,7 +622,7 @@ class GlobTests : TestRplFile {
 
 	void test_globs_no_match() {
 		var output = run({ "--recursive", "--glob=*.foo", "foo", "bar", test_result_root }, 1);
-		assert_true(output.stderr.contains("the given filename patterns did not match any files!"));
+		assert_true(output.std_err.contains("the given filename patterns did not match any files!"));
 	}
 }
 
