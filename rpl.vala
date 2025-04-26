@@ -297,7 +297,13 @@ StringBuilder slurp_patterns (string filename) {
 	return new StringBuilder.from_buffer ((char[]) input);
 }
 
-int main (string[] args) {
+int main (string[] argv) {
+	string[] args;
+#if WINDOWS
+	args = Win32.get_command_line ();
+#else
+	args = argv;
+#endif
 	GLib.Log.set_always_fatal (LEVEL_CRITICAL);
 	program_name = args[0];
 
