@@ -36,7 +36,11 @@ TESTS = test
 LOG_DRIVER = \
 	env AM_TAP_AWK='$(AWK)' TEST_FILES_DIR=$(top_srcdir)/test-files $(SHELL) \
 	$(top_srcdir)/build-aux/tap-driver.sh
-TEST_FILES = $(wildcard test-files/*.txt)
+TEST_FILES = \
+	$(wildcard test-files/*.txt) \
+	$(wildcard test-files/*/*.txt*) \
+	$(wildcard test-files/test-tree/*/*.txt) \
+	$(wildcard test-files/test-tree-expected/*/*.txt)
 
 rpl_SOURCES = rpl.vala slurp.vala cmdline.c cmdline.h
 rpl_CFLAGS = --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) $(CODE_COVERAGE_CFLAGS)
