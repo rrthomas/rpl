@@ -29,19 +29,17 @@ public string slurp_file (string filename) throws Error {
 }
 
 Subprocess start_prog(string prog, string[] args) {
-	string[] cmd = { prog };
-	foreach (var arg in args) {
-		cmd += arg;
-	}
+	var cmd = new Array<string>.take_zero_terminated(args);
+	cmd.prepend_val(prog);
 	Subprocess proc = null;
 	try {
-		proc = new Subprocess.newv(cmd,
-									   SubprocessFlags.SEARCH_PATH_FROM_ENVP
-									   | SubprocessFlags.STDIN_PIPE
-									   | SubprocessFlags.STDOUT_PIPE
-									   | SubprocessFlags.STDERR_PIPE);
+		proc = new Subprocess.newv(cmd.data,
+								   SubprocessFlags.SEARCH_PATH_FROM_ENVP
+								   | SubprocessFlags.STDIN_PIPE
+								   | SubprocessFlags.STDOUT_PIPE
+								   | SubprocessFlags.STDERR_PIPE);
 	} catch (Error e) {
-		print(@"error starting command $(string.joinv(" ", cmd)): $(e.message)\n");
+		print(@"error starting command $(string.joinv(" ", cmd.data)): $(e.message)\n");
 		assert_no_error(e);
 	}
 	return proc;
@@ -56,6 +54,19 @@ Subprocess check_prog(string prog, string[] args) throws Error {
 	var proc = start_prog(prog, args);
 	proc.wait_check(null);
 	return proc;
+}
+
+bool try_sudo(string[] cmd) {
+	try {
+		var cmd_args = new Array<string>.take_zero_terminated(cmd);
+		cmd_args.prepend_val("-n");
+		check_prog("sudo", cmd_args.data);
+		return true;
+	} catch (Error e) {
+		print("cannot sudo, skipping test\n");
+		Test.skip();
+		return false;
+	}
 }
 
 Output run_prog(string prog, string[] args, int expected_rc = 0) {
@@ -395,56 +406,6 @@ class LoremUtf8Tests : TestRplFile {
 		add_test("test_backup_file_exists", test_backup_file_exists);
 	}
 
-	private uint64 getenv_int(string name) {
-		string val = Environment.get_variable(name);
-		if (val == null) {
-			print(@"environment variable $name not found\n");
-			return -1;
-		}
-		uint64 res;
-		if (!int64.try_parse(val, out res, null, 10)) {
-			print(@"error converting $name to integer\n");
-			return -1;
-		}
-		return res;
-	}
-
-	private uid_t get_real_uid() {
-		uid_t uid = getuid();
-		if (uid == 0) {
-			uid = (uid_t) getenv_int("SUDO_UID");
-		}
-		return uid;
-	}
-
-	private bool check_root() {
-		return getuid() == 0;
-	}
-
-	private bool require_root() {
-		if (!check_root()) {
-			Test.skip();
-			print("need root to run this test\n");
-			return false;
-		}
-		return true;
-	}
-
-	private void drop_root() {
-		uid_t real_uid = get_real_uid();
-		if (seteuid(real_uid) != 0) {
-			perror(@"setuid to uid $((uint64) real_uid)");
-			Test.fail();
-		}
-	}
-
-	private void regain_root() {
-		if (seteuid(0) != 0) {
-			perror("setuid to root");
-			Test.fail();
-		}
-	}
-
 	void test_utf_8() {
 		run({ "amét", "amèt", test_result_root });
 		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
@@ -521,78 +482,54 @@ class LoremUtf8Tests : TestRplFile {
 	}
 
 	void test_force () {
-		if (!require_root()) {
+		if (!try_sudo({ "chown", "0:0", test_result_root }) ||
+			!try_sudo({ "chmod", "644", test_result_root })) {
 			return;
 		}
-		assert_true(Posix.chown(test_result_root, 0, 0) == 0);
-		run({ "--force", "amét", "amèt", test_result_root });
+		var output = run_prog("sudo", { "-n", rpl, "--force", "amét", "amèt", test_result_root });
 		assert_true(result_matches("lorem-utf-8_utf-8_expected.txt"));
+		assert_true(!output.stderr.contains("unable to set attributes"));
+		assert_true(!output.stderr.contains("new file attributes may not match"));
 	}
 
 	void test_force_fail () {
-		if (!require_root()) {
+		if (!try_sudo({ "chown", "0:0", test_result_root }) ||
+			!try_sudo({ "chmod", "777", test_result_root }) ||
+			!try_sudo({ "chmod", "755", test_result_dir })) {
 			return;
 		}
-		assert_true(Posix.chmod(test_result_root, 0777) == 0);
-		assert_true(Posix.chmod(test_result_dir, 0755) == 0);
-		drop_root();
 		var output = run({ "--force", "amét", "amèt", test_result_root });
-		regain_root();
 		assert_true(output.stderr.contains("unable to set attributes"));
 		assert_true(output.stderr.contains("new file attributes may not match"));
 	}
 
 	void test_set_attributes_fail () {
-		if (!require_root()) {
+		if (!try_sudo({ "chown", "0:0", test_result_root }) ||
+			!try_sudo({ "chmod", "777", test_result_root }) ||
+			!try_sudo({ "chmod", "755", test_result_dir })) {
 			return;
 		}
-		assert_true(Posix.chmod(test_result_root, 0777) == 0);
-		assert_true(Posix.chmod(test_result_dir, 0755) == 0);
-		drop_root();
 		var output = run({ "amét", "amèt", test_result_root });
-		regain_root();
 		assert_true(output.stderr.contains("unable to set attributes"));
 		assert_true(output.stderr.contains("skipping"));
 	}
 
 	void test_unreadable_input () {
-		var root = check_root();
 		assert_true(Posix.chmod(test_result_root, 0000) == 0);
-		if (root) {
-			drop_root();
-		}
 		var output = run({ "amét", "amèt", test_result_root });
-		if (root) {
-			regain_root();
-		}
 		assert_true(output.stderr.contains(@"skipping $test_result_root"));
 	}
 
 	void test_unwritable_input () {
-		var root = check_root();
 		assert_true(Posix.chmod(test_result_dir, 0500) == 0);
 		assert_true(Posix.chmod(test_result_root, 0777) == 0);
-		if (root) {
-			assert_true(Posix.chown(test_result_dir, get_real_uid(), 0) == 0);
-			assert_true(Posix.chown(test_result_root, get_real_uid(), 0) == 0);
-			drop_root();
-		}
 		var output = run({ "amét", "amèt", test_result_root });
 		assert_true(output.stderr.contains("could not move"));
-		if (root) {
-			regain_root();
-		}
 		// Allow test directory to be deleted.
 		assert_true(Posix.chmod(test_result_dir, 0700) == 0);
 	}
 
 	void test_backup_file_exists () {
-		var root = check_root();
-		if (root) {
-			assert_true(Posix.chown(test_result_dir, get_real_uid(), 0) == 0);
-			assert_true(Posix.chown(test_result_root, get_real_uid(), 0) == 0);
-			drop_root();
-		}
 		var backup_file = @"$test_result_root~";
 		try {
 			assert_true(File.new_for_path(backup_file).create(0).close());
@@ -603,9 +540,6 @@ class LoremUtf8Tests : TestRplFile {
 		assert_true(Posix.chmod(test_result_dir, 0500) == 0);
 		var output = run({ "--backup", "amét", "amèt", test_result_root });
 		assert_true(output.stderr.contains("error renaming"));
-		if (root) {
-			regain_root();
-		}
 		// Allow test directory to be deleted.
 		assert_true(Posix.chmod(test_result_dir, 0700) == 0);
 	}
