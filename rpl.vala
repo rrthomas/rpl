@@ -453,7 +453,8 @@ int main (string[] args) {
 			output_fd = fd;
 
 			// Set permissions and owner
-			if (Posix.chown (tmp_path, perms.st_uid, perms.st_gid) != 0
+			errno = 0;
+			if ((Posix.chown (tmp_path, perms.st_uid, perms.st_gid) != 0 && errno != ENOSYS)
 			    || Posix.chmod (tmp_path, perms.st_mode) != 0) {
 				warn (@"unable to set attributes of $filename: $(GLib.strerror(errno))");
 				if (args_info.force_given) {
