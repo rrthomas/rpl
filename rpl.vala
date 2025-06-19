@@ -96,7 +96,7 @@ ssize_t replace (int input_fd,
                  Pcre2.Regex old_regex,
                  Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
-                 string? encoding) {
+                 string encoding) {
 	ssize_t num_matches = 0;
 	size_t buf_size = 1024 * 1024;
 
@@ -105,7 +105,9 @@ ssize_t replace (int input_fd,
 	var retry_prefix = new StringBuilder ();
 	IConv.IConv? iconv_in = null;
 	IConv.IConv? iconv_out = null;
-	if (encoding != null && encoding != "UTF-8") {
+	var encoding_upper = encoding.up();
+	if (encoding_upper != "UTF-8" && encoding_upper != "UTF8" && encoding_upper != "ASCII") {
+	    print(@"encoding: $(encoding)");
 		iconv_in = IConv.IConv.open ("UTF-8", encoding);
 		iconv_out = IConv.IConv.open (encoding, "UTF-8");
 	}
@@ -113,8 +115,8 @@ ssize_t replace (int input_fd,
 	ssize_t n_read = buf.len;
 	while (true) {
 		if (buf.len == 0) {
-			Memory.copy (buf.data, retry_prefix.data, retry_prefix.len);
-			n_read = Posix.read (input_fd, ((uint8*) buf.data) + retry_prefix.len, buf_size - retry_prefix.len);
+			buf.append_len (retry_prefix.str, retry_prefix.len);
+			n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
 			if (n_read < 0) { // GCOVR_EXCL_START
 				warn (@"error reading $input_filename: $(GLib.strerror(errno))");
 				break;
@@ -130,6 +132,7 @@ ssize_t replace (int input_fd,
 			var out_buf = new char[out_buf_size];
 			unowned char[] out_buf_ptr = out_buf;
 			size_t out_buf_len = out_buf.length;
+			errno = 0;
 			var rc = iconv_in.iconv (ref buf_ptr, ref buf_len, ref out_buf_ptr, ref out_buf_len);
 			if (rc == -1) {
 				// Try carrying invalid input over to next iteration in case it's
