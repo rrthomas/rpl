@@ -30,6 +30,7 @@
 /install-sh
 /m4/gnulib-cache.m4
 /missing
+/perf.data*
 /stamp-h1
 /pcre2-16-demo
 /pcre2-16-demo.exe
