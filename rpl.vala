@@ -105,7 +105,7 @@ ssize_t replace (int input_fd,
 	var retry_prefix = new StringBuilder ();
 	IConv.IConv? iconv_in = null;
 	IConv.IConv? iconv_out = null;
-	if (encoding != null && encoding != "UTF-8") {
+	if (encoding != null) {
 		iconv_in = IConv.IConv.open ("UTF-8", encoding);
 		iconv_out = IConv.IConv.open (encoding, "UTF-8");
 	}
@@ -508,10 +508,12 @@ int main (string[] argv) {
 			buf.len = n_bytes;
 			GLib.assert (detector.handle_data (buf.data) == 0);
 			detector.data_end ();
+			var encoding_guessed = false;
 			encoding = detector.get_charset ();
 			if (args_info.verbose_given) {
 				if (encoding != "") {
 					warn (@"guessed encoding '$encoding'");
+					encoding_guessed = true;
 				} else { // GCOVR_EXCL_START
 					encoding = null;
 					warn ("unable to guess encoding");
@@ -525,6 +527,11 @@ int main (string[] argv) {
 					warn (@"could not guess encoding; using locale default '$encoding'");
 				}
 			} // GCOVR_EXCL_STOP
+
+			if (encoding_guessed && (encoding == "ASCII" || encoding == "UTF-8")) {
+				warn (@"guessed an encoding that does not require iconv");
+				encoding = null;
+			}
 		}
 
 		// Process the file
