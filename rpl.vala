@@ -371,7 +371,7 @@ int main (string[] argv) {
 		new_text = new StringBuilder (args_info.inputs[1]);
 	}
 
-	// # Tell the user what is going to happen
+	// Tell the user what is going to happen
 	if (!args_info.quiet_given) {
 		warn ("%s \"%.*s\" with \"%.*s\" (%s; %s)".printf (
 			      args_info.dry_run_given ? "simulating replacement of" : "replacing",
