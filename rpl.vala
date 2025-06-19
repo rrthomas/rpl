@@ -165,7 +165,7 @@ ssize_t replace (int input_fd,
 		size_t matching_from = 0;
 		size_t start_pos;
 		size_t end_pos = 0;
-		Match ? match = null;
+		Match? match = null;
 		int rc = 0;
 		while (matching_from < search_str.len) {
 			var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
@@ -192,11 +192,11 @@ ssize_t replace (int input_fd,
 				var new_pattern_str = new StringBuilder.sized (new_pattern.len);
 				new_pattern_str.append_len (new_pattern.str, new_pattern.len);
 				var output = old_regex.substitute (
-				                                   search_str, matching_from,
-				                                   replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
-				                                   match,
-				                                   new_pattern_str,
-				                                   out rc
+					search_str, matching_from,
+					replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
+					match,
+					new_pattern_str,
+					out rc
 				);
 				if (rc < 0) {
 					warn (@"error in replacement: $(get_error_message(rc))");
@@ -234,7 +234,7 @@ ssize_t replace (int input_fd,
 				string output = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
 				write_res = Posix.write (output_fd, output, bytes_written);
 			} catch (ConvertError e) {
- 				warn (@"output encoding error: $(GLib.strerror(errno))");
+				warn (@"output encoding error: $(GLib.strerror(errno))");
 				iconv_in.close ();
 				iconv_out.close ();
 				return -1;
@@ -268,9 +268,9 @@ private List<string> get_dir_tree (File file) {
 	var results = new List<string> ();
 	try {
 		FileEnumerator enumerator = file.enumerate_children (
-		                                                     "standard::name,standard::type",
-		                                                     FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
-		                                                     null);
+			"standard::name,standard::type",
+			FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
+			null);
 
 		FileInfo info = null;
 		while (((info = enumerator.next_file (null)) != null)) {
@@ -374,11 +374,11 @@ int main (string[] argv) {
 	// # Tell the user what is going to happen
 	if (!args_info.quiet_given) {
 		warn ("%s \"%.*s\" with \"%.*s\" (%s; %s)".printf (
-		                                                   args_info.dry_run_given ? "simulating replacement of" : "replacing",
-		                                                   (int) old_text.len, old_text.str,
-		                                                   (int) new_text.len, new_text.str,
-		                                                   (args_info.ignore_case_given ? "ignoring case" : (args_info.match_case_given ? "matching case" : "case sensitive")),
-		                                                   args_info.whole_words_given ? "whole words only" : "partial words matched"
+			      args_info.dry_run_given ? "simulating replacement of" : "replacing",
+			      (int) old_text.len, old_text.str,
+			      (int) new_text.len, new_text.str,
+			      (args_info.ignore_case_given ? "ignoring case" : (args_info.match_case_given ? "matching case" : "case sensitive")),
+			      args_info.whole_words_given ? "whole words only" : "partial words matched"
 		));
 	}
 
@@ -396,9 +396,7 @@ int main (string[] argv) {
 	var opts = Pcre2.CompileFlags.MULTILINE;
 	Pcre2.MatchFlags replace_opts = 0;
 	if (args_info.fixed_strings_given) {
-		opts = Pcre2.CompileFlags.LITERAL;         // Override default options,
-		// which are incompatible with
-		// LITERAL.
+		opts = Pcre2.CompileFlags.LITERAL; // Override default options, which are incompatible with LITERAL.
 		replace_opts |= Pcre2.MatchFlags.SUBSTITUTE_LITERAL;
 	}
 	if (args_info.ignore_case_given || args_info.match_case_given) {
@@ -417,8 +415,7 @@ int main (string[] argv) {
 	size_t total_matches = 0;
 	foreach (var filename in files) {
 		bool have_perms = false;
-		Posix.Stat perms = Posix.Stat () {
-		};
+		Posix.Stat perms = Posix.Stat () {};
 		int input_fd;
 		int output_fd;
 		string tmp_path = null;
@@ -629,11 +626,11 @@ int main (string[] argv) {
 	// We're about to exit, give a summary
 	if (!args_info.quiet_given) {
 		warn ("%zu matches %s in %zu out of %zu file%s".printf (
-		                                                        total_matches,
-		                                                        args_info.dry_run_given ? "found" : "replaced",
-		                                                        matched_files,
-		                                                        total_files,
-		                                                        total_files != 1 ? "s" : ""
+			      total_matches,
+			      args_info.dry_run_given ? "found" : "replaced",
+			      matched_files,
+			      total_files,
+			      total_files != 1 ? "s" : ""
 		));
 	}
 
