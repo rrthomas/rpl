@@ -113,8 +113,8 @@ ssize_t replace (int input_fd,
 	ssize_t n_read = buf.len;
 	while (true) {
 		if (buf.len == 0) {
-			Memory.copy (buf.data, retry_prefix.data, retry_prefix.len);
-			n_read = Posix.read (input_fd, ((uint8*) buf.data) + retry_prefix.len, buf_size - retry_prefix.len);
+			buf.append_len (retry_prefix.str, retry_prefix.len);
+			n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
 			if (n_read < 0) { // GCOVR_EXCL_START
 				warn (@"error reading $input_filename: $(GLib.strerror(errno))");
 				break;
@@ -136,8 +136,7 @@ ssize_t replace (int input_fd,
 				// just incomplete.
 				if (buf_ptr != (char[]) buf.data) {
 					retry_prefix = new StringBuilder.sized (buf_len);
-					Memory.copy (retry_prefix.data, buf_ptr, buf_len);
-					retry_prefix.len = (ssize_t) buf_len;
+					retry_prefix.append_len ((string) buf_ptr, (ssize_t) buf_len);
 				} else {
 					warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
 					warn ("You can specify the encoding with --encoding");
@@ -150,8 +149,7 @@ ssize_t replace (int input_fd,
 			}
 			size_t out_len = out_buf_size - out_buf_len;
 			buf = new StringBuilder.sized (out_len);
-			Memory.copy (buf.data, out_buf, out_len);
-			buf.len = (ssize_t) out_len;
+			buf.append_len ((string) out_buf, (ssize_t) out_len);
 		}
 
 		StringBuilder search_str;
