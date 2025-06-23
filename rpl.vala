@@ -247,7 +247,7 @@ ssize_t replace (int input_fd,
 		} // GCOVR_EXCL_STOP
 
 		// Reset buffer for next iteration
-		buf = new StringBuilder.sized (buf_size + 16);
+		buf = new StringBuilder.sized (buf_size);
 	}
 
 	return num_matches;
