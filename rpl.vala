@@ -227,7 +227,7 @@ ssize_t replace (int input_fd,
 
 		ssize_t write_res = 0;
 		if (args_info.dry_run_given) {
-			write_res = Posix.write (output_fd, buf.data, buf.len);
+			write_res = Posix.write (output_fd, search_str.data, search_str.len);
 		} else if (iconv_out != null) {
 			try {
 				size_t bytes_written;
