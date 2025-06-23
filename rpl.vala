@@ -154,10 +154,16 @@ ssize_t replace (int input_fd,
 			buf.len = (ssize_t) out_len;
 		}
 
-		var search_str = new StringBuilder.sized (buf_size * 2);
-
-		search_str.append_len ((string) ((char*) tonext.str + tonext_offset), (ssize_t) (tonext.len - tonext_offset));
-		search_str.append_len (buf.str, buf.len);
+		StringBuilder search_str;
+		// If we have search data held over from last iteration, copy it
+		// into a new buffer.
+		if (tonext.len > 0) {
+			search_str = new StringBuilder.sized (buf_size * 2);
+			search_str.append_len ((string) ((char*) tonext.str + tonext_offset), (ssize_t) (tonext.len - tonext_offset));
+			search_str.append_len (buf.str, buf.len);
+		} else {
+			search_str = (owned) buf;
+		}
 		if (search_str.len == 0) {
 			break;
 		}
