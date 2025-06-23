@@ -111,6 +111,8 @@ ssize_t replace (int input_fd,
 	}
 	var buf = (owned) initial_buf;
 	ssize_t n_read = buf.len;
+	var new_pattern_str = new StringBuilder.sized (new_pattern.len);
+	new_pattern_str.append_len (new_pattern.str, new_pattern.len);
 	while (true) {
 		if (buf.len == 0) {
 			buf.append_len (retry_prefix.str, retry_prefix.len);
@@ -193,8 +195,6 @@ ssize_t replace (int input_fd,
 				end_pos = match.group_end (0);
 				num_matches += 1;
 
-				var new_pattern_str = new StringBuilder.sized (new_pattern.len);
-				new_pattern_str.append_len (new_pattern.str, new_pattern.len);
 				var output = old_regex.substitute (
 					search_str, matching_from,
 					replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
