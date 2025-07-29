@@ -114,9 +114,12 @@ ssize_t replace (int input_fd,
 	var new_pattern_str = new StringBuilder.sized (new_pattern.len);
 	new_pattern_str.append_len (new_pattern.str, new_pattern.len);
 	while (true) {
+		// If we're not processing initial_buf, read more data.
 		if (buf.len == 0) {
 			buf.append_len (retry_prefix.str, retry_prefix.len);
 			n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
+			if (args_info.verbose_given)
+				warn (@"bytes read: $(n_read)\n");
 			if (n_read < 0) { // GCOVR_EXCL_START
 				warn (@"error reading $input_filename: $(GLib.strerror(errno))");
 				break;
@@ -165,8 +168,11 @@ ssize_t replace (int input_fd,
 			search_str = (owned) buf;
 		}
 		if (search_str.len == 0) {
+			if (args_info.verbose_given)
+				warn ("no input left, exiting");
 			break;
 		}
+
 		var result = new StringBuilder ();
 		size_t matching_from = 0;
 		size_t start_pos;
@@ -493,13 +499,14 @@ int main (string[] argv) {
 			ssize_t n_bytes = 0;
 			while (n_bytes < encoding_buf_size) {
 				ssize_t n_read = Posix.read (input_fd, (uint8*) buf.data + n_bytes, encoding_buf_size);
+				if (args_info.verbose_given)
+					warn (@"bytes read to guess encoding: $(n_read)\n");
 				if (n_read < 0) { // GCOVR_EXCL_START
 					warn (@"error reading $filename: $(GLib.strerror(errno))");
 					break;
 				} // GCOVR_EXCL_STOP
-				if (n_read == 0) {
+				if (n_read == 0)
 					break;
-				}
 				n_bytes += n_read;
 			}
 			buf.len = n_bytes;
