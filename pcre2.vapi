@@ -447,10 +447,10 @@ namespace Pcre2 {
 			return output;
 		}
 
+		[CCode (cname = "pcre2_jit_compile")]
+		public int jit_compile(JitCompileFlags options);
+
 		// TODO:
-		//  #define PCRE2_JIT_FUNCTIONS \
-		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
-		//    pcre2_jit_compile(pcre2_code *, JitCompileFlags); \
 		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
 		//    pcre2_jit_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE, \
 		//      uint32_t, pcre2_match_data *, pcre2_match_context *); \
