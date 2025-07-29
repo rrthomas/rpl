@@ -149,38 +149,6 @@ namespace Pcre2 {
 	// PCRE2_BSR_UNICODE
 	// PCRE2_BSR_ANYCRLF
 
-	/* Request types for pcre2_pattern_info() */
-	[CCode (cprefix = "PCRE2_INFO_", has_type_id = false)]
-	public enum PatternInfo {
-		ALLOPTIONS,
-		ARGOPTIONS,
-		BACKREFMAX,
-		BSR,
-		CAPTURECOUNT,
-		FIRSTCODEUNIT,
-		FIRSTCODETYPE,
-		FIRSTBITMAP,
-		HASCRORLF,
-		JCHANGED,
-		JITSIZE,
-		LASTCODEUNIT,
-		LASTCODETYPE,
-		MATCHEMPTY,
-		MATCHLIMIT,
-		MAXLOOKBEHIND,
-		MINLENGTH,
-		NAMECOUNT,
-		NAMEENTRYSIZE,
-		NAMETABLE,
-		NEWLINE,
-		DEPTHLIMIT,
-		SIZE,
-		HASBACKSLASHC,
-		FRAMESIZE,
-		HEAPLIMIT,
-		EXTRAOPTIONS,
-	}
-
 	/* Request types for pcre2_config(). */
 	[CCode (cprefix = "PCRE2_CONFIG_", has_type_id = false)]
 	public enum Config {
@@ -395,10 +363,55 @@ namespace Pcre2 {
 		[CCode (cname = "pcre2_copy_code_with_tables")]
 		public Regex dup_with_tables ();
 
-		// TODO:
 		//  #define PCRE2_PATTERN_INFO_FUNCTIONS \
 		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
-		//    pcre2_pattern_info(const pcre2_code *, uint32_t, void *); \
+		//    pcre2_pattern_info(const pcre2_code *, uint32_t, void *);
+
+		/* Request types for pcre2_pattern_info() */
+		[CCode (cprefix = "PCRE2_INFO_", has_type_id = false)]
+		public enum PatternInfo {
+			ALLOPTIONS,
+			ARGOPTIONS,
+			BACKREFMAX,
+			BSR,
+			CAPTURECOUNT,
+			FIRSTCODEUNIT,
+			FIRSTCODETYPE,
+			FIRSTBITMAP,
+			HASCRORLF,
+			JCHANGED,
+			JITSIZE,
+			LASTCODEUNIT,
+			LASTCODETYPE,
+			MATCHEMPTY,
+			MATCHLIMIT,
+			MAXLOOKBEHIND,
+			MINLENGTH,
+			NAMECOUNT,
+			NAMEENTRYSIZE,
+			NAMETABLE,
+			NEWLINE,
+			DEPTHLIMIT,
+			SIZE,
+			HASBACKSLASHC,
+			FRAMESIZE,
+			HEAPLIMIT,
+			EXTRAOPTIONS,
+		}
+
+		[CCode (cname = "pcre2_pattern_info")]
+		private int _pcre2_pattern_info(PatternInfo what, void *where);
+
+		[CCode (cname = "_vala_pcre2_pattern_info_maxlookbehind")]
+		public uint32 pattern_info_maxlookbehind() {
+			uint32 res = 0;
+			_pcre2_pattern_info(PatternInfo.MAXLOOKBEHIND, &res);
+			return res;
+		}
+
+		// TODO: Implement methods for remaining PatternInfo values.
+
+		// TODO:
 		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
 		//    pcre2_callout_enumerate(const pcre2_code *, \
 		//      int (*)(pcre2_callout_enumerate_block *, void *), void *);

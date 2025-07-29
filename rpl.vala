@@ -432,7 +432,7 @@ int main (string[] argv) {
 	if (regex.jit_compile(JitCompileFlags.COMPLETE | JitCompileFlags.PARTIAL_HARD) != 0
 		&& args_info.verbose_given)
 		warn("JIT compilation of regular expression failed");
-
+	bool has_lookbehind = regex.pattern_info_maxlookbehind() != 0;
 
 	// Process files
 	size_t total_files = 0;
