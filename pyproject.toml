@@ -2,7 +2,7 @@
 name = "rpl"
 version = "1.18"
 description = "Replace strings in files"
-license = {text = "GPL v3 or later"}
+license = "GPL-3.0+"
 authors = [
     {name = "Reuben Thomas", email = "rrt@sc3d.org"}
 ]
