@@ -176,51 +176,50 @@ ssize_t replace (int input_fd,
 		while (matching_from < search_str.len) {
 			var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 			match = old_regex.match (search_str, matching_from, do_partial, out rc);
-			if (rc != Pcre2.Error.NOMATCH) {
-				if (rc == Pcre2.Error.PARTIAL) {
-					tonext_offset = matching_from;
-					tonext = (owned) search_str;
-					buf_size *= 2;
-					break;
-				} else if (rc < 0) { // GCOVR_EXCL_START
-					if (iconv_in != null) {
-						iconv_in.close ();
-						iconv_out.close ();
-					}
-					warn (@"$input_filename: $(get_error_message(rc))");
-					return -1; // GCOVR_EXCL_STOP
+			if (rc == Pcre2.Error.NOMATCH)
+				break;
+			else if (rc == Pcre2.Error.PARTIAL) {
+				tonext_offset = matching_from;
+				tonext = (owned) search_str;
+				buf_size *= 2;
+				break;
+			} else if (rc < 0) { // GCOVR_EXCL_START
+				if (iconv_in != null) {
+					iconv_in.close ();
+					iconv_out.close ();
 				}
-				start_pos = match.group_start (0);
-				result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (start_pos - end_pos));
-				end_pos = match.group_end (0);
-				num_matches += 1;
+				warn (@"$input_filename: $(get_error_message(rc))");
+				return -1; // GCOVR_EXCL_STOP
+			}
 
-				var output = old_regex.substitute (
-					search_str, matching_from,
-					replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
-					match,
-					new_pattern_str,
-					out rc
-				);
-				if (rc < 0) {
-					warn (@"error in replacement: $(get_error_message(rc))");
-					return -1;
-				}
+			start_pos = match.group_start (0);
+			result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (start_pos - end_pos));
+			end_pos = match.group_end (0);
+			num_matches += 1;
 
-				if (args_info.match_case_given) {
-					var model_len = (ssize_t) (match.group_end (0) - match.group_start (0));
-					var model = new StringBuilder.sized (model_len);
-					model.append_len ((string) ((uint8*) search_str.data + match.group_start (0)), model_len);
-					var recased = caselike (model, output);
-					output = (owned) recased;
-				}
-				result.append_len (output.str, output.len);
-				matching_from = end_pos;
-				if (start_pos == end_pos) {
-					matching_from += 1;
-				}
-			} else {
-				matching_from = search_str.len;
+			var output = old_regex.substitute (
+				search_str, matching_from,
+				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
+				match,
+				new_pattern_str,
+				out rc
+			);
+			if (rc < 0) {
+				warn (@"error in replacement: $(get_error_message(rc))");
+				return -1;
+			}
+
+			if (args_info.match_case_given) {
+				var model_len = (ssize_t) (match.group_end (0) - match.group_start (0));
+				var model = new StringBuilder.sized (model_len);
+				model.append_len ((string) ((uint8*) search_str.data + match.group_start (0)), model_len);
+				var recased = caselike (model, output);
+				output = (owned) recased;
+			}
+			result.append_len (output.str, output.len);
+			matching_from = end_pos;
+			if (start_pos == end_pos) {
+				matching_from += 1;
 			}
 		}
 		if (match != null && rc != Pcre2.Error.PARTIAL) {
