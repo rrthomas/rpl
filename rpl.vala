@@ -173,12 +173,15 @@ ssize_t replace (int input_fd,
 		size_t end_pos = 0;
 		Match? match = null;
 		int rc = 0;
-		while (matching_from < search_str.len) {
+		while (true) {
 			var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 			match = old_regex.match (search_str, matching_from, do_partial, out rc);
-			if (rc == Pcre2.Error.NOMATCH)
+			if (rc == Pcre2.Error.NOMATCH) {
+				tonext = new StringBuilder ();
+				tonext_offset = 0;
+				result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (search_str.len - end_pos));
 				break;
-			else if (rc == Pcre2.Error.PARTIAL) {
+			} else if (rc == Pcre2.Error.PARTIAL) {
 				tonext_offset = matching_from;
 				tonext = (owned) search_str;
 				buf_size *= 2;
@@ -218,14 +221,8 @@ ssize_t replace (int input_fd,
 			}
 			result.append_len (output.str, output.len);
 			matching_from = end_pos;
-			if (start_pos == end_pos) {
+			if (start_pos == end_pos)
 				matching_from += 1;
-			}
-		}
-		if (match != null && rc != Pcre2.Error.PARTIAL) {
-			tonext = new StringBuilder ();
-			tonext_offset = 0;
-			result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (search_str.len - end_pos));
 		}
 
 		ssize_t write_res = 0;
