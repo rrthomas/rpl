@@ -1,5 +1,6 @@
 # gengetopt for rpl
 purpose "Search and replace text in files."
+text "\nOLD-TEXT matches at most once in each position, even when it matches the empty string.\n"
 usage " [OPTION...] OLD-TEXT NEW-TEXT [FILE...]"
 
 versiontext "Copyright (C) 2025 Reuben Thomas <rrt@sc3d.org>
