@@ -187,12 +187,7 @@ ssize_t replace (int input_fd,
 				tonext_offset = 0;
 				result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (search_str.len - end_pos));
 				break;
-			} else if (rc == Pcre2.Error.PARTIAL) {
-				tonext_offset = matching_from;
-				tonext = (owned) search_str;
-				buf_size *= 2;
-				break;
-			} else if (rc < 0) { // GCOVR_EXCL_START
+			} else if (rc < 0 && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
 				if (iconv_in != null) {
 					iconv_in.close ();
 					iconv_out.close ();
@@ -204,7 +199,14 @@ ssize_t replace (int input_fd,
 			start_pos = match.group_start (0);
 			result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (start_pos - end_pos));
 			end_pos = match.group_end (0);
-			num_matches += 1;
+
+			if (rc == Pcre2.Error.PARTIAL) {
+				tonext_offset = start_pos;
+				tonext = (owned) search_str;
+				buf_size *= 2;
+				break;
+			} else
+				num_matches += 1;
 
 			var output = old_regex.substitute (
 				search_str, matching_from,
