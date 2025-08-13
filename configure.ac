@@ -3,7 +3,7 @@
 # Copyright (c) 2009-2025 Reuben Thomas
 
 # Initialise autoconf and automake
-AC_INIT([rpl],[2.0rc1],[rrt@sc3d.org])
+AC_INIT([rpl],[2.0rc2],[rrt@sc3d.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AM_INIT_AUTOMAKE([-Wall std-options foreign])
