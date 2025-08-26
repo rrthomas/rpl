@@ -89,6 +89,22 @@ private StringBuilder caselike (StringBuilder model, StringBuilder str) {
 	return res;
 }
 
+/* Append to `a` the bytes of `b` from `start` to the end of `b`. */
+private void append_string_builder_slice (StringBuilder a, StringBuilder b, ssize_t start, ssize_t end)
+requires (0 <= start)
+requires (start <= end)
+requires (end <= b.len)
+{
+	a.append_len ((string) ((char *) b.str + start), end - start);
+}
+
+/* Append to `a` the bytes of `b` from `start` to the end of `b`. */
+private void append_string_builder_tail (StringBuilder a, StringBuilder b, ssize_t start)
+requires (0 <= start)
+requires (start <= b.len) {
+	append_string_builder_slice (a, b, start, b.len);
+}
+
 ssize_t replace (int input_fd,
                  owned StringBuilder initial_buf,
                  string input_filename,
@@ -101,7 +117,7 @@ ssize_t replace (int input_fd,
 	size_t buf_size = 1024 * 1024;
 
 	var tonext = new StringBuilder ();
-	size_t tonext_offset = 0;
+	ssize_t tonext_offset = 0;
 	var retry_prefix = new StringBuilder ();
 	IConv.IConv? iconv_in = null;
 	IConv.IConv? iconv_out = null;
@@ -114,7 +130,7 @@ ssize_t replace (int input_fd,
 	while (true) {
 		// If we're not processing initial_buf, read more data.
 		if (buf.len == 0) {
-			buf.append_len (retry_prefix.str, retry_prefix.len);
+			append_string_builder_tail (buf, retry_prefix, 0);
 			n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
 			if (args_info.verbose_given)
 				warn (@"bytes read: $(n_read)\n");
@@ -138,7 +154,7 @@ ssize_t replace (int input_fd,
 				// Try carrying invalid input over to next iteration in case it's
 				// just incomplete.
 				if (buf_ptr != (char[]) buf.data) {
-					retry_prefix = new StringBuilder.sized (buf_len);
+					retry_prefix = new StringBuilder ();
 					retry_prefix.append_len ((string) buf_ptr, (ssize_t) buf_len);
 				} else {
 					warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
@@ -151,7 +167,7 @@ ssize_t replace (int input_fd,
 				retry_prefix = new StringBuilder ();
 			}
 			size_t out_len = out_buf_size - out_buf_len;
-			buf = new StringBuilder.sized (out_len);
+			buf = new StringBuilder ();
 			buf.append_len ((string) out_buf, (ssize_t) out_len);
 		}
 
@@ -160,8 +176,8 @@ ssize_t replace (int input_fd,
 		// into a new buffer.
 		if (tonext.len > 0) {
 			search_str = new StringBuilder.sized (buf_size * 2);
-			search_str.append_len ((string) ((char*) tonext.str + tonext_offset), (ssize_t) (tonext.len - tonext_offset));
-			search_str.append_len (buf.str, buf.len);
+			append_string_builder_tail (search_str, tonext, tonext_offset);
+			append_string_builder_tail (search_str, buf, 0);
 		} else {
 			search_str = (owned) buf;
 		}
@@ -173,8 +189,8 @@ ssize_t replace (int input_fd,
 
 		var result = new StringBuilder ();
 		size_t matching_from = 0;
-		size_t start_pos;
-		size_t end_pos = 0;
+		ssize_t start_pos;
+		ssize_t end_pos = 0;
 		Match? match = null;
 		int rc = 0;
 		while (true) {
@@ -183,7 +199,7 @@ ssize_t replace (int input_fd,
 			if (rc == Pcre2.Error.NOMATCH) {
 				tonext = new StringBuilder ();
 				tonext_offset = 0;
-				result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (search_str.len - end_pos));
+				append_string_builder_tail (result, search_str, end_pos);
 				break;
 			} else if (rc < 0 && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
 				if (iconv_in != null) {
@@ -194,9 +210,9 @@ ssize_t replace (int input_fd,
 				return -1; // GCOVR_EXCL_STOP
 			}
 
-			start_pos = match.group_start (0);
-			result.append_len ((string) ((uint8*) search_str.data + end_pos), (ssize_t) (start_pos - end_pos));
-			end_pos = match.group_end (0);
+			start_pos = (ssize_t) match.group_start (0);
+			append_string_builder_slice (result, search_str, end_pos, start_pos);
+			end_pos = (ssize_t) match.group_end (0);
 
 			if (rc == Pcre2.Error.PARTIAL) {
 				tonext_offset = start_pos;
@@ -219,13 +235,12 @@ ssize_t replace (int input_fd,
 			}
 
 			if (args_info.match_case_given) {
-				var model_len = (ssize_t) (match.group_end (0) - match.group_start (0));
-				var model = new StringBuilder.sized (model_len);
-				model.append_len ((string) ((uint8*) search_str.data + match.group_start (0)), model_len);
+				var model = new StringBuilder ();
+				append_string_builder_slice (model, search_str, (ssize_t) match.group_start (0), (ssize_t) match.group_end (0));
 				var recased = caselike (model, output);
 				output = (owned) recased;
 			}
-			result.append_len (output.str, output.len);
+			append_string_builder_tail (result, output, 0);
 			matching_from = end_pos;
 			if (start_pos == end_pos)
 				matching_from += 1;
