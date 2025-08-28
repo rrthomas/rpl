@@ -53,7 +53,8 @@ requires (str.len > 0)
 
 	int index = 0;
 	unichar c = 0;
-	GLib.assert (str.str.get_next_char (ref index, out c));
+	var ok = str.str.get_next_char (ref index, out c);
+	GLib.assert (ok);
 	if (c.isupper ()) {
 		// Could be capitalized
 		bool all_lower = true;
@@ -83,7 +84,8 @@ private StringBuilder caselike (StringBuilder model, StringBuilder str) {
 		case Case.CAPITALIZED: {
 			int index = 0;
 			unichar c = 0;
-			GLib.assert (str.str.get_next_char (ref index, out c));
+			var ok = str.str.get_next_char (ref index, out c);
+			GLib.assert (ok);
 			res.append_unichar (str.str.get_char ().toupper ());
 			res.append_len (((string) ((char *) str.str + index)).down (str.len - index), str.len - index);
 			break;
@@ -338,7 +340,8 @@ int main (string[] argv) {
 	// Process command-line options
 	args_info = {};
 	// gengetopt parser always returns 0 or calls exit() itself.
-	GLib.assert (ArgsInfo.parser (args, ref args_info) == 0);
+	var res = ArgsInfo.parser (args, ref args_info);
+	GLib.assert (res == 0);
 	if (args_info.inputs.length < 2) {
 		ArgsInfo.parser_print_help ();
 		exit (EXIT_FAILURE);
