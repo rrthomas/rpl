@@ -395,13 +395,10 @@ namespace Pcre2 {
 		[CCode (cname = "pcre2_copy_code_with_tables")]
 		public Regex dup_with_tables ();
 
-		// TODO:
-		//  #define PCRE2_PATTERN_INFO_FUNCTIONS \
-		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
-		//    pcre2_pattern_info(const pcre2_code *, uint32_t, void *); \
-		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
-		//    pcre2_callout_enumerate(const pcre2_code *, \
-		//      int (*)(pcre2_callout_enumerate_block *, void *), void *);
+		// TODO: PCRE2_PATTERN_INFO_FUNCTIONS
+		// int pcre2_pattern_info(const pcre2_code *, uint32_t, void *); \
+		// int pcre2_callout_enumerate(const pcre2_code *, \
+		//    int (*)(pcre2_callout_enumerate_block *, void *), void *);
 
 		[CCode (cname = "pcre2_match_data_create_from_pattern")]
 		private Match? create_match (void *gcontext = null);
@@ -421,9 +418,8 @@ namespace Pcre2 {
 		}
 
 		// TODO:
-		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
-		//    pcre2_dfa_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE, \
-		//      uint32_t, pcre2_match_data *, pcre2_match_context *, int *, PCRE2_SIZE); \
+		// int pcre2_dfa_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE, \
+		//    uint32_t, pcre2_match_data *, pcre2_match_context *, int *, PCRE2_SIZE); \
 
 		[CCode (cname = "pcre2_substitute")]
 		public int _substitute (
@@ -451,9 +447,8 @@ namespace Pcre2 {
 		public int jit_compile(JitCompileFlags options);
 
 		// TODO:
-		//  PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
-		//    pcre2_jit_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE, \
-		//      uint32_t, pcre2_match_data *, pcre2_match_context *); \
+		// int pcre2_jit_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE,
+		//    uint32_t, pcre2_match_data *, pcre2_match_context *);
 	}
 
 	[Compact]
@@ -462,31 +457,22 @@ namespace Pcre2 {
 		[CCode (cname = "pcre2_compile_context_create")]
 		public CompileContext (void *gcontext = null);
 
-		// TODO:
-		// #define PCRE2_COMPILE_CONTEXT_FUNCTIONS			   \
-		// PCRE2_EXP_DECL pcre2_compile_context *PCRE2_CALL_CONVENTION	\
-		//   pcre2_compile_context_copy(pcre2_compile_context *);		\
-		// PCRE2_EXP_DECL void PCRE2_CALL_CONVENTION					\
-		//   pcre2_compile_context_free(pcre2_compile_context *);		\
-		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
-		//   pcre2_set_bsr(pcre2_compile_context *, uint32_t);			\
-		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
-		//   pcre2_set_character_tables(pcre2_compile_context *, const uint8_t *); \
+		// TODO: PCRE2_COMPILE_CONTEXT_FUNCTIONS
+		// pcre2_compile_context *pcre2_compile_context_copy(pcre2_compile_context *);
+		// void pcre2_compile_context_free(pcre2_compile_context *);
+		// int pcre2_set_bsr(pcre2_compile_context *, uint32_t);
+		// int pcre2_set_character_tables(pcre2_compile_context *, const uint8_t *);
 
 		[CCode (cname = "pcre2_set_compile_extra_options")]
 		public int set_extra_options (ExtraCompileFlags options);
 
-		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
-		//   pcre2_set_compile_extra_options(pcre2_compile_context *, uint32_t); \
-		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
-		//   pcre2_set_max_pattern_length(pcre2_compile_context *, PCRE2_SIZE); \
-		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
-		//   pcre2_set_newline(pcre2_compile_context *, uint32_t);		\
-		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
-		//   pcre2_set_parens_nest_limit(pcre2_compile_context *, uint32_t); \
-		// PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION						\
-		//   pcre2_set_compile_recursion_guard(pcre2_compile_context *, \
-		//     int (*)(uint32_t, void *), void *);
+		// TODO:
+		// int pcre2_set_compile_extra_options(pcre2_compile_context *, uint32_t);
+		// int pcre2_set_max_pattern_length(pcre2_compile_context *, PCRE2_SIZE);
+		// int pcre2_set_newline(pcre2_compile_context *, uint32_t);
+		// int pcre2_set_parens_nest_limit(pcre2_compile_context *, uint32_t);
+		// int pcre2_set_compile_recursion_guard(pcre2_compile_context *,
+		//   int (*)(uint32_t, void *), void *);
 	}
 
 	[Compact]
@@ -526,15 +512,11 @@ namespace Pcre2 {
 		}
 
 		// TODO:
-		//    PCRE2_EXP_DECL int PCRE2_CALL_CONVENTION \
-		//		pcre2_dfa_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE, \
-		//		  uint32_t, pcre2_match_data *, pcre2_match_context *, int *, PCRE2_SIZE); \
-		//    PCRE2_EXP_DECL PCRE2_SPTR PCRE2_CALL_CONVENTION \
-		//		pcre2_get_mark(pcre2_match_data *); \
-		//    PCRE2_EXP_DECL PCRE2_SIZE PCRE2_CALL_CONVENTION \
-		//		pcre2_get_match_data_size(pcre2_match_data *); \
-		//    PCRE2_EXP_DECL PCRE2_SIZE PCRE2_CALL_CONVENTION \
-		//		pcre2_get_startchar(pcre2_match_data *);
+		// int pcre2_dfa_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE,
+		//    uint32_t, pcre2_match_data *, pcre2_match_context *, int *, PCRE2_SIZE);
+		// PCRE2_SPTR pcre2_get_mark(pcre2_match_data *); \
+		// PCRE2_SIZE pcre2_get_match_data_size(pcre2_match_data *); \
+		// PCRE2_SIZE pcre2_get_startchar(pcre2_match_data *);
 	}
 
 	[CCode (cname = "pcre2_get_error_message")]
