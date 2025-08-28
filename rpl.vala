@@ -533,15 +533,17 @@ int main (string[] argv) {
 			detector.data_end ();
 			var encoding_guessed = false;
 			encoding = detector.get_charset ();
-			if (args_info.verbose_given) {
-				if (encoding != "") {
+			if (encoding != "") {
+				if (args_info.verbose_given) {
 					warn (@"guessed encoding '$encoding'");
-					encoding_guessed = true;
-				} else { // GCOVR_EXCL_START
-					encoding = null;
+				}
+				encoding_guessed = true;
+			} else { // GCOVR_EXCL_START
+				encoding = null;
+				if (args_info.verbose_given) {
 					warn ("unable to guess encoding");
-				} // GCOVR_EXCL_STOP
-			}
+				}
+			} // GCOVR_EXCL_STOP
 
 			// Use locale encoding if none guessed.
 			if (encoding == null) { // GCOVR_EXCL_START
@@ -552,7 +554,9 @@ int main (string[] argv) {
 			} // GCOVR_EXCL_STOP
 
 			if (encoding_guessed && (encoding == "ASCII" || encoding == "UTF-8")) {
-				warn (@"guessed an encoding that does not require iconv");
+				if (args_info.verbose_given) {
+					warn (@"guessed an encoding that does not require iconv");
+				}
 				encoding = null;
 			}
 		}
