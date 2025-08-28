@@ -33,6 +33,9 @@ distcleancheck_listfiles = \
             sh '{}' ';'
 
 bin_PROGRAMS = rpl
+if PCRE2_16_DEMO
+noinst_PROGRAMS = pcre2-16-demo
+endif
 man_MANS = rpl.1
 check_PROGRAMS = test
 TESTS = test
@@ -45,7 +48,7 @@ TEST_FILES = \
 	$(wildcard test-files/test-tree/*/*.txt) \
 	$(wildcard test-files/test-tree-expected/*/*.txt)
 
-rpl_SOURCES = rpl.vala slurp.vala cmdline.c cmdline.h
+rpl_SOURCES = rpl.vala cmdline.c cmdline.h
 rpl_CFLAGS = --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 rpl_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg cmdline --pkg gio-2.0 --pkg posix --pkg gnu --pkg pcre2 --pkg uchardet --pkg iconv
 rpl_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
@@ -54,6 +57,11 @@ rpl.c: cmdline.h
 
 cmdline.h cmdline.c: $(top_srcdir)/opts.ggo
 	gengetopt < $(top_srcdir)/opts.ggo --unamed-opts="OLD-TEXT NEW-TEXT [FILE...]"
+
+pcre2_16_demo_SOURCES = pcre2-16-demo.vala
+pcre2_16_demo_CFLAGS = --include config.h --include pcre2-16.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS)
+pcre2_16_demo_VALAFLAGS = $(AM_VALAFLAGS) --pkg pcre2
+pcre2_16_demo_LDADD = $(LDADD) $(GLIB_LIBS) -lpcre2-16
 
 test_SOURCES = test.vala testcase.vala slurp.vala
 # -W flag in next line is to work around https://gitlab.gnome.org/GNOME/vala/-/issues/1413

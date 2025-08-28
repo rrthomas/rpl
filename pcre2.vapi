@@ -34,6 +34,15 @@ namespace Pcre2 {
 		public const string DATE;
 	}
 
+	[CCode (cprefix = "PCRE2_")]
+	public const int CODE_UNIT_WIDTH;
+
+	// Uchar can be uint8, uint16 or uint32
+	// The correct flavor of pcre2 must be set with PCRE2_CODE_UNIT_WIDTH
+	[SimpleType]
+	[CCode (cname = "PCRE2_UCHAR")]
+	public struct Uchar {}
+
 	[CCode (cname = "uint32_t", cprefix = "PCRE2_", has_type_id = false)]
 	[Flags]
 	public enum CompileFlags {
@@ -384,11 +393,11 @@ namespace Pcre2 {
 		DFA_UINVALID_UTF,
 	}
 
-	/* TODO: Make Regex generic over the size of the code unit (8/16/32 bits). */
 	[Compact]
 	[CCode (cprefix = "pcre2_", cname = "pcre2_code", free_function = "pcre2_code_free")]
 	public class Regex {
-		public static Regex? compile ([CCode (array_length_type = "size_t")] uint8[] pattern, CompileFlags options, out int errorcode, out size_t error_offset, CompileContext? ccontext = null);
+		[CCode (simple_generics = true)]
+		public static Regex? compile ([CCode (array_length_type = "size_t")] Uchar[] pattern, CompileFlags options, out int errorcode, out size_t error_offset, CompileContext? ccontext = null);
 
 		[CCode (cname = "pcre2_copy_code")]
 		public Regex dup ();
@@ -405,7 +414,7 @@ namespace Pcre2 {
 		private Match? create_match (void *gcontext = null);
 
 		[CCode (cname = "pcre2_match")]
-		private int _match (uint8* subject, size_t subject_len, size_t startoffset, MatchFlags options, Match match_data, void *mcontext = null);
+		private int _match (Uchar* subject, size_t subject_len, size_t startoffset, MatchFlags options, Match match_data, void *mcontext = null);
 
 		[CCode (cname = "_vala_pcre2_match")]
 		public Match? match (GLib.StringBuilder subject, size_t startoffset, uint32 options, out int rc) {
@@ -414,7 +423,7 @@ namespace Pcre2 {
 				rc = Error.NOMEMORY;
 				return null;
 			}
-			rc = _match (subject.data, subject.len, startoffset, options, match);
+			rc = _match ((Uchar *)subject.data, subject.len / sizeof(Uchar), startoffset, options, match);
 			return match;
 		}
 
@@ -424,10 +433,10 @@ namespace Pcre2 {
 
 		[CCode (cname = "pcre2_substitute")]
 		public int _substitute (
-			uint8* subject, size_t subject_len, size_t startoffset,
+			Uchar* subject, size_t subject_len, size_t startoffset,
 			MatchFlags options, Match match, void *mcontext,
-			uint8* replacement, size_t replacement_len,
-			uint8* outputbuffer, ref size_t outlength
+			Uchar* replacement, size_t replacement_len,
+			Uchar* outputbuffer, ref size_t outlength
 		);
 
 		[CCode (cname = "_vala_pcre2_substitute")]
