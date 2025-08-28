@@ -395,11 +395,11 @@ int main (string[] argv) {
 	// Tell the user what is going to happen
 	if (!args_info.quiet_given) {
 		warn ("%s \"%.*s\" with \"%.*s\" (%s; %s)".printf (
-			      args_info.dry_run_given ? "simulating replacement of" : "replacing",
-			      (int) old_text.len, old_text.str,
-			      (int) new_text.len, new_text.str,
-			      (args_info.ignore_case_given ? "ignoring case" : (args_info.match_case_given ? "matching case" : "case sensitive")),
-			      args_info.whole_words_given ? "whole words only" : "partial words matched"
+				  args_info.dry_run_given ? "simulating replacement of" : "replacing",
+				  (int) old_text.len, old_text.str,
+				  (int) new_text.len, new_text.str,
+				  (args_info.ignore_case_given ? "ignoring case" : (args_info.match_case_given ? "matching case" : "case sensitive")),
+				  args_info.whole_words_given ? "whole words only" : "partial words matched"
 		));
 	}
 
@@ -656,11 +656,11 @@ int main (string[] argv) {
 	// We're about to exit, give a summary
 	if (!args_info.quiet_given) {
 		warn ("%zu matches %s in %zu out of %zu file%s".printf (
-			      total_matches,
-			      args_info.dry_run_given ? "found" : "replaced",
-			      matched_files,
-			      total_files,
-			      total_files != 1 ? "s" : ""
+				  total_matches,
+				  args_info.dry_run_given ? "found" : "replaced",
+				  matched_files,
+				  total_files,
+				  total_files != 1 ? "s" : ""
 		));
 	}
 
