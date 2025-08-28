@@ -437,8 +437,9 @@ int main (string[] argv) {
 		die (1, "bad regex %.*s (%s)".printf ((int) old_text.len, old_text.str, get_error_message (errorcode)));
 	}
 	if (regex.jit_compile (JitCompileFlags.COMPLETE | JitCompileFlags.PARTIAL_HARD) != 0
-	    && args_info.verbose_given)
+	    && args_info.verbose_given) // GCOVR_EXCL_START
 		warn ("JIT compilation of regular expression failed");
+	// GCOVR_EXCL_STOP
 
 
 	// Process files
