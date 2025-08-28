@@ -7,6 +7,6 @@ non viverra lorem. Duis pretium euismod consectetur. Sed tempus finibus
 faucibus. Suspendisse potenti. Donec maximus leo lorem, non tincidunt ex
 vehicula a. Nullam luctus convallis massa, out mattis velit malesuada
 quis. Donec id augue arcu. Vestibulum ante ipsum primis out faucibus orci
-luctus et ultrices posuere cubilia Curae; Quisque facilisis, sapien ac
+luctus et ultrices posuere cubilia CURAE; Quisque facilisis, sapien ac
 condimentum rhoncus, nisl neque tincidunt erat, ac porttitor tellus elit
 nec massa. Praesent at enim ultricies, blandit justo eu, cursus nunc.

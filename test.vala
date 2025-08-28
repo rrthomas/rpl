@@ -403,6 +403,7 @@ class LoremUtf8Tests : TestRplFile {
 		add_test ("test_whole_words", test_whole_words);
 		add_test ("test_patterns_in_files", test_patterns_in_files);
 		add_test ("test_fixed_strings", test_fixed_strings);
+		add_test ("test_match_case_non_ascii", test_match_case_non_ascii);
 		add_test ("test_keep_times", test_keep_times);
 		add_test ("test_without_keep_times", test_without_keep_times);
 		add_test ("test_prompt_yes", test_prompt_yes);
@@ -436,6 +437,11 @@ class LoremUtf8Tests : TestRplFile {
 	void test_fixed_strings () {
 		run ({ "--fixed-strings", "t.", "t$$", test_result_root });
 		assert_true (result_matches ("lorem-utf-8_fixed-strings_expected.txt"));
+	}
+
+	void test_match_case_non_ascii () {
+		run ({ "-m", "\\w+", "éowyn", test_result_root });
+		assert_true (result_matches ("lorem-utf-8_match-case-non-ascii_expected.txt"));
 	}
 
 	void test_keep_times () {

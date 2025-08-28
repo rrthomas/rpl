@@ -51,12 +51,15 @@ requires (str.len > 0)
 		return Case.LOWER;
 	}
 
-	if (str.str[0].isupper ()) {
+	int index = 0;
+	unichar c = 0;
+	GLib.assert (str.str.get_next_char (ref index, out c));
+	if (c.isupper ()) {
 		// Could be capitalized
 		bool all_lower = true;
 
-		for (var i = 1; i < str.len; i++) {
-			if (!str.str[i].islower ()) {
+		while (str.str.get_next_char (ref index, out c)) {
+			if (!c.islower ()) {
 				all_lower = false;
 			}
 		}
@@ -77,10 +80,14 @@ private StringBuilder caselike (StringBuilder model, StringBuilder str) {
 		case Case.UPPER:
 			res.append_len (str.str.up (str.len), str.len);
 			break;
-		case Case.CAPITALIZED:
-			res.append_len (str.str.down (str.len), str.len);
-			res.str.data[0] = res.str[0].toupper ();
+		case Case.CAPITALIZED: {
+			int index = 0;
+			unichar c = 0;
+			GLib.assert (str.str.get_next_char (ref index, out c));
+			res.append_unichar (str.str.get_char ().toupper ());
+			res.append_len (((string) ((char *) str.str + index)).down (str.len - index), str.len - index);
 			break;
+		}
 		case Case.MIXED:
 			res.append_len (str.str, str.len);
 			break;
@@ -414,7 +421,7 @@ int main (string[] argv) {
 		ccontext.set_extra_options (Pcre2.ExtraCompileFlags.MATCH_WORD);
 	}
 
-	var opts = Pcre2.CompileFlags.MULTILINE;
+	var opts = Pcre2.CompileFlags.MULTILINE | Pcre2.CompileFlags.UTF | Pcre2.CompileFlags.UCP;
 	Pcre2.MatchFlags replace_opts = 0;
 	if (args_info.fixed_strings_given) {
 		opts = Pcre2.CompileFlags.LITERAL; // Override default options, which are incompatible with LITERAL.
