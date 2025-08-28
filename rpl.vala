@@ -231,7 +231,7 @@ ssize_t replace (int input_fd,
 
 			var output = old_regex.substitute (
 				search_str, matching_from,
-				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
+				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
 				match,
 				new_pattern,
 				out rc
