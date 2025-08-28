@@ -103,7 +103,7 @@ namespace Gnu {
 	[CCode (cheader_filename = "quote.h")]
 	public string quote (string arg);
 
-	[CCode (cheader_filename = "relocatable.h", cname = "relocate", type ="const char*")]
+	[CCode (cheader_filename = "relocatable.h", cname = "relocate", type = "const char*")]
 	char* _gnulib_relocate (char* path);
 	[CCode (cname = "_vala_gnulib_relocate")]
 	public string relocate (string path) {
