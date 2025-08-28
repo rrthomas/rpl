@@ -444,7 +444,6 @@ int main (string[] argv) {
 		warn ("JIT compilation of regular expression failed");
 	// GCOVR_EXCL_STOP
 
-
 	// Process files
 	size_t total_files = 0;
 	size_t matched_files = 0;
