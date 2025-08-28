@@ -419,26 +419,26 @@ namespace Pcre2 {
 		}
 
 		// TODO:
-		// int pcre2_dfa_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE, \
-		//    uint32_t, pcre2_match_data *, pcre2_match_context *, int *, PCRE2_SIZE); \
+		// int pcre2_dfa_match(const pcre2_code *, PCRE2_SPTR, PCRE2_SIZE, PCRE2_SIZE,
+		//    uint32_t, pcre2_match_data *, pcre2_match_context *, int *, PCRE2_SIZE);
 
 		[CCode (cname = "pcre2_substitute")]
 		public int _substitute (
-								 uint8* subject, size_t subject_len, size_t startoffset,
-								 MatchFlags options, Match match, void *mcontext,
-								 uint8* replacement, size_t replacement_len,
-								 uint8* outputbuffer, ref size_t outlength
-								);
+			uint8* subject, size_t subject_len, size_t startoffset,
+			MatchFlags options, Match match, void *mcontext,
+			uint8* replacement, size_t replacement_len,
+			uint8* outputbuffer, ref size_t outlength
+		);
 
 		[CCode (cname = "_vala_pcre2_substitute")]
 		public GLib.StringBuilder substitute (GLib.StringBuilder subject, size_t startoffset, MatchFlags options, Match match, GLib.StringBuilder replacement, out int rc) {
 			size_t outlength = subject.len + replacement.len;
-			var output = new GLib.StringBuilder.sized(outlength);
-			rc = _substitute(subject.data, subject.len, startoffset, options | MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH, match, null, replacement.data, replacement.len, output.data, ref outlength);
+			var output = new GLib.StringBuilder.sized (outlength);
+			rc = _substitute (subject.data, subject.len, startoffset, options | MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH, match, null, replacement.data, replacement.len, output.data, ref outlength);
 			if (rc == Error.NOMEMORY) {
-				output = new GLib.StringBuilder.sized(outlength);
-				rc = _substitute(subject.data, subject.len, startoffset, options, match, null, replacement.data, replacement.len, output.data, ref outlength);
-				GLib.assert(rc != Error.NOMEMORY);
+				output = new GLib.StringBuilder.sized (outlength);
+				rc = _substitute (subject.data, subject.len, startoffset, options, match, null, replacement.data, replacement.len, output.data, ref outlength);
+				GLib.assert (rc != Error.NOMEMORY);
 			}
 			output.len = (ssize_t) outlength;
 			return output;
@@ -493,20 +493,20 @@ namespace Pcre2 {
 		private size_t[] ovector {
 			get {
 				unowned size_t[] vec = (size_t[]) ovector_pointer ();
-				vec.length = (int) ovector_count() * 2;
+				vec.length = (int) ovector_count () * 2;
 				return vec;
 			}
 		}
 
-		public size_t group_start(uint32 n) {
-			if (n > ovector_count()) {
+		public size_t group_start (uint32 n) {
+			if (n > ovector_count ()) {
 				return size_t.MAX;
 			}
 			return ovector[n * 2];
 		}
 
-		public size_t group_end(uint32 n) {
-			if (n > ovector_count()) {
+		public size_t group_end (uint32 n) {
+			if (n > ovector_count ()) {
 				return size_t.MAX;
 			}
 			return ovector[n * 2 + 1];
@@ -524,9 +524,9 @@ namespace Pcre2 {
 	private int _get_error_message(int errorcode, [CCode (array_length_type = "size_t")] uint8[] outputbuffer);
 
 	[CCode (cname = "_vala_pcre2_get_error_message")]
-	public string get_error_message(int errorcode) {
+	public string get_error_message (int errorcode) {
 		var msg = new uint8[256]; // 120 said to be "ample" in PCRE2 documentation.
-		int rc = _get_error_message(errorcode, msg);
+		int rc = _get_error_message (errorcode, msg);
 		if (rc < 0) {
 			return "Error getting error message!";
 		}
