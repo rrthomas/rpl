@@ -429,9 +429,9 @@ int main (string[] argv) {
 	if (regex == null) {
 		die (1, "bad regex %.*s (%s)".printf ((int) old_text.len, old_text.str, get_error_message (errorcode)));
 	}
-	if (regex.jit_compile(JitCompileFlags.COMPLETE | JitCompileFlags.PARTIAL_HARD) != 0
-		&& args_info.verbose_given)
-		warn("JIT compilation of regular expression failed");
+	if (regex.jit_compile (JitCompileFlags.COMPLETE | JitCompileFlags.PARTIAL_HARD) != 0
+	    && args_info.verbose_given)
+		warn ("JIT compilation of regular expression failed");
 
 
 	// Process files
