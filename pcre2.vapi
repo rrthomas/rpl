@@ -384,6 +384,7 @@ namespace Pcre2 {
 		DFA_UINVALID_UTF,
 	}
 
+	/* TODO: Make Regex generic over the size of the code unit (8/16/32 bits). */
 	[Compact]
 	[CCode (cprefix = "pcre2_", cname = "pcre2_code", free_function = "pcre2_code_free")]
 	public class Regex {
