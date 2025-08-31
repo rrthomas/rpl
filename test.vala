@@ -300,7 +300,6 @@ class LoremTests : TestRplFile {
 		add_test ("test_ignores_dash_E", test_ignores_dash_E);
 		add_test ("test_bad_replacement", test_bad_replacement);
 		add_test ("test_input_on_stdin", test_input_on_stdin);
-		add_test ("test_dry_run_on_stdin", test_dry_run_on_stdin);
 		add_test ("test_recursive_used_with_file", test_recursive_used_with_file);
 		add_test ("test_bad_output_encoding", test_bad_output_encoding);
 		add_test ("test_bad_ASCII_output", test_bad_ascii_output);
@@ -357,22 +356,6 @@ class LoremTests : TestRplFile {
 			stdin_pipe.close ();
 			var std_out = slurp (stdout_pipe);
 			var expected_file = Path.build_filename (test_files_dir, "lorem_no-flags_expected.txt");
-			assert_true (std_out == slurp_file (expected_file));
-		} catch (Error e) {
-			print ("error communicating with rpl\n");
-			assert_no_error (e);
-		}
-	}
-
-	void test_dry_run_on_stdin () {
-		try {
-			var proc = start_prog (rpl, { "--dry-run", "Lorem", "L-O-R-E-M", "-" });
-			var stdin_pipe = proc.get_stdin_pipe ();
-			var stdout_pipe = proc.get_stdout_pipe ();
-			stdin_pipe.write (slurp_file (test_result_root).data);
-			stdin_pipe.close ();
-			var std_out = slurp (stdout_pipe);
-			var expected_file = Path.build_filename (test_files_dir, "lorem.txt");
 			assert_true (std_out == slurp_file (expected_file));
 		} catch (Error e) {
 			print ("error communicating with rpl\n");

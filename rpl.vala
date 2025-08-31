@@ -256,26 +256,25 @@ ssize_t replace (int input_fd,
 		}
 
 		ssize_t write_res = 0;
-		if (args_info.dry_run_given) {
-			write_res = Posix.write (output_fd, search_str.data, search_str.len);
-		} else if (iconv_out != null) {
-			try {
-				size_t bytes_written;
-				string output = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
-				write_res = Posix.write (output_fd, output, bytes_written);
-			} catch (ConvertError e) {
-				warn (@"output encoding error: $(GLib.strerror(errno))");
-				iconv_in.close ();
-				iconv_out.close ();
-				return -1;
+		if (!args_info.dry_run_given) {
+			if (iconv_out != null) {
+				try {
+					size_t bytes_written;
+					string output = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
+					write_res = Posix.write (output_fd, output, bytes_written);
+				} catch (ConvertError e) {
+					warn (@"output encoding error: $(GLib.strerror(errno))");
+					iconv_in.close ();
+					iconv_out.close ();
+					return -1;
+				}
+			} else {
+				write_res = Posix.write (output_fd, result.data, result.len);
 			}
-		} else {
-			write_res = Posix.write (output_fd, result.data, result.len);
+			if (write_res < 0) { // GCOVR_EXCL_START
+				warn (@"write error: $(GLib.strerror(errno))");
+			} // GCOVR_EXCL_STOP
 		}
-		if (write_res < 0) { // GCOVR_EXCL_START
-			warn (@"write error: $(GLib.strerror(errno))");
-		} // GCOVR_EXCL_STOP
-
 		// Reset buffer for next iteration
 		buf = new StringBuilder.sized (buf_size);
 	}
@@ -452,7 +451,7 @@ int main (string[] argv) {
 		bool have_perms = false;
 		Posix.Stat perms = Posix.Stat () {};
 		int input_fd;
-		int output_fd;
+		int output_fd = -1;
 		string tmp_path = null;
 		if (filename == "-") {
 			filename = "standard input";
@@ -484,25 +483,27 @@ int main (string[] argv) {
 			input_fd = fd;
 
 			// Create the output file
-			tmp_path = ".tmp.rpl-XXXXXX";
-			fd = FileUtils.mkstemp (tmp_path);
-			if (fd == -1) { // GCOVR_EXCL_START
-				warn (@"skipping $filename: cannot create temp file: $(Posix.strerror(errno))");
-				continue;
-			} // GCOVR_EXCL_STOP
-			output_fd = fd;
-
-			// Set permissions and owner
-			errno = 0;
-			if ((Posix.chown (tmp_path, perms.st_uid, perms.st_gid) != 0 && errno != ENOSYS)
-			    || Posix.chmod (tmp_path, perms.st_mode) != 0) {
-				warn (@"unable to set attributes of $filename: $(GLib.strerror(errno))");
-				if (args_info.force_given) {
-					warn ("new file attributes may not match!");
-				} else {
-					warn (@"skipping $filename!");
-					remove_temp_file (tmp_path);
+			if (!args_info.dry_run_given) {
+				tmp_path = ".tmp.rpl-XXXXXX";
+				fd = FileUtils.mkstemp (tmp_path);
+				if (fd == -1) { // GCOVR_EXCL_START
+					warn (@"skipping $filename: cannot create temp file: $(Posix.strerror(errno))");
 					continue;
+				} // GCOVR_EXCL_STOP
+				output_fd = fd;
+
+				// Set permissions and owner
+				errno = 0;
+				if ((Posix.chown (tmp_path, perms.st_uid, perms.st_gid) != 0 && errno != ENOSYS)
+				    || Posix.chmod (tmp_path, perms.st_mode) != 0) {
+					warn (@"unable to set attributes of $filename: $(GLib.strerror(errno))");
+					if (args_info.force_given) {
+						warn ("new file attributes may not match!");
+					} else {
+						warn (@"skipping $filename!");
+						remove_temp_file (tmp_path);
+						continue;
+					}
 				}
 			}
 		}
@@ -578,7 +579,7 @@ int main (string[] argv) {
 		if (Posix.close (input_fd) < 0) { // GCOVR_EXCL_START
 			warn (@"error closing $filename: $(GLib.strerror(errno))");
 		}
-		if (Posix.close (output_fd) < 0) {
+		if (output_fd >= 0 && Posix.close (output_fd) < 0) {
 			warn (@"error closing $filename: $(GLib.strerror(errno))");
 		} // GCOVR_EXCL_STOP
 
@@ -591,23 +592,6 @@ int main (string[] argv) {
 			continue;
 		}
 		matched_files += 1;
-
-		if (args_info.dry_run_given) {
-			string fn;
-			if (tmp_path == null) {
-				fn = filename;
-			} else {
-				fn = Filename.canonicalize (filename);
-				remove_temp_file (tmp_path);
-			}
-
-			if (!args_info.quiet_given) {
-				info (@"  $fn\n");
-			}
-
-			total_matches += num_matches;
-			continue;
-		}
 
 		if (args_info.prompt_given) {
 			GLib.stderr.printf (@"\nUpdate \"$filename\"? [Y/n] ");
