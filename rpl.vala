@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet --pkg iconv
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet --pkg iconv
 // rpl: search and replace text in files
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -114,14 +114,15 @@ requires (start <= b.len) {
 	append_string_builder_slice (a, b, start, b.len);
 }
 
-ssize_t replace (int input_fd,
+ssize_t replace (InputStream input,
                  owned StringBuilder initial_buf,
                  string input_filename,
                  int output_fd,
                  Pcre2.Regex old_regex,
                  Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
-                 string? encoding) {
+                 string? encoding)
+throws IOError {
 	bool has_lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
 	const size_t INITIAL_BUF_SIZE = 1024 * 1024;
@@ -142,7 +143,8 @@ ssize_t replace (int input_fd,
 		// If we're not processing initial_buf, read more data.
 		if (buf.len == 0) {
 			append_string_builder_tail (buf, retry_prefix, 0);
-			n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
+			n_read = input.read (buf.data[buf.len: buf.allocated_len]);
+			buf.len += n_read;
 			if (args_info.verbose_given)
 				warn (@"bytes read: $(n_read)\n");
 			if (n_read < 0) { // GCOVR_EXCL_START
@@ -464,13 +466,13 @@ int main (string[] argv) {
 	foreach (var filename in files) {
 		bool have_perms = false;
 		Posix.Stat perms = Posix.Stat () {};
-		int input_fd;
+		InputStream input;
 		int output_fd = -1;
 		string tmp_path = null;
 		if (filename == "-") {
 			filename = "standard input";
-			input_fd = GLib.stdin.fileno ();
-			Gnu.set_binary_mode (input_fd, Gnu.O_BINARY);
+			Gnu.set_binary_mode (GLib.stdin.fileno (), Gnu.O_BINARY);
+			input = new UnixInputStream (GLib.stdin.fileno (), false);
 			output_fd = GLib.stdout.fileno ();
 			Gnu.set_binary_mode (output_fd, Gnu.O_BINARY);
 		} else {
@@ -489,17 +491,17 @@ int main (string[] argv) {
 			}
 
 			// Open the input file
-			var fd = Posix.open (filename, Posix.O_RDONLY);
-			if (fd < 0) { // GCOVR_EXCL_START
-				warn (@"skipping $filename: $(Posix.strerror(errno))");
+			try {
+				input = File.new_for_path (filename).read ();
+			} catch (IOError e) { // GCOVR_EXCL_START
+				warn (@"skipping $filename: $(e.message)");
 				continue;
 			} // GCOVR_EXCL_STOP
-			input_fd = fd;
 
 			// Create the output file
 			if (!args_info.dry_run_given) {
 				tmp_path = ".tmp.rpl-XXXXXX";
-				fd = FileUtils.mkstemp (tmp_path);
+				var fd = FileUtils.mkstemp (tmp_path);
 				if (fd == -1) { // GCOVR_EXCL_START
 					warn (@"skipping $filename: cannot create temp file: $(Posix.strerror(errno))");
 					continue;
@@ -542,7 +544,8 @@ int main (string[] argv) {
 			// Scan at most 1MB, so we don't slurp a large file
 			ssize_t n_bytes = 0;
 			while (n_bytes < encoding_buf_size) {
-				ssize_t n_read = Posix.read (input_fd, (uint8*) buf.data + n_bytes, encoding_buf_size);
+				ssize_t n_read = input.read (buf.data[buf.len: buf.allocated_len]);
+				buf.len += n_read;
 				if (args_info.verbose_given)
 					warn (@"bytes read to guess encoding: $(n_read)\n");
 				if (n_read < 0) { // GCOVR_EXCL_START
@@ -588,12 +591,14 @@ int main (string[] argv) {
 
 		// Process the file
 		ssize_t num_matches = 0;
-		num_matches = replace (input_fd, (owned) buf, filename, output_fd, regex, replace_opts, new_text, encoding);
+		num_matches = replace (input, (owned) buf, filename, output_fd, regex, replace_opts, new_text, encoding);
 
-		if (Posix.close (input_fd) < 0) { // GCOVR_EXCL_START
-			warn (@"error closing $filename: $(GLib.strerror(errno))");
-		}
-		if (output_fd >= 0 && Posix.close (output_fd) < 0) {
+		try {
+			input.close ();
+		} catch (IOError e) { // GCOVR_EXCL_START
+			warn (@"error closing $filename: $(e.message)");
+		} // GCOVR_EXCL_STOP
+		if (output_fd >= 0 && Posix.close (output_fd) < 0) { // GCOVR_EXCL_START
 			warn (@"error closing $filename: $(GLib.strerror(errno))");
 		} // GCOVR_EXCL_STOP
 
