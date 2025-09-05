@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet --pkg iconv
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet --pkg iconv prefix-stream.vala
 // rpl: search and replace text in files
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -115,7 +115,6 @@ requires (start <= b.len) {
 }
 
 ssize_t replace (InputStream input,
-                 owned StringBuilder initial_buf,
                  string input_filename,
                  int output_fd,
                  Pcre2.Regex old_regex,
@@ -135,18 +134,16 @@ throws IOError {
 		iconv_in = IConv.IConv.open ("UTF-8", encoding);
 		iconv_out = IConv.IConv.open (encoding, "UTF-8");
 	}
-	var buf = (owned) initial_buf;
-	ssize_t n_read = buf.len;
 	while (true) {
-		// If we're not processing initial_buf, read more data.
-		if (buf.len == 0) {
-			append_string_builder_tail (buf, retry_prefix, 0);
-			n_read = input.read (buf.data[buf.len: buf.allocated_len]);
-			buf.len += n_read;
-			if (args_info.verbose_given)
-				warn (@"bytes read: $(n_read)\n");
-			buf.len = retry_prefix.len + n_read;
-		}
+		// Read some data.
+		ssize_t n_read = 0;
+		var buf = new StringBuilder.sized (buf_size);
+		append_string_builder_tail (buf, retry_prefix, 0);
+		n_read = input.read (buf.data[buf.len: buf.allocated_len]);
+		buf.len += n_read;
+		if (args_info.verbose_given)
+			warn (@"bytes read: $(n_read)\n");
+		buf.len = retry_prefix.len + n_read;
 
 		if (iconv_in != null && buf.len > 0) {
 			unowned char[] buf_ptr = (char[]) buf.data;
@@ -273,8 +270,6 @@ throws IOError {
 				warn (@"write error: $(GLib.strerror(errno))");
 			} // GCOVR_EXCL_STOP
 		}
-		// Reset buffer for next iteration
-		buf = new StringBuilder.sized (buf_size);
 	}
 
 	return num_matches;
@@ -519,8 +514,8 @@ int main (string[] argv) {
 
 		// If we don't have an explicit encoding, guess
 		const int encoding_buf_size = 1024 * 1024;
-		var buf = new StringBuilder.sized (encoding_buf_size);
 		if (encoding == null) {
+			var buf = new StringBuilder.sized (encoding_buf_size);
 			var detector = new UCharDet ();
 
 			// Scan at most 1MB, so we don't slurp a large file
@@ -565,12 +560,15 @@ int main (string[] argv) {
 				}
 				encoding = null;
 			}
+
+			// Prepend data sent to Uchardet to the rest of the input.
+			input = new PrefixInputStream (buf.data, input);
 		}
 
 		// Process the file
 		ssize_t num_matches = 0;
 		try {
-			num_matches = replace (input, (owned) buf, filename, output_fd, regex, replace_opts, new_text, encoding);
+			num_matches = replace (input, filename, output_fd, regex, replace_opts, new_text, encoding);
 		} catch (IOError e) { // GCOVR_EXCL_START
 			warn (@"error reading $filename: $(e.message); skipping!");
 			try {
