@@ -114,13 +114,16 @@ requires (start <= b.len) {
 	append_string_builder_slice (a, b, start, b.len);
 }
 
-ssize_t replace (InputStream input,
-                 string input_filename,
-                 OutputStream? output,
-                 Pcre2.Regex old_regex,
-                 Pcre2.MatchFlags replace_opts,
-                 StringBuilder new_pattern)
-throws IOError {
+errordomain RplError {
+	PCRE2_ERROR,
+}
+
+size_t replace (InputStream input,
+                OutputStream? output,
+                Pcre2.Regex old_regex,
+                Pcre2.MatchFlags replace_opts,
+                StringBuilder new_pattern)
+throws IOError, RplError {
 	ssize_t num_matches = 0;
 	size_t buf_size = 1024 * 1024;
 
@@ -135,9 +138,9 @@ throws IOError {
 		try {
 			n_read = input.read (buf.data[buf.len: buf.allocated_len]);
 		} catch (IOError e) {
-			if (e.code == IOError.INVALID_DATA) {
+			if (e is IOError.INVALID_DATA) {
 				throw new IOError.INVALID_DATA ("error decoding input");
-			} else if (e.code == IOError.PARTIAL_INPUT) {
+			} else if (e is IOError.PARTIAL_INPUT) {
 				retry_prefix = new StringBuilder ();
 				append_string_builder_slice (retry_prefix, buf, n_read, buf.len);
 			} else {
@@ -180,9 +183,8 @@ throws IOError {
 				append_string_builder_tail (result, search_str, end_pos);
 				break;
 			} else if (rc < 0 && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
-				warn (@"$input_filename: $(get_error_message(rc))");
-				return -1; // GCOVR_EXCL_STOP
-			}
+				throw new RplError.PCRE2_ERROR (get_error_message (rc));
+			} // GCOVR_EXCL_STOP
 
 			start_pos = (ssize_t) match.group_start (0);
 			append_string_builder_slice (result, search_str, end_pos, start_pos);
@@ -204,8 +206,7 @@ throws IOError {
 				out rc
 			);
 			if (rc < 0) {
-				warn (@"error in replacement: $(get_error_message(rc))");
-				return -1;
+				throw new RplError.PCRE2_ERROR (@"$(get_error_message (rc)) in replacement");
 			}
 
 			if (args_info.match_case_given) {
@@ -225,7 +226,7 @@ throws IOError {
 			try {
 				output.write_all (result.data, out bytes_written);
 			} catch (IOError e) {
-				if (e.code == IOError.INVALID_DATA) {
+				if (e is IOError.INVALID_DATA) {
 					throw new IOError.INVALID_DATA ("error encoding output");
 				}
 				throw e;
@@ -538,18 +539,18 @@ int main (string[] argv) {
 		}
 
 		// Process the file
-		ssize_t num_matches = 0;
+		size_t num_matches = 0;
 		try {
-			num_matches = replace (input, filename, output, regex, replace_opts, new_text);
-		} catch (IOError e) { // GCOVR_EXCL_START
+			num_matches = replace (input, output, regex, replace_opts, new_text);
+		} catch (GLib.Error e) { // GCOVR_EXCL_START
 			warn (@"error processing $filename: $(e.message); skipping!");
-			if (e.code == IOError.INVALID_DATA) {
+			if (e is IOError.INVALID_DATA) {
 				warn ("you can specify the encoding with --encoding");
 			}
 			try {
 				input.close ();
 			} catch (IOError e) {}
-			num_matches = -1;
+			num_matches = size_t.MAX;
 		} // GCOVR_EXCL_STOP
 
 		try {
@@ -565,9 +566,9 @@ int main (string[] argv) {
 			} // GCOVR_EXCL_STOP
 		}
 
-		// Delete temporary file if either we had an error (num_matches < 0)
+		// Delete temporary file if either we had an error (num_matches == size_t.MAX)
 		// or nothing changed (num_matches == 0).
-		if (num_matches <= 0) {
+		if (num_matches == 0 || num_matches == size_t.MAX) {
 			if (tmp_path != null) {
 				remove_temp_file (tmp_path);
 			}

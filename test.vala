@@ -344,7 +344,7 @@ class LoremTests : TestRplFile {
 
 	void test_bad_replacement () {
 		var output = run ({ "Lorem", "$input", test_result_root });
-		assert_true (output.std_err.contains ("error in replacement"));
+		assert_true (output.std_err.contains ("unknown substring in replacement"));
 	}
 
 	void test_input_on_stdin () {
