@@ -542,21 +542,16 @@ int main (string[] argv) {
 			var detector = new UCharDet ();
 
 			// Scan at most 1MB, so we don't slurp a large file
-			ssize_t n_bytes = 0;
-			while (n_bytes < encoding_buf_size) {
-				ssize_t n_read = input.read (buf.data[buf.len: buf.allocated_len]);
-				buf.len += n_read;
+			try {
+				size_t n_bytes = 0;
+				input.read_all (buf.data[buf.len: buf.allocated_len], out n_bytes);
+				buf.len += (ssize_t) n_bytes;
 				if (args_info.verbose_given)
-					warn (@"bytes read to guess encoding: $(n_read)\n");
-				if (n_read < 0) { // GCOVR_EXCL_START
-					warn (@"error reading $filename: $(GLib.strerror(errno))");
-					break;
-				} // GCOVR_EXCL_STOP
-				if (n_read == 0)
-					break;
-				n_bytes += n_read;
-			}
-			buf.len = n_bytes;
+					warn (@"bytes read to guess encoding: $(buf.len)\n");
+			} catch (IOError e) { // GCOVR_EXCL_START
+				warn (@"error reading $filename: $(e.message); skipping!");
+				continue;
+			} // GCOVR_EXCL_STOP
 			GLib.assert (detector.handle_data (buf.data) == 0);
 			detector.data_end ();
 			var encoding_guessed = false;
