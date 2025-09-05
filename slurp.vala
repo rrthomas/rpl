@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --pkg posix
+#! /usr/bin/env -S vala --pkg gio-2.0
 // Slurp a file.
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -15,8 +15,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <https://www.gnu.org/licenses/>.
-
-using Posix;
 
 public string slurp (InputStream stream) throws Error {
 	uint8[] data = {};
