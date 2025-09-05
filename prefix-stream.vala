@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0
+#! /usr/bin/env -S vala --pkg gio-2.0
 // PrefixInputStream: present some bytes followed by an InputStream as an
 // InputStream.
 //
