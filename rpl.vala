@@ -147,10 +147,6 @@ throws IOError {
 			buf.len += n_read;
 			if (args_info.verbose_given)
 				warn (@"bytes read: $(n_read)\n");
-			if (n_read < 0) { // GCOVR_EXCL_START
-				warn (@"error reading $input_filename: $(GLib.strerror(errno))");
-				break;
-			} // GCOVR_EXCL_STOP
 			buf.len = retry_prefix.len + n_read;
 		}
 
@@ -493,7 +489,7 @@ int main (string[] argv) {
 			// Open the input file
 			try {
 				input = File.new_for_path (filename).read ();
-			} catch (IOError e) { // GCOVR_EXCL_START
+			} catch (GLib.Error e) { // GCOVR_EXCL_START
 				warn (@"skipping $filename: $(e.message)");
 				continue;
 			} // GCOVR_EXCL_STOP
@@ -552,7 +548,8 @@ int main (string[] argv) {
 				warn (@"error reading $filename: $(e.message); skipping!");
 				continue;
 			} // GCOVR_EXCL_STOP
-			GLib.assert (detector.handle_data (buf.data) == 0);
+			var ok = detector.handle_data (buf.data);
+			GLib.assert (ok == 0);
 			detector.data_end ();
 			var encoding_guessed = false;
 			encoding = detector.get_charset ();
@@ -586,7 +583,15 @@ int main (string[] argv) {
 
 		// Process the file
 		ssize_t num_matches = 0;
-		num_matches = replace (input, (owned) buf, filename, output_fd, regex, replace_opts, new_text, encoding);
+		try {
+			num_matches = replace (input, (owned) buf, filename, output_fd, regex, replace_opts, new_text, encoding);
+		} catch (IOError e) { // GCOVR_EXCL_START
+			warn (@"error reading $filename: $(e.message); skipping!");
+			try {
+				input.close ();
+			} catch (IOError e) {}
+			num_matches = -1;
+		} // GCOVR_EXCL_STOP
 
 		try {
 			input.close ();
