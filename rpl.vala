@@ -140,12 +140,12 @@ throws IOError, RplError {
 		} catch (IOError e) {
 			if (e is IOError.INVALID_DATA) {
 				throw new IOError.INVALID_DATA ("error decoding input");
-			} else if (e is IOError.PARTIAL_INPUT) {
+			} else if (e is IOError.PARTIAL_INPUT) { // GCOV_EXCL_START
 				retry_prefix = new StringBuilder ();
 				append_string_builder_slice (retry_prefix, buf, n_read, buf.len);
 			} else {
 				throw e;
-			}
+			} // GCOV_EXCL_STOP
 		}
 		buf.len += n_read;
 		if (args_info.verbose_given)
@@ -229,7 +229,7 @@ throws IOError, RplError {
 				if (e is IOError.INVALID_DATA) {
 					throw new IOError.INVALID_DATA ("error encoding output");
 				}
-				throw e;
+				throw e; // GCOV_EXCL_LINE
 			}
 		}
 	}
