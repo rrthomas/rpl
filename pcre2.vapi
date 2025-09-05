@@ -441,7 +441,13 @@ namespace Pcre2 {
 
 		[CCode (cname = "_vala_pcre2_substitute")]
 		public GLib.StringBuilder substitute (GLib.StringBuilder subject, size_t startoffset, MatchFlags options, Match match, GLib.StringBuilder replacement, out int rc) {
-			size_t outlength = subject.len + replacement.len;
+			size_t outlength;
+			if (MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY in options) {
+				outlength = replacement.len;
+			} else {
+				outlength = subject.len + replacement.len;
+			}
+
 			var output = new GLib.StringBuilder.sized (outlength);
 			rc = _substitute (subject.data, subject.len, startoffset, options | MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH, match, null, replacement.data, replacement.len, output.data, ref outlength);
 			if (rc == Error.NOMEMORY) {
