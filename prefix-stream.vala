@@ -48,30 +48,3 @@ public class PrefixInputStream : FilterInputStream {
 		}
 	}
 }
-
-
-// Tests. TODO: enable these.
-
-//  void debug(string name, uint8[] data) {
-//  	stdout.write(name.data);
-//  	stdout.write(" holds '".data);
-//  	stdout.write(data);
-//  	stdout.write("'\n".data);
-//  }
-
-//  public static void main(string[] args) {
-//      InputStream input = new MemoryInputStream.from_data(
-//          "a single man in possession of a good fortune must be in want of a wife.".data
-//      );
-//      PrefixInputStream prefix_input = new PrefixInputStream((owned) input);
-//      debug("prefix_input.prefix", prefix_input.prefix.data);
-//      prefix_input.unread(
-//          "It is a truth universally acknowledged, that ".data
-//      );
-//      debug("prefix_input.prefix", prefix_input.prefix.data);
-//      var output = new uint8[80];
-//      size_t num_bytes;
-//      prefix_input.read_all(output, out num_bytes);
-//      debug("prefix_input.prefix", prefix_input.prefix.data);
-//      debug("output", output);
-//  }

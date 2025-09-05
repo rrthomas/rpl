@@ -39,7 +39,7 @@ noinst_PROGRAMS = pcre2-16-demo
 endif
 man_MANS = rpl.1
 check_PROGRAMS = test
-TESTS = test
+TESTS = test test-prefix-stream
 LOG_DRIVER = \
 	env AM_TAP_AWK='$(AWK)' TEST_FILES_DIR=$(top_srcdir)/test-files $(SHELL) \
 	$(top_srcdir)/build-aux/tap-driver.sh
@@ -69,6 +69,12 @@ test_SOURCES = test.vala testcase.vala slurp.vala
 test_CFLAGS = $(AM_CFLAGS) --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) -Wno-incompatible-function-pointer-types
 test_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg gio-2.0 --pkg pcre2 --pkg posix --pkg gnu
 test_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
+
+test_prefix_stream_SOURCES = test-prefix-stream.vala prefix-stream.vala testcase.vala
+# -W flag in next line is to work around https://gitlab.gnome.org/GNOME/vala/-/issues/1413
+test_prefix_stream_CFLAGS = $(AM_CFLAGS) --include config.h $(GLIB_CFLAGS) -Wno-incompatible-function-pointer-types
+test_prefix_stream_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg gio-2.0
+test_prefix_stream_LDADD = $(LDADD) $(GLIB_LIBS)
 
 rpl.1: man-extras.1 configure.ac $(builddir)/rpl$(EXEEXT) build-aux/rpl-help2man-wrapper
 ## Exit gracefully if rpl.1 is not writeable, such as during distcheck!
