@@ -119,8 +119,7 @@ ssize_t replace (InputStream input,
                  OutputStream? output,
                  Pcre2.Regex old_regex,
                  Pcre2.MatchFlags replace_opts,
-                 StringBuilder new_pattern,
-                 string? encoding)
+                 StringBuilder new_pattern)
 throws IOError {
 	ssize_t num_matches = 0;
 	size_t buf_size = 1024 * 1024;
@@ -128,52 +127,27 @@ throws IOError {
 	var tonext = new StringBuilder ();
 	ssize_t tonext_offset = 0;
 	var retry_prefix = new StringBuilder ();
-	IConv.IConv? iconv_in = null;
-	IConv.IConv? iconv_out = null;
-	if (encoding != null) {
-		iconv_in = IConv.IConv.open ("UTF-8", encoding);
-		iconv_out = IConv.IConv.open (encoding, "UTF-8");
-	}
 	while (true) {
 		// Read some data.
 		ssize_t n_read = 0;
 		var buf = new StringBuilder.sized (buf_size);
 		append_string_builder_tail (buf, retry_prefix, 0);
-		n_read = input.read (buf.data[buf.len: buf.allocated_len]);
+		try {
+			n_read = input.read (buf.data[buf.len: buf.allocated_len]);
+		} catch (IOError e) {
+			if (e.code == IOError.INVALID_DATA) {
+				throw new IOError.INVALID_DATA ("error decoding input");
+			} else if (e.code == IOError.PARTIAL_INPUT) {
+				retry_prefix = new StringBuilder ();
+				append_string_builder_slice (retry_prefix, buf, n_read, buf.len);
+			} else {
+				throw e;
+			}
+		}
 		buf.len += n_read;
 		if (args_info.verbose_given)
 			warn (@"bytes read: $(n_read)\n");
 		buf.len = retry_prefix.len + n_read;
-
-		if (iconv_in != null && buf.len > 0) {
-			unowned char[] buf_ptr = (char[]) buf.data;
-			size_t buf_len = buf.len;
-			// Guess maximum input:output ratio required.
-			size_t out_buf_size = buf.len * 8;
-			var out_buf = new char[out_buf_size];
-			unowned char[] out_buf_ptr = out_buf;
-			size_t out_buf_len = out_buf.length;
-			var rc = iconv_in.iconv (ref buf_ptr, ref buf_len, ref out_buf_ptr, ref out_buf_len);
-			if (rc == -1) {
-				// Try carrying invalid input over to next iteration in case it's
-				// just incomplete.
-				if (buf_ptr != (char[]) buf.data) {
-					retry_prefix = new StringBuilder ();
-					retry_prefix.append_len ((string) buf_ptr, (ssize_t) buf_len);
-				} else {
-					warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
-					warn ("You can specify the encoding with --encoding");
-					iconv_in.close ();
-					iconv_out.close ();
-					return -1;
-				}
-			} else {
-				retry_prefix = new StringBuilder ();
-			}
-			size_t out_len = out_buf_size - out_buf_len;
-			buf = new StringBuilder ();
-			buf.append_len ((string) out_buf, (ssize_t) out_len);
-		}
 
 		StringBuilder search_str;
 		// If we have search data held over from last iteration, copy it
@@ -206,10 +180,6 @@ throws IOError {
 				append_string_builder_tail (result, search_str, end_pos);
 				break;
 			} else if (rc < 0 && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
-				if (iconv_in != null) {
-					iconv_in.close ();
-					iconv_out.close ();
-				}
 				warn (@"$input_filename: $(get_error_message(rc))");
 				return -1; // GCOVR_EXCL_STOP
 			}
@@ -252,18 +222,13 @@ throws IOError {
 
 		if (output != null) {
 			size_t bytes_written;
-			if (iconv_out != null) {
-				try {
-					var converted = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
-					output.write_all (converted.data[0 : bytes_written], out bytes_written);
-				} catch (ConvertError e) {
-					warn (@"output encoding error: $(GLib.strerror(errno))");
-					iconv_in.close ();
-					iconv_out.close ();
-					return -1;
-				}
-			} else {
+			try {
 				output.write_all (result.data, out bytes_written);
+			} catch (IOError e) {
+				if (e.code == IOError.INVALID_DATA) {
+					throw new IOError.INVALID_DATA ("error encoding output");
+				}
+				throw e;
 			}
 		}
 	}
@@ -277,7 +242,7 @@ ArgsInfo args_info;
 void remove_temp_file (string tmp_path) {
 	int rc = FileUtils.remove (tmp_path);
 	if (rc < 0) { // GCOVR_EXCL_START
-		warn (@"Error removing temporary file $tmp_path: $(GLib.strerror(errno))");
+		warn (@"error removing temporary file $tmp_path: $(GLib.strerror(errno))");
 	} // GCOVR_EXCL_STOP
 }
 
@@ -562,12 +527,25 @@ int main (string[] argv) {
 			input = new PrefixInputStream (buf.data, input);
 		}
 
+		// Set up character set conversion if required.
+		if (encoding != null) {
+			try {
+				var iconverter = new CharsetConverter ("utf-8", encoding);
+				input = new ConverterInputStream (input, iconverter);
+				var oconverter = new CharsetConverter (encoding, "utf-8");
+				output = new ConverterOutputStream (output, oconverter);
+			} catch (GLib.Error e) {}
+		}
+
 		// Process the file
 		ssize_t num_matches = 0;
 		try {
-			num_matches = replace (input, filename, output, regex, replace_opts, new_text, encoding);
+			num_matches = replace (input, filename, output, regex, replace_opts, new_text);
 		} catch (IOError e) { // GCOVR_EXCL_START
 			warn (@"error processing $filename: $(e.message); skipping!");
+			if (e.code == IOError.INVALID_DATA) {
+				warn ("you can specify the encoding with --encoding");
+			}
 			try {
 				input.close ();
 			} catch (IOError e) {}
