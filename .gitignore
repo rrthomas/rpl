@@ -40,4 +40,6 @@
 /rpl-*.tar.gz
 /test
 /test.exe
+/test-prefix-stream
+/test-prefix-stream.exe
 /TAGS
