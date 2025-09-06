@@ -542,24 +542,8 @@ int main (string[] argv) {
 			if (e is IOError.INVALID_DATA) {
 				warn ("you can specify the encoding with --encoding");
 			}
-			try {
-				input.close ();
-			} catch (IOError e) {}
 			num_matches = size_t.MAX;
 		} // GCOVR_EXCL_STOP
-
-		try {
-			input.close ();
-		} catch (IOError e) { // GCOVR_EXCL_START
-			warn (@"error closing $filename: $(e.message)");
-		} // GCOVR_EXCL_STOP
-		if (output != null) {
-			try {
-				output.close ();
-			} catch (IOError e) { // GCOVR_EXCL_START
-				warn (@"error closing $filename: $(e.message)");
-			} // GCOVR_EXCL_STOP
-		}
 
 		// Delete temporary file if either we had an error (num_matches == size_t.MAX)
 		// or nothing changed (num_matches == 0).
