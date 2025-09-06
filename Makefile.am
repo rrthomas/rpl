@@ -38,7 +38,7 @@ if PCRE2_16_DEMO
 noinst_PROGRAMS = pcre2-16-demo
 endif
 man_MANS = rpl.1
-check_PROGRAMS = test
+check_PROGRAMS = test test-prefix-stream
 TESTS = test test-prefix-stream
 LOG_DRIVER = \
 	env AM_TAP_AWK='$(AWK)' TEST_FILES_DIR=$(top_srcdir)/test-files $(SHELL) \
