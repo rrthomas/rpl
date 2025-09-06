@@ -129,20 +129,15 @@ throws IOError, RplError {
 
 	var tonext = new StringBuilder ();
 	ssize_t tonext_offset = 0;
-	var retry_prefix = new StringBuilder ();
 	while (true) {
 		// Read some data.
 		ssize_t n_read = 0;
 		var buf = new StringBuilder.sized (buf_size);
-		append_string_builder_tail (buf, retry_prefix, 0);
 		try {
 			n_read = input.read (buf.data[buf.len: buf.allocated_len]);
 		} catch (IOError e) {
 			if (e is IOError.INVALID_DATA) {
 				throw new IOError.INVALID_DATA ("error decoding input");
-			} else if (e is IOError.PARTIAL_INPUT) { // GCOV_EXCL_START
-				retry_prefix = new StringBuilder ();
-				append_string_builder_slice (retry_prefix, buf, n_read, buf.len);
 			} else {
 				throw e;
 			} // GCOV_EXCL_STOP
@@ -150,7 +145,7 @@ throws IOError, RplError {
 		buf.len += n_read;
 		if (args_info.verbose_given)
 			warn (@"bytes read: $(n_read)\n");
-		buf.len = retry_prefix.len + n_read;
+		buf.len = n_read;
 
 		StringBuilder search_str;
 		// If we have search data held over from last iteration, copy it
