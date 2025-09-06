@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg gio-unix-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet prefix-stream.vala
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet fd-stream.vala prefix-stream.vala
 // rpl: search and replace text in files
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -420,9 +420,9 @@ int main (string[] argv) {
 		if (filename == "-") {
 			filename = "standard input";
 			Gnu.set_binary_mode (GLib.stdin.fileno (), Gnu.O_BINARY);
-			input = new UnixInputStream (GLib.stdin.fileno (), false);
+			input = new FdInputStream (Posix.STDIN_FILENO);
 			Gnu.set_binary_mode (GLib.stdout.fileno (), Gnu.O_BINARY);
-			output = new UnixOutputStream (GLib.stdout.fileno (), false);
+			output = new FdOutputStream (Posix.STDOUT_FILENO);
 		} else {
 			// Check `filename` is a regular file, and get its permissions
 			if (Posix.lstat (filename, out perms) != 0) {
@@ -455,7 +455,7 @@ int main (string[] argv) {
 				if (fd == -1) { // GCOVR_EXCL_START
 					warn (@"skipping $filename: cannot create temp file: $(Posix.strerror(errno))");
 				} // GCOVR_EXCL_STOP
-				output = new UnixOutputStream (fd, false);
+				output = new FdOutputStream (fd);
 
 				// Set permissions and owner
 				errno = 0;
