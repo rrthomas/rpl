@@ -123,7 +123,8 @@ ssize_t replace (int input_fd,
                  StringBuilder new_pattern,
                  string? encoding) {
 	ssize_t num_matches = 0;
-	size_t buf_size = 1024 * 1024;
+	const size_t INITIAL_BUF_SIZE = 1024 * 1024;
+	size_t buf_size = INITIAL_BUF_SIZE;
 
 	var tonext = new StringBuilder ();
 	ssize_t tonext_offset = 0;
@@ -226,7 +227,7 @@ ssize_t replace (int input_fd,
 			if (rc == Pcre2.Error.PARTIAL) {
 				tonext_offset = start_pos;
 				tonext = (owned) search_str;
-				buf_size *= 2;
+				buf_size = size_t.max (buf_size, 2 * (tonext.len - tonext_offset) + INITIAL_BUF_SIZE);
 				break;
 			} else
 				num_matches += 1;
