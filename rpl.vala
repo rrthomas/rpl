@@ -118,6 +118,22 @@ errordomain RplError {
 	PCRE2_ERROR,
 }
 
+delegate void WriteFunc(uint8[] data);
+
+void write_output (OutputStream output, uint8[] data) throws IOError {
+	if (output != null) {
+		size_t bytes_written;
+		try {
+			output.write_all (data, out bytes_written);
+		} catch (IOError e) {
+			if (e is IOError.INVALID_DATA) {
+				throw new IOError.INVALID_DATA ("error encoding output");
+			}
+			throw e;     // GCOV_EXCL_LINE
+		}
+	}
+}
+
 size_t replace (InputStream input,
                 OutputStream? output,
                 Pcre2.Regex old_regex,
@@ -165,7 +181,6 @@ throws IOError, RplError {
 			break;
 		}
 
-		var result = new StringBuilder ();
 		size_t matching_from = 0;
 		ssize_t start_pos;
 		ssize_t end_pos = 0;
@@ -177,14 +192,14 @@ throws IOError, RplError {
 			if (rc == Pcre2.Error.NOMATCH) {
 				tonext = new StringBuilder ();
 				tonext_offset = 0;
-				append_string_builder_tail (result, search_str, end_pos);
+				write_output (output,search_str.data[end_pos:]);
 				break;
 			} else if (rc < 0 && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
 				throw new RplError.PCRE2_ERROR (get_error_message (rc));
 			} // GCOVR_EXCL_STOP
 
 			start_pos = (ssize_t) match.group_start (0);
-			append_string_builder_slice (result, search_str, end_pos, start_pos);
+			write_output (output, search_str.data[end_pos: start_pos]);
 			end_pos = (ssize_t) match.group_end (0);
 
 			if (rc == Pcre2.Error.PARTIAL) {
@@ -217,7 +232,7 @@ throws IOError, RplError {
 				var recased = caselike (model, replacement);
 				replacement = (owned) recased;
 			}
-			append_string_builder_tail (result, replacement, 0);
+			write_output (output, replacement.data);
 
 			// Move past the match.
 			num_matches += 1;
@@ -227,18 +242,6 @@ throws IOError, RplError {
 				int c_len = 0;
 				((string) ((char *)search_str.data + end_pos)).get_next_char (ref c_len, out c);
 				matching_from += c_len;
-			}
-		}
-
-		if (output != null) {
-			size_t bytes_written;
-			try {
-				output.write_all (result.data, out bytes_written);
-			} catch (IOError e) {
-				if (e is IOError.INVALID_DATA) {
-					throw new IOError.INVALID_DATA ("error encoding output");
-				}
-				throw e; // GCOV_EXCL_LINE
 			}
 		}
 	}
@@ -550,7 +553,7 @@ int main (string[] argv) {
 		// Process the file
 		size_t num_matches = 0;
 		try {
-			num_matches = replace (input, output, regex, replace_opts, new_text);
+			num_matches = replace (input, new BufferedOutputStream (output), regex, replace_opts, new_text);
 		} catch (GLib.Error e) { // GCOVR_EXCL_START
 			warn (@"error processing $filename: $(e.message); skipping!");
 			if (e is IOError.INVALID_DATA) {
