@@ -167,7 +167,7 @@ ssize_t replace (int input_fd,
 					retry_prefix.append_len ((string) buf_ptr, (ssize_t) buf_len);
 				} else {
 					warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
-					warn ("You can specify the encoding with --encoding");
+					warn ("you can specify the encoding with --encoding");
 					iconv_in.close ();
 					iconv_out.close ();
 					return -1;
@@ -288,7 +288,7 @@ ArgsInfo args_info;
 void remove_temp_file (string tmp_path) {
 	int rc = FileUtils.remove (tmp_path);
 	if (rc < 0) { // GCOVR_EXCL_START
-		warn (@"Error removing temporary file $tmp_path: $(GLib.strerror(errno))");
+		warn (@"error removing temporary file $tmp_path: $(GLib.strerror(errno))");
 	} // GCOVR_EXCL_STOP
 }
 
