@@ -122,6 +122,7 @@ ssize_t replace (int input_fd,
                  Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
                  string? encoding) {
+	bool has_lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
 	const size_t INITIAL_BUF_SIZE = 1024 * 1024;
 	size_t buf_size = INITIAL_BUF_SIZE;
@@ -225,8 +226,14 @@ ssize_t replace (int input_fd,
 			end_pos = (ssize_t) match.group_end (0);
 
 			if (rc == Pcre2.Error.PARTIAL) {
-				tonext_offset = start_pos;
-				tonext = (owned) search_str;
+				if (has_lookbehind) {
+					tonext_offset = start_pos;
+					tonext = (owned) search_str;
+				} else {
+					tonext_offset = 0;
+					tonext = new StringBuilder ();
+					append_string_builder_tail (tonext, search_str, start_pos);
+				}
 				buf_size = size_t.max (buf_size, 2 * (tonext.len - tonext_offset) + INITIAL_BUF_SIZE);
 				break;
 			}
@@ -449,7 +456,6 @@ int main (string[] argv) {
 	    && args_info.verbose_given) { // GCOVR_EXCL_START
 		warn ("JIT compilation of regular expression failed");
 	} // GCOVR_EXCL_STOP
-	bool has_lookbehind = regex.pattern_info_maxlookbehind () != 0;
 
 	// Process files
 	size_t total_files = 0;
