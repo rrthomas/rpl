@@ -251,8 +251,12 @@ ssize_t replace (int input_fd,
 			}
 			append_string_builder_tail (result, output, 0);
 			matching_from = end_pos;
-			if (start_pos == end_pos)
-				matching_from += 1;
+			if (start_pos == end_pos) {
+				unichar c;
+				int c_len = 0;
+				((string) ((char *)search_str.data + end_pos)).get_next_char (ref c_len, out c);
+				matching_from += c_len;
+			}
 		}
 
 		ssize_t write_res = 0;
