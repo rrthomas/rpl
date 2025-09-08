@@ -229,8 +229,7 @@ ssize_t replace (int input_fd,
 				tonext = (owned) search_str;
 				buf_size = size_t.max (buf_size, 2 * (tonext.len - tonext_offset) + INITIAL_BUF_SIZE);
 				break;
-			} else
-				num_matches += 1;
+			}
 
 			var output = old_regex.substitute (
 				search_str, matching_from,
@@ -251,6 +250,9 @@ ssize_t replace (int input_fd,
 				output = (owned) recased;
 			}
 			append_string_builder_tail (result, output, 0);
+
+			// Move past the match.
+			num_matches += 1;
 			matching_from = end_pos;
 			if (start_pos == end_pos) {
 				unichar c;
