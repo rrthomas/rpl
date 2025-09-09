@@ -282,8 +282,9 @@ ssize_t replace (int input_fd,
 			}
 		}
 
-		ssize_t write_res = 0;
 		if (!args_info.dry_run_given) {
+			// Write output.
+			ssize_t write_res = 0;
 			if (iconv_out != null) {
 				try {
 					size_t bytes_written;
