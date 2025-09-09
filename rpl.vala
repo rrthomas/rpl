@@ -260,6 +260,7 @@ ssize_t replace (int input_fd,
 				break;
 			}
 
+			// Perform substitutions.
 			var replacement = old_regex.substitute (
 				search_str, matching_from,
 				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | Pcre2.MatchFlags.NO_UTF_CHECK,
@@ -272,12 +273,15 @@ ssize_t replace (int input_fd,
 				return -1;
 			}
 
+			// Match case of replacement to case of original if required.
 			if (args_info.match_case_given) {
 				var model = new StringBuilder ();
 				append_string_builder_slice (model, search_str, (ssize_t) match.group_start (0), (ssize_t) match.group_end (0));
 				var recased = caselike (model, replacement);
 				replacement = (owned) recased;
 			}
+
+			// Add replacement to result.
 			append_string_builder_tail (result, replacement, 0);
 
 			// Move past the match.
