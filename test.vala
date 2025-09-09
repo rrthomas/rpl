@@ -605,6 +605,18 @@ class EmptyMatchesTests : TestRplFile {
 	}
 }
 
+class BufferBoundaryTests : TestRplFile {
+	public BufferBoundaryTests(string bin_dir, string test_files_dir) {
+		base (bin_dir, test_files_dir, "many-a-acute.txt");
+		add_test ("test_buffer_crossing_character", test_buffer_crossing_character);
+	}
+
+	void test_buffer_crossing_character () {
+		run ({ "á", "b", test_result_root });
+		assert_true (result_matches ("many-a-acute_buffer-crossing-character_expected.txt"));
+	}
+}
+
 class DirTests : TestRplFile {
 	public DirTests(string bin_dir, string test_files_dir) {
 		base (bin_dir, test_files_dir, "test-dir");
@@ -655,6 +667,7 @@ public int main (string[] args) {
 	TestSuite.get_root ().add_suite (new MixedCaseTests (bin_dir, test_files_dir).get_suite ());
 	TestSuite.get_root ().add_suite (new BackreferenceTests (bin_dir, test_files_dir).get_suite ());
 	TestSuite.get_root ().add_suite (new EmptyMatchesTests (bin_dir, test_files_dir).get_suite ());
+	TestSuite.get_root ().add_suite (new BufferBoundaryTests (bin_dir, test_files_dir).get_suite ());
 	TestSuite.get_root ().add_suite (new DirTests (bin_dir, test_files_dir).get_suite ());
 	TestSuite.get_root ().add_suite (new GlobTests (bin_dir, test_files_dir).get_suite ());
 

@@ -151,7 +151,16 @@ ssize_t replace (int input_fd,
 			buf.len = retry_prefix.len + n_read;
 		}
 
-		if (iconv_in != null && buf.len > 0) {
+		retry_prefix = new StringBuilder ();
+		if (iconv_in == null) {
+			// Check that input is valid UTF-8
+			char *end_valid;
+			buf.str.validate (buf.len, out end_valid);
+			size_t num_valid = end_valid - (char *)buf.str;
+			retry_prefix.append_len ((string) end_valid, (ssize_t) (buf.len - num_valid));
+			buf.truncate (num_valid);
+		} else if (buf.len > 0) {
+			// Convert input to UTF-8
 			unowned char[] buf_ptr = (char[]) buf.data;
 			size_t buf_len = buf.len;
 			// Guess maximum input:output ratio required.
@@ -160,21 +169,16 @@ ssize_t replace (int input_fd,
 			unowned char[] out_buf_ptr = out_buf;
 			size_t out_buf_len = out_buf.length;
 			var rc = iconv_in.iconv (ref buf_ptr, ref buf_len, ref out_buf_ptr, ref out_buf_len);
-			if (rc == -1) {
-				// Try carrying invalid input over to next iteration in case it's
-				// just incomplete.
-				if (buf_ptr != (char[]) buf.data) {
-					retry_prefix = new StringBuilder ();
-					retry_prefix.append_len ((string) buf_ptr, (ssize_t) buf_len);
-				} else {
-					warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
-					warn ("you can specify the encoding with --encoding");
-					iconv_in.close ();
-					iconv_out.close ();
-					return -1;
-				}
-			} else {
-				retry_prefix = new StringBuilder ();
+			// Try carrying invalid input over to next iteration in case it's
+			// just incomplete.
+			retry_prefix.append_len ((string) buf_ptr, (ssize_t) buf_len);
+			// If we failed to convert anything, error immediately.
+			if (rc == -1 && buf_ptr == (char[]) buf.data) {
+				warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
+				warn ("you can specify the encoding with --encoding");
+				iconv_in.close ();
+				iconv_out.close ();
+				return -1;
 			}
 			size_t out_len = out_buf_size - out_buf_len;
 			buf = new StringBuilder ();
@@ -205,7 +209,7 @@ ssize_t replace (int input_fd,
 		int rc = 0;
 		while (true) {
 			var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
-			match = old_regex.match (search_str, matching_from, do_partial, out rc);
+			match = old_regex.match (search_str, matching_from, do_partial | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
 			if (rc == Pcre2.Error.NOMATCH) {
 				tonext = new StringBuilder ();
 				tonext_offset = 0;
@@ -233,7 +237,7 @@ ssize_t replace (int input_fd,
 
 			var replacement = old_regex.substitute (
 				search_str, matching_from,
-				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY,
+				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | Pcre2.MatchFlags.NO_UTF_CHECK,
 				match,
 				new_pattern,
 				out rc
