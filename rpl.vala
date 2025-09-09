@@ -165,9 +165,9 @@ ssize_t replace (int input_fd,
 			size_t buf_len = buf.len;
 			// Guess maximum input:output ratio required.
 			size_t out_buf_size = buf.len * 8;
-			var out_buf = new char[out_buf_size];
-			unowned char[] out_buf_ptr = out_buf;
-			size_t out_buf_len = out_buf.length;
+			var out_buf = new StringBuilder.sized (out_buf_size);
+			unowned char[] out_buf_ptr = (char[]) out_buf.data;
+			size_t out_buf_len = out_buf_size;
 			var rc = iconv_in.iconv (ref buf_ptr, ref buf_len, ref out_buf_ptr, ref out_buf_len);
 			// Try carrying invalid input over to next iteration in case it's
 			// just incomplete.
@@ -181,8 +181,9 @@ ssize_t replace (int input_fd,
 				return -1;
 			}
 			size_t out_len = out_buf_size - out_buf_len;
-			buf = new StringBuilder ();
-			buf.append_len ((string) out_buf, (ssize_t) out_len);
+			buf = (owned) out_buf;
+			buf.len = (ssize_t) out_len;
+			buf.truncate (buf.len);
 		}
 
 		StringBuilder search_str;
