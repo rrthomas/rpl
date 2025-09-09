@@ -114,6 +114,45 @@ requires (start <= b.len) {
 	append_string_builder_slice (a, b, start, b.len);
 }
 
+private StringBuilder? validate_utf8 (StringBuilder buf) {
+	var retry_prefix = new StringBuilder ();
+	// Check that input is valid UTF-8
+	char *end_valid;
+	buf.str.validate (buf.len, out end_valid);
+	size_t num_valid = end_valid - (char *)buf.str;
+	retry_prefix.append_len ((string) end_valid, (ssize_t) (buf.len - num_valid));
+	buf.truncate (num_valid);
+	if (end_valid == (char *) buf.str) {
+		return null;
+	}
+	return retry_prefix;
+}
+
+private StringBuilder? to_utf8 (IConv.IConv iconv_in, ref StringBuilder buf) {
+	var retry_prefix = new StringBuilder ();
+	// Convert input to UTF-8
+	unowned char[] buf_ptr = (char[]) buf.data;
+	size_t buf_len = buf.len;
+	// Guess maximum input:output ratio required.
+	size_t out_buf_size = buf.len * 8;
+	var out_buf = new StringBuilder.sized (out_buf_size);
+	unowned char[] out_buf_ptr = (char[]) out_buf.data;
+	size_t out_buf_len = out_buf_size;
+	var rc = iconv_in.iconv (ref buf_ptr, ref buf_len, ref out_buf_ptr, ref out_buf_len);
+	// Try carrying invalid input over to next iteration in case it's
+	// just incomplete.
+	retry_prefix.append_len ((string) buf_ptr, (ssize_t) buf_len);
+	// If we failed to convert anything, error immediately.
+	if (rc == -1 && buf_ptr == (char[]) buf.data) {
+		return null;
+	}
+	size_t out_len = out_buf_size - out_buf_len;
+	buf = (owned) out_buf;
+	buf.len = (ssize_t) out_len;
+	buf.truncate (buf.len);
+	return retry_prefix;
+}
+
 ssize_t replace (int input_fd,
                  owned StringBuilder initial_buf,
                  string input_filename,
@@ -151,39 +190,24 @@ ssize_t replace (int input_fd,
 			buf.len = retry_prefix.len + n_read;
 		}
 
-		retry_prefix = new StringBuilder ();
-		if (iconv_in == null) {
-			// Check that input is valid UTF-8
-			char *end_valid;
-			buf.str.validate (buf.len, out end_valid);
-			size_t num_valid = end_valid - (char *)buf.str;
-			retry_prefix.append_len ((string) end_valid, (ssize_t) (buf.len - num_valid));
-			buf.truncate (num_valid);
-		} else if (buf.len > 0) {
-			// Convert input to UTF-8
-			unowned char[] buf_ptr = (char[]) buf.data;
-			size_t buf_len = buf.len;
-			// Guess maximum input:output ratio required.
-			size_t out_buf_size = buf.len * 8;
-			var out_buf = new StringBuilder.sized (out_buf_size);
-			unowned char[] out_buf_ptr = (char[]) out_buf.data;
-			size_t out_buf_len = out_buf_size;
-			var rc = iconv_in.iconv (ref buf_ptr, ref buf_len, ref out_buf_ptr, ref out_buf_len);
-			// Try carrying invalid input over to next iteration in case it's
-			// just incomplete.
-			retry_prefix.append_len ((string) buf_ptr, (ssize_t) buf_len);
-			// If we failed to convert anything, error immediately.
-			if (rc == -1 && buf_ptr == (char[]) buf.data) {
-				warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
-				warn ("you can specify the encoding with --encoding");
+		// Convert or validate input, getting back any invalid suffix.
+		if (buf.len == 0) {
+			retry_prefix = new StringBuilder ();
+		} else if (iconv_in == null) {
+			retry_prefix = validate_utf8 (buf);
+		} else {
+			retry_prefix = to_utf8 (iconv_in, ref buf);
+		}
+
+		// If we failed to convert anything, error immediately.
+		if (retry_prefix == null) {
+			warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
+			warn ("you can specify the encoding with --encoding");
+			if (iconv_in != null) {
 				iconv_in.close ();
 				iconv_out.close ();
-				return -1;
 			}
-			size_t out_len = out_buf_size - out_buf_len;
-			buf = (owned) out_buf;
-			buf.len = (ssize_t) out_len;
-			buf.truncate (buf.len);
+			return -1;
 		}
 
 		StringBuilder search_str;
