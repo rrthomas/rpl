@@ -160,7 +160,8 @@ ssize_t replace (int input_fd,
                  Pcre2.Regex old_regex,
                  Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
-                 string? encoding) {
+                 IConv.IConv? iconv_in,
+                 IConv.IConv? iconv_out) {
 	ssize_t num_matches = 0;
 	const size_t INITIAL_BUF_SIZE = 1024 * 1024;
 	size_t buf_size = INITIAL_BUF_SIZE;
@@ -168,12 +169,6 @@ ssize_t replace (int input_fd,
 	var tonext = new StringBuilder ();
 	ssize_t tonext_offset = 0;
 	var retry_prefix = new StringBuilder ();
-	IConv.IConv? iconv_in = null;
-	IConv.IConv? iconv_out = null;
-	if (encoding != null) {
-		iconv_in = IConv.IConv.open ("UTF-8", encoding);
-		iconv_out = IConv.IConv.open (encoding, "UTF-8");
-	}
 	var buf = (owned) initial_buf;
 	ssize_t n_read = buf.len;
 	while (true) {
@@ -203,10 +198,6 @@ ssize_t replace (int input_fd,
 		if (retry_prefix == null) {
 			warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
 			warn ("you can specify the encoding with --encoding");
-			if (iconv_in != null) {
-				iconv_in.close ();
-				iconv_out.close ();
-			}
 			return -1;
 		}
 
@@ -241,10 +232,6 @@ ssize_t replace (int input_fd,
 				append_string_builder_tail (result, search_str, end_pos);
 				break;
 			} else if (rc < 0 && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
-				if (iconv_in != null) {
-					iconv_in.close ();
-					iconv_out.close ();
-				}
 				warn (@"$input_filename: $(get_error_message(rc))");
 				return -1; // GCOVR_EXCL_STOP
 			}
@@ -304,8 +291,6 @@ ssize_t replace (int input_fd,
 					write_res = Posix.write (output_fd, output, bytes_written);
 				} catch (ConvertError e) {
 					warn (@"output encoding error: $(GLib.strerror(errno))");
-					iconv_in.close ();
-					iconv_out.close ();
 					return -1;
 				}
 			} else {
@@ -614,7 +599,17 @@ int main (string[] argv) {
 
 		// Process the file
 		ssize_t num_matches = 0;
-		num_matches = replace (input_fd, (owned) buf, filename, output_fd, regex, replace_opts, new_text, encoding);
+		IConv.IConv? iconv_in = null;
+		IConv.IConv? iconv_out = null;
+		if (encoding != null) {
+			iconv_in = IConv.IConv.open ("UTF-8", encoding);
+			iconv_out = IConv.IConv.open (encoding, "UTF-8");
+		}
+		num_matches = replace (input_fd, (owned) buf, filename, output_fd, regex, replace_opts, new_text, iconv_in, iconv_out);
+		if (iconv_in != null) {
+			iconv_in.close ();
+			iconv_out.close ();
+		}
 
 		if (Posix.close (input_fd) < 0) { // GCOVR_EXCL_START
 			warn (@"error closing $filename: $(GLib.strerror(errno))");
