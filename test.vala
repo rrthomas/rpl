@@ -248,6 +248,7 @@ class OutputFileTests : TestRplOutputFile {
 
 		add_test ("test_multi_buffer_matches", test_multi_buffer_matches);
 		add_test ("test_buffer_crossing_character", test_buffer_crossing_character);
+		add_test ("test_empty_match_at_buffer_end", test_empty_match_at_buffer_end);
 		add_test ("test_recursive_no_file_arguments", test_recursive_no_file_arguments);
 		add_test ("test_bad_regex", test_bad_regex);
 		add_test ("test_non_file_input", test_non_file_input);
@@ -284,6 +285,20 @@ class OutputFileTests : TestRplOutputFile {
 		}
 		run ({ "á", "b", test_result_root });
 		assert_true (result_matches ("many-a-acute_buffer-crossing-character_expected.txt"));
+	}
+
+	void test_empty_match_at_buffer_end () {
+		try {
+			var file = File.new_for_path (test_result_root);
+			FileOutputStream os = file.create (FileCreateFlags.NONE);
+			os.write (string.nfill (2 * 1000 * 1000, 'a').data);
+			os.close ();
+		} catch (GLib.Error e) {
+			print ("error writing to temporary file\n");
+			assert_no_error (e);
+		}
+		run ({ "a?", "b", test_result_root });
+		assert_true (result_matches ("empty-match-at-buffer-end_expected.txt"));
 	}
 
 	void test_recursive_no_file_arguments () {
