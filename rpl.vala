@@ -169,6 +169,7 @@ ssize_t replace (int input_fd,
 	size_t buf_size = INITIAL_BUF_SIZE;
 	var buf = (owned) initial_buf;
 	var retry_prefix = new StringBuilder ();
+	var at_bob = true;
 
 	// Helper function to read input, returning initial_buf on first read.
 	var prefix_read = false;
@@ -190,8 +191,9 @@ ssize_t replace (int input_fd,
 
 	var tonext = new StringBuilder ();
 	ssize_t tonext_offset = 0;
-	while (true) {
-		var n_read = read_with_prefix ();
+	ssize_t n_read = 0;
+	do {
+		n_read = read_with_prefix ();
 		if (n_read < 0) { // GCOVR_EXCL_START
 			warn (@"error reading $input_filename: $(GLib.strerror(errno))");
 			break;
@@ -223,20 +225,16 @@ ssize_t replace (int input_fd,
 		} else {
 			search_str = (owned) buf;
 		}
-		if (search_str.len == 0) {
-			if (args_info.verbose_given)
-				warn ("no input left, exiting");
-			break;
-		}
 
 		var result = new StringBuilder ();
 		size_t match_from = 0;
 		ssize_t end_pos = 0;
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
+		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
 		while (true) {
 			// Do match, and return on error.
 			int rc = 0;
-			Match? match = old_regex.match (search_str, match_from, do_partial | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
+			Match? match = old_regex.match (search_str, match_from, do_partial | notbol | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
 			if (rc < 0 && rc != Pcre2.Error.NOMATCH && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
 				warn (@"$input_filename: $(get_error_message(rc))");
 				return -1; // GCOVR_EXCL_STOP
@@ -245,11 +243,16 @@ ssize_t replace (int input_fd,
 			// Append unmatched input to result.
 			ssize_t start_pos = rc == Pcre2.Error.NOMATCH ? search_str.len : (ssize_t) match.group_start (0);
 			append_string_builder_slice (result, search_str, end_pos, start_pos);
+			end_pos = (ssize_t) match.group_end (0);
 
-			// If we didn't get a complete match, break for more input.
+			// If the match is zero-width and at the end of the buffer, but
+			// not the end of the input, treat it as partial.
+			if (do_partial != 0 && start_pos == end_pos && start_pos == search_str.len) {
+				rc = Pcre2.Error.PARTIAL;
+			}
+
+			// If we didn't get a match, break for more input.
 			if (rc == Pcre2.Error.NOMATCH) {
-				tonext = new StringBuilder ();
-				tonext_offset = 0;
 				break;
 			} else if (rc == Pcre2.Error.PARTIAL) {
 				// For a partial match, copy text to re-match and grow buffer.
@@ -260,7 +263,6 @@ ssize_t replace (int input_fd,
 			}
 
 			// Perform substitutions.
-			end_pos = (ssize_t) match.group_end (0);
 			var replacement = old_regex.substitute (
 				search_str, match_from,
 				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | Pcre2.MatchFlags.NO_UTF_CHECK,
@@ -288,6 +290,10 @@ ssize_t replace (int input_fd,
 			num_matches += 1;
 			match_from = end_pos;
 			if (start_pos == end_pos) {
+				// If we're at the end of the input, break.
+				if (end_pos == search_str.len) {
+					break;
+				}
 				unichar c;
 				int c_len = 0;
 				((string) ((char *)search_str.data + end_pos)).get_next_char (ref c_len, out c);
@@ -314,9 +320,14 @@ ssize_t replace (int input_fd,
 				warn (@"write error: $(GLib.strerror(errno))");
 			} // GCOVR_EXCL_STOP
 		}
+
 		// Reset buffer for next iteration
 		buf = new StringBuilder.sized (buf_size);
-	}
+		at_bob = false;
+	} while (n_read != 0);
+
+	if (args_info.verbose_given)
+		warn ("no input left, exiting");
 
 	return num_matches;
 }
