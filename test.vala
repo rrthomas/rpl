@@ -256,7 +256,7 @@ class OutputFileTests : TestRplOutputFile {
 		try {
 			var file = File.new_for_path (test_result_root);
 			FileOutputStream os = file.create (FileCreateFlags.NONE);
-			os.write (string.nfill (1024 * 1024, 'a').data);
+			os.write (string.nfill (2 * 1024 * 1024, 'a').data);
 			os.close ();
 		} catch (GLib.Error e) {
 			print ("error writing to temporary file\n");
