@@ -230,14 +230,14 @@ ssize_t replace (int input_fd,
 		}
 
 		var result = new StringBuilder ();
-		size_t matching_from = 0;
+		size_t match_from = 0;
 		ssize_t start_pos;
 		ssize_t end_pos = 0;
 		Match? match = null;
 		int rc = 0;
 		while (true) {
 			var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
-			match = old_regex.match (search_str, matching_from, do_partial | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
+			match = old_regex.match (search_str, match_from, do_partial | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
 			if (rc == Pcre2.Error.NOMATCH) {
 				tonext = new StringBuilder ();
 				tonext_offset = 0;
@@ -261,7 +261,7 @@ ssize_t replace (int input_fd,
 
 			// Perform substitutions.
 			var replacement = old_regex.substitute (
-				search_str, matching_from,
+				search_str, match_from,
 				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | Pcre2.MatchFlags.NO_UTF_CHECK,
 				match,
 				new_pattern,
@@ -285,12 +285,12 @@ ssize_t replace (int input_fd,
 
 			// Move past the match.
 			num_matches += 1;
-			matching_from = end_pos;
+			match_from = end_pos;
 			if (start_pos == end_pos) {
 				unichar c;
 				int c_len = 0;
 				((string) ((char *)search_str.data + end_pos)).get_next_char (ref c_len, out c);
-				matching_from += c_len;
+				match_from += c_len;
 			}
 		}
 
