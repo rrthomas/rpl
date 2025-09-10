@@ -234,31 +234,33 @@ ssize_t replace (int input_fd,
 		ssize_t end_pos = 0;
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		while (true) {
-			ssize_t start_pos;
+			// Do match, and return on error.
 			int rc = 0;
 			Match? match = old_regex.match (search_str, match_from, do_partial | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
-			if (rc == Pcre2.Error.NOMATCH) {
-				tonext = new StringBuilder ();
-				tonext_offset = 0;
-				append_string_builder_tail (result, search_str, end_pos);
-				break;
-			} else if (rc < 0 && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
+			if (rc < 0 && rc != Pcre2.Error.NOMATCH && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
 				warn (@"$input_filename: $(get_error_message(rc))");
 				return -1; // GCOVR_EXCL_STOP
 			}
 
-			start_pos = (ssize_t) match.group_start (0);
+			// Append unmatched input to result.
+			ssize_t start_pos = rc == Pcre2.Error.NOMATCH ? search_str.len : (ssize_t) match.group_start (0);
 			append_string_builder_slice (result, search_str, end_pos, start_pos);
-			end_pos = (ssize_t) match.group_end (0);
 
-			if (rc == Pcre2.Error.PARTIAL) {
-				tonext_offset = start_pos;
+			// If we didn't get a complete match, break for more input.
+			if (rc == Pcre2.Error.NOMATCH) {
+				tonext = new StringBuilder ();
+				tonext_offset = 0;
+				break;
+			} else if (rc == Pcre2.Error.PARTIAL) {
+				// For a partial match, copy text to re-match and grow buffer.
 				tonext = (owned) search_str;
+				tonext_offset = start_pos;
 				buf_size = size_t.max (buf_size, 2 * (tonext.len - tonext_offset) + INITIAL_BUF_SIZE);
 				break;
 			}
 
 			// Perform substitutions.
+			end_pos = (ssize_t) match.group_end (0);
 			var replacement = old_regex.substitute (
 				search_str, match_from,
 				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | Pcre2.MatchFlags.NO_UTF_CHECK,
