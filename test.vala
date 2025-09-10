@@ -246,13 +246,14 @@ class OutputFileTests : TestRplOutputFile {
 	public OutputFileTests(string bin_dir, string test_files_dir) {
 		base (bin_dir, test_files_dir);
 
-		add_test ("multi_buffer_matches", multi_buffer_matches);
+		add_test ("test_multi_buffer_matches", test_multi_buffer_matches);
+		add_test ("test_buffer_crossing_character", test_buffer_crossing_character);
 		add_test ("test_recursive_no_file_arguments", test_recursive_no_file_arguments);
 		add_test ("test_bad_regex", test_bad_regex);
 		add_test ("test_non_file_input", test_non_file_input);
 	}
 
-	void multi_buffer_matches () {
+	void test_multi_buffer_matches () {
 		try {
 			var file = File.new_for_path (test_result_root);
 			FileOutputStream os = file.create (FileCreateFlags.NONE);
@@ -264,6 +265,25 @@ class OutputFileTests : TestRplOutputFile {
 		}
 		run ({ "a+", "b", test_result_root });
 		assert_true (result_matches ("one-b.txt"));
+	}
+
+	void test_buffer_crossing_character () {
+		try {
+			var file = File.new_for_path (test_result_root);
+			FileOutputStream os = file.create (FileCreateFlags.NONE);
+			os.write ("a".data);
+			var s = new StringBuilder ();
+			for (var i = 0; i < 2 * 1000 * 1000; i++) {
+				s.append_unichar ('á');
+			}
+			os.write (s.data);
+			os.close ();
+		} catch (GLib.Error e) {
+			print ("error writing to temporary file\n");
+			assert_no_error (e);
+		}
+		run ({ "á", "b", test_result_root });
+		assert_true (result_matches ("many-a-acute_buffer-crossing-character_expected.txt"));
 	}
 
 	void test_recursive_no_file_arguments () {
@@ -605,18 +625,6 @@ class EmptyMatchesTests : TestRplFile {
 	}
 }
 
-class BufferBoundaryTests : TestRplFile {
-	public BufferBoundaryTests(string bin_dir, string test_files_dir) {
-		base (bin_dir, test_files_dir, "many-a-acute.txt");
-		add_test ("test_buffer_crossing_character", test_buffer_crossing_character);
-	}
-
-	void test_buffer_crossing_character () {
-		run ({ "á", "b", test_result_root });
-		assert_true (result_matches ("many-a-acute_buffer-crossing-character_expected.txt"));
-	}
-}
-
 class DirTests : TestRplFile {
 	public DirTests(string bin_dir, string test_files_dir) {
 		base (bin_dir, test_files_dir, "test-dir");
@@ -667,7 +675,6 @@ public int main (string[] args) {
 	TestSuite.get_root ().add_suite (new MixedCaseTests (bin_dir, test_files_dir).get_suite ());
 	TestSuite.get_root ().add_suite (new BackreferenceTests (bin_dir, test_files_dir).get_suite ());
 	TestSuite.get_root ().add_suite (new EmptyMatchesTests (bin_dir, test_files_dir).get_suite ());
-	TestSuite.get_root ().add_suite (new BufferBoundaryTests (bin_dir, test_files_dir).get_suite ());
 	TestSuite.get_root ().add_suite (new DirTests (bin_dir, test_files_dir).get_suite ());
 	TestSuite.get_root ().add_suite (new GlobTests (bin_dir, test_files_dir).get_suite ());
 
