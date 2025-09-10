@@ -153,6 +153,8 @@ private StringBuilder? to_utf8 (IConv.IConv iconv_in, ref StringBuilder buf) {
 	return retry_prefix;
 }
 
+private delegate ssize_t ReaderType ();
+
 ssize_t replace (int input_fd,
                  owned StringBuilder initial_buf,
                  string input_filename,
@@ -165,25 +167,35 @@ ssize_t replace (int input_fd,
 	ssize_t num_matches = 0;
 	const size_t INITIAL_BUF_SIZE = 1024 * 1024;
 	size_t buf_size = INITIAL_BUF_SIZE;
+	var buf = (owned) initial_buf;
+	var retry_prefix = new StringBuilder ();
+
+	// Helper function to read input, returning initial_buf on first read.
+	var prefix_read = false;
+	ReaderType read_with_prefix = () => {
+		// If we've not yet processed initial_buf, return if it's not empty.
+		if (!prefix_read) {
+			prefix_read = true;
+			if (buf.len > 0) {
+				return buf.len;
+			}
+		}
+		append_string_builder_tail (buf, retry_prefix, 0);
+		ssize_t n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
+		if (args_info.verbose_given)
+			warn (@"bytes read: $(n_read)\n");
+		buf.len = retry_prefix.len + n_read;
+		return buf.len;
+	};
 
 	var tonext = new StringBuilder ();
 	ssize_t tonext_offset = 0;
-	var retry_prefix = new StringBuilder ();
-	var buf = (owned) initial_buf;
-	ssize_t n_read = buf.len;
 	while (true) {
-		// If we're not processing initial_buf, read more data.
-		if (buf.len == 0) {
-			append_string_builder_tail (buf, retry_prefix, 0);
-			n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
-			if (args_info.verbose_given)
-				warn (@"bytes read: $(n_read)\n");
-			if (n_read < 0) { // GCOVR_EXCL_START
-				warn (@"error reading $input_filename: $(GLib.strerror(errno))");
-				break;
-			} // GCOVR_EXCL_STOP
-			buf.len = retry_prefix.len + n_read;
-		}
+		var n_read = read_with_prefix ();
+		if (n_read < 0) { // GCOVR_EXCL_START
+			warn (@"error reading $input_filename: $(GLib.strerror(errno))");
+			break;
+		} // GCOVR_EXCL_STOP
 
 		// Convert or validate input, getting back any invalid suffix.
 		if (buf.len == 0) {
