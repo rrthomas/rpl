@@ -231,13 +231,12 @@ ssize_t replace (int input_fd,
 
 		var result = new StringBuilder ();
 		size_t match_from = 0;
-		ssize_t start_pos;
 		ssize_t end_pos = 0;
-		Match? match = null;
-		int rc = 0;
+		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		while (true) {
-			var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
-			match = old_regex.match (search_str, match_from, do_partial | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
+			ssize_t start_pos;
+			int rc = 0;
+			Match? match = old_regex.match (search_str, match_from, do_partial | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
 			if (rc == Pcre2.Error.NOMATCH) {
 				tonext = new StringBuilder ();
 				tonext_offset = 0;
