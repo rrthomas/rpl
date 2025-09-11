@@ -122,9 +122,9 @@ private StringBuilder? validate_utf8 (StringBuilder buf) {
 	size_t num_valid = end_valid - (char *)buf.str;
 	retry_prefix.append_len ((string) end_valid, (ssize_t) (buf.len - num_valid));
 	buf.truncate (num_valid);
-	if (end_valid == (char *) buf.str) {
+	if (end_valid == (char *) buf.str) { // GCOV_EXCL_START
 		return null;
-	}
+	} // GCOV_EXCL_STOP
 	return retry_prefix;
 }
 
