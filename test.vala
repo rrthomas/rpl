@@ -273,18 +273,26 @@ class OutputFileTests : TestRplOutputFile {
 
 	void test_buffer_crossing_character () {
 		var s = new StringBuilder ("a");
-		for (var i = 0; i < 2 * 1000 * 1000; i++) {
+		var repeats = 2 * 1000 * 1000;
+		for (var i = 0; i < repeats; i++) {
 			s.append_unichar ('á');
 		}
 		string_to_file (test_result_root, s.str);
+		var expected_result = Path.build_filename (test_result_dir, "expected.txt");
+		s = new StringBuilder ("a");
+		s.append (string.nfill (repeats, 'b'));
+		string_to_file (expected_result, s.str);
 		run ({ "á", "b", test_result_root });
-		assert_true (result_matches (Path.build_filename (test_files_dir, "many-a-acute_buffer-crossing-character_expected.txt")));
+		assert_true (result_matches (expected_result));
 	}
 
 	void test_empty_match_at_buffer_end () {
-		string_to_file (test_result_root, string.nfill (2 * 1000 * 1000, 'a'));
+		var repeats = 2 * 1000 * 1000;
+		string_to_file (test_result_root, string.nfill (repeats, 'a'));
+		var expected_result = Path.build_filename (test_result_dir, "expected.txt");
+		string_to_file (expected_result, string.nfill (repeats + 1, 'b'));
 		run ({ "a?", "b", test_result_root });
-		assert_true (result_matches (Path.build_filename (test_files_dir, "empty-match-at-buffer-end_expected.txt")));
+		assert_true (result_matches (expected_result));
 	}
 
 	void test_recursive_no_file_arguments () {
