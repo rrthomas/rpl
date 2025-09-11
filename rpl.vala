@@ -183,8 +183,9 @@ ssize_t replace (int input_fd,
 		}
 		append_string_builder_tail (buf, retry_prefix, 0);
 		ssize_t n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
-		if (args_info.verbose_given)
+		if (args_info.verbose_given) {
 			warn (@"bytes read: $(n_read)\n");
+		}
 		buf.len = retry_prefix.len + n_read;
 		return buf.len;
 	};
@@ -326,8 +327,9 @@ ssize_t replace (int input_fd,
 		at_bob = false;
 	} while (n_read != 0);
 
-	if (args_info.verbose_given)
+	if (args_info.verbose_given) {
 		warn ("no input left, exiting");
+	}
 
 	return num_matches;
 }
@@ -491,9 +493,9 @@ int main (string[] argv) {
 		die (1, "bad regex %.*s (%s)".printf ((int) old_text.len, old_text.str, get_error_message (errorcode)));
 	}
 	if (regex.jit_compile (JitCompileFlags.COMPLETE | JitCompileFlags.PARTIAL_HARD) != 0
-	    && args_info.verbose_given) // GCOVR_EXCL_START
+	    && args_info.verbose_given) { // GCOVR_EXCL_START
 		warn ("JIT compilation of regular expression failed");
-	// GCOVR_EXCL_STOP
+	} // GCOVR_EXCL_STOP
 
 	// Process files
 	size_t total_files = 0;
@@ -581,8 +583,9 @@ int main (string[] argv) {
 			ssize_t n_bytes = 0;
 			while (n_bytes < encoding_buf_size) {
 				ssize_t n_read = Posix.read (input_fd, (uint8*) buf.data + n_bytes, encoding_buf_size);
-				if (args_info.verbose_given)
+				if (args_info.verbose_given) {
 					warn (@"bytes read to guess encoding: $(n_read)\n");
+				}
 				if (n_read < 0) { // GCOVR_EXCL_START
 					warn (@"error reading $filename: $(GLib.strerror(errno))");
 					break;
