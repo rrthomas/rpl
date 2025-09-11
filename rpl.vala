@@ -194,7 +194,6 @@ ssize_t replace (int input_fd,
 
 	var tonext = new StringBuilder ();
 	var lookbehind_margin = new StringBuilder ();
-	ssize_t tonext_offset = 0;
 	ssize_t n_read = 0;
 	do {
 		n_read = read_with_prefix ();
@@ -234,7 +233,7 @@ ssize_t replace (int input_fd,
 			}
 			// If we have search data held over, prepend it to the buffer.
 			if (tonext.len > 0) {
-				append_string_builder_tail (search_str, tonext, tonext_offset);
+				append_string_builder_tail (search_str, tonext, 0);
 			}
 			// Finally, append the data we read.
 			append_string_builder_tail (search_str, buf, 0);
@@ -270,9 +269,10 @@ ssize_t replace (int input_fd,
 				break;
 			} else if (rc == Pcre2.Error.PARTIAL) {
 				// For a partial match, copy text to re-match and grow buffer.
-				tonext = (owned) search_str;
-				tonext_offset = start_pos;
-				buf_size = size_t.max (buf_size, 2 * (tonext.len - tonext_offset) + INITIAL_BUF_SIZE);
+				tonext = new StringBuilder ();
+				append_string_builder_tail (tonext, search_str, start_pos);
+				match_from = start_pos;
+				buf_size = size_t.max (buf_size, 2 * tonext.len + INITIAL_BUF_SIZE);
 				break;
 			}
 
@@ -320,7 +320,7 @@ ssize_t replace (int input_fd,
 			lookbehind_margin = new StringBuilder ();
 			append_string_builder_slice (
 				lookbehind_margin,
-				search_str ?? tonext,
+				search_str,
 				ssize_t.max (0, (ssize_t) (match_from - MAX_LOOKBEHIND_BYTES)),
 				(ssize_t) match_from
 			);
