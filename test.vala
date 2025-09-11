@@ -154,6 +154,15 @@ class TestRplOutputFile : TestRpl {
 		}
 		return true;
 	}
+
+	public bool result_matches_string (string expected) {
+		try {
+			var s = slurp_file (test_result_root);
+			return s == expected;
+		} catch (Error e) {
+			return false;
+		}
+	}
 }
 
 // Each set of tests that uses a particular input test file or directory is
@@ -278,21 +287,18 @@ class OutputFileTests : TestRplOutputFile {
 			s.append_unichar ('á');
 		}
 		string_to_file (test_result_root, s.str);
-		var expected_result = Path.build_filename (test_result_dir, "expected.txt");
-		s = new StringBuilder ("a");
-		s.append (string.nfill (repeats, 'b'));
-		string_to_file (expected_result, s.str);
+		var expected = new StringBuilder ("a");
+		expected.append (string.nfill (repeats, 'b'));
 		run ({ "á", "b", test_result_root });
-		assert_true (result_matches (expected_result));
+		assert_true (result_matches_string (expected.str));
 	}
 
 	void test_empty_match_at_buffer_end () {
 		var repeats = 2 * 1000 * 1000;
 		string_to_file (test_result_root, string.nfill (repeats, 'a'));
-		var expected_result = Path.build_filename (test_result_dir, "expected.txt");
-		string_to_file (expected_result, string.nfill (repeats + 1, 'b'));
+		var expected = string.nfill (repeats + 1, 'b');
 		run ({ "a?", "b", test_result_root });
-		assert_true (result_matches (expected_result));
+		assert_true (result_matches_string (expected));
 	}
 
 	void test_recursive_no_file_arguments () {
