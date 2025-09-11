@@ -263,6 +263,9 @@ class NoFileTests : TestRpl {
 
 // This class contains all the tests that don't use an input file.
 class OutputFileTests : TestRplOutputFile {
+	// FIXME: Get the default buffer size from rpl
+	private const int MULTI_BUFFER_TEST_BYTES = 2 * 1024 * 1024;
+
 	public OutputFileTests(string bin_dir, string test_files_dir) {
 		base (bin_dir, test_files_dir);
 
@@ -331,28 +334,28 @@ class OutputFileTests : TestRplOutputFile {
 	}
 
 	void test_multi_buffer_matches () {
-		string_to_file (test_result_root, string.nfill (2 * 1024 * 1024, 'a'));
+		string_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a'));
 		run ({ "a+", "b", test_result_root });
 		assert_true (result_matches (Path.build_filename (test_files_dir, "one-b.txt")));
 	}
 
 	void test_buffer_crossing_character () {
 		var s = new StringBuilder ("a");
-		var repeats = 2 * 1000 * 1000;
-		for (var i = 0; i < repeats; i++) {
+		// á is two bytes in UTF-8, so when preceded by a single byte will
+		// span a buffer boundary assuming that the buffer length is even..
+		for (var i = 0; i < MULTI_BUFFER_TEST_BYTES; i++) {
 			s.append_unichar ('á');
 		}
 		string_to_file (test_result_root, s.str);
 		var expected = new StringBuilder ("a");
-		expected.append (string.nfill (repeats, 'b'));
+		expected.append (string.nfill (MULTI_BUFFER_TEST_BYTES, 'b'));
 		run ({ "á", "b", test_result_root });
 		assert_true (result_matches_string (expected.str));
 	}
 
 	void test_empty_match_at_buffer_end () {
-		var repeats = 2 * 1000 * 1000;
-		string_to_file (test_result_root, string.nfill (repeats, 'a'));
-		var expected = string.nfill (repeats + 1, 'b');
+		string_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a'));
+		var expected = string.nfill (MULTI_BUFFER_TEST_BYTES + 1, 'b');
 		run ({ "a?", "b", test_result_root });
 		assert_true (result_matches_string (expected));
 	}
