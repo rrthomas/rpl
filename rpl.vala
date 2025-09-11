@@ -227,13 +227,13 @@ ssize_t replace (int input_fd,
 			// If we're using lookbehind, use it as the start of the buffer.
 			if (lookbehind) {
 				search_str = new StringBuilder (lookbehind_margin.str);
-			} else {
-				// We have search data held over, so make a bigger buffer.
-				search_str = new StringBuilder.sized (buf_size * 2);
-			}
-			// If we have search data held over, prepend it to the buffer.
-			if (tonext.len > 0) {
+				// Append any search data held over from last time.
 				append_string_builder_tail (search_str, tonext, 0);
+			} else if (tonext.len > 0) {
+				// If we're not using lookbehind, reuse `tonext`.
+				search_str = (owned) tonext;
+			} else {
+				search_str = new StringBuilder ();
 			}
 			// Finally, append the data we read.
 			append_string_builder_tail (search_str, buf, 0);
