@@ -134,8 +134,7 @@ class TestRplOutputFile : TestRpl {
 		this.test_result_root = Path.build_filename (test_result_dir, "test.txt");
 	}
 
-	public bool result_matches (string file) {
-		var expected_file = Path.build_filename (test_files_dir, file);
+	public bool result_matches (string expected_file) {
 		try {
 			check_prog ("diff", { "-r", expected_file, test_result_root });
 		} catch (Error e) {
@@ -179,7 +178,7 @@ class EncodingTests : TestRplFile {
 
 	void test_explicit_encoding () {
 		run ({ "--encoding=iso-8859-1", "Lorem", "L-O-R-E-M", test_result_root });
-		assert_true (result_matches ("lorem-iso-8859-1_explicit-encoding_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem-iso-8859-1_explicit-encoding_expected.txt")));
 	}
 }
 
@@ -265,7 +264,7 @@ class OutputFileTests : TestRplOutputFile {
 			assert_no_error (e);
 		}
 		run ({ "a+", "b", test_result_root });
-		assert_true (result_matches ("one-b.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "one-b.txt")));
 	}
 
 	void test_buffer_crossing_character () {
@@ -284,7 +283,7 @@ class OutputFileTests : TestRplOutputFile {
 			assert_no_error (e);
 		}
 		run ({ "á", "b", test_result_root });
-		assert_true (result_matches ("many-a-acute_buffer-crossing-character_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "many-a-acute_buffer-crossing-character_expected.txt")));
 	}
 
 	void test_empty_match_at_buffer_end () {
@@ -298,7 +297,7 @@ class OutputFileTests : TestRplOutputFile {
 			assert_no_error (e);
 		}
 		run ({ "a?", "b", test_result_root });
-		assert_true (result_matches ("empty-match-at-buffer-end_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "empty-match-at-buffer-end_expected.txt")));
 	}
 
 	void test_recursive_no_file_arguments () {
@@ -343,38 +342,38 @@ class LoremTests : TestRplFile {
 	void test_ignore_case_verbose () {
 		var output = run ({ "-iv", "Lorem", "L-O-R-E-M", test_result_root });
 		assert_true (output.std_err.contains ("processing "));
-		assert_true (result_matches ("lorem_ignore-case_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem_ignore-case_expected.txt")));
 	}
 
 	void test_match_case () {
 		run ({ "lorem", "loReM", test_result_root });
-		assert_true (result_matches ("lorem_match-case_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem_match-case_expected.txt")));
 	}
 
 	void test_no_flags () {
 		run ({ "Lorem", "L-O-R-E-M", test_result_root });
-		assert_true (result_matches ("lorem_no-flags_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem_no-flags_expected.txt")));
 	}
 
 	void test_use_regexp () {
 		run ({ "a[a-z]+", "coffee", test_result_root });
-		assert_true (result_matches ("lorem_use-regexp_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem_use-regexp_expected.txt")));
 	}
 
 	void test_dry_run () {
 		run ({ "--dry-run", "Lorem", "L-O-R-E-M", test_result_root });
-		assert_true (result_matches ("lorem.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem.txt")));
 	}
 
 	void test_quiet () {
 		var output = run ({ "--quiet", "Lorem", "L-O-R-E-M", test_result_root });
 		assert_true (output.std_err.length == 0);
-		assert_true (result_matches ("lorem_no-flags_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem_no-flags_expected.txt")));
 	}
 
 	void test_ignores_dash_E () {
 		run ({ "-E", "Lorem", "L-O-R-E-M", test_result_root });
-		assert_true (result_matches ("lorem_no-flags_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem_no-flags_expected.txt")));
 	}
 
 	void test_bad_replacement () {
@@ -400,7 +399,7 @@ class LoremTests : TestRplFile {
 
 	void test_recursive_used_with_file () {
 		run ({ "--recursive", "Lorem", "L-O-R-E-M", test_result_root });
-		assert_true (result_matches ("lorem_no-flags_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem_no-flags_expected.txt")));
 	}
 
 	void test_bad_output_encoding () {
@@ -437,29 +436,29 @@ class LoremUtf8Tests : TestRplFile {
 
 	void test_utf_8 () {
 		run ({ "amét", "amèt", test_result_root });
-		assert_true (result_matches ("lorem-utf-8_utf-8_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem-utf-8_utf-8_expected.txt")));
 	}
 
 	void test_whole_words () {
 		run ({ "--whole-words", "in", "out", test_result_root });
-		assert_true (result_matches ("lorem-utf-8_whole-words_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem-utf-8_whole-words_expected.txt")));
 	}
 
 	void test_patterns_in_files () {
 		var in_file = Path.build_filename (test_files_dir, "in.txt");
 		var out_file = Path.build_filename (test_files_dir, "out.txt");
 		run ({ "--files", "--whole-words", in_file, out_file, test_result_root });
-		assert_true (result_matches ("lorem-utf-8_whole-words_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem-utf-8_whole-words_expected.txt")));
 	}
 
 	void test_fixed_strings () {
 		run ({ "--fixed-strings", "t.", "t$$", test_result_root });
-		assert_true (result_matches ("lorem-utf-8_fixed-strings_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem-utf-8_fixed-strings_expected.txt")));
 	}
 
 	void test_match_case_non_ascii () {
 		run ({ "-m", "\\w+", "éowyn", test_result_root });
-		assert_true (result_matches ("lorem-utf-8_match-case-non-ascii_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem-utf-8_match-case-non-ascii_expected.txt")));
 	}
 
 	void test_keep_times () {
@@ -503,17 +502,17 @@ class LoremUtf8Tests : TestRplFile {
 
 	void test_prompt_yes () {
 		prompt_test ("y\n", "Updated");
-		assert_true (result_matches ("lorem-utf-8_whole-words_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem-utf-8_whole-words_expected.txt")));
 	}
 
 	void test_prompt_no () {
 		prompt_test ("n\n", "Not updated");
-		assert_true (!result_matches ("lorem-utf-8_whole-words_expected.txt"));
+		assert_true (!result_matches (Path.build_filename (test_files_dir, "lorem-utf-8_whole-words_expected.txt")));
 	}
 
 	void test_prompt_empty () {
 		prompt_test ("\n", "Updated");
-		assert_true (result_matches ("lorem-utf-8_whole-words_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem-utf-8_whole-words_expected.txt")));
 	}
 
 	void test_force () {
@@ -522,7 +521,7 @@ class LoremUtf8Tests : TestRplFile {
 			return;
 		}
 		var output = run_prog ("sudo", { "-n", rpl, "--force", "amét", "amèt", test_result_root });
-		assert_true (result_matches ("lorem-utf-8_utf-8_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "lorem-utf-8_utf-8_expected.txt")));
 		assert_true (!output.std_err.contains ("unable to set attributes"));
 		assert_true (!output.std_err.contains ("new file attributes may not match"));
 	}
@@ -600,7 +599,7 @@ class Utf8SigTests : TestRplFile {
 
 	void test_utf_8_sig () {
 		run ({ "BOM mark", "BOM", test_result_root });
-		assert_true (result_matches ("utf-8-sig_utf-8-sig_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "utf-8-sig_utf-8-sig_expected.txt")));
 	}
 }
 
@@ -612,7 +611,7 @@ class MixedCaseTests : TestRplFile {
 
 	void test_mixed_replace_lower () {
 		run ({ "-m", "MixedInput", "MixedOutput", test_result_root });
-		assert_true (result_matches ("mixed-case_mixed-replace-lower_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "mixed-case_mixed-replace-lower_expected.txt")));
 	}
 }
 
@@ -624,7 +623,7 @@ class BackreferenceTests : TestRplFile {
 
 	void test_backreference_numbering () {
 		run ({ "a(b)a", "$1", test_result_root });
-		assert_true (result_matches ("aba_backreference-numbering_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "aba_backreference-numbering_expected.txt")));
 	}
 }
 
@@ -636,7 +635,7 @@ class EmptyMatchesTests : TestRplFile {
 
 	void test_empty_matches () {
 		run ({ "^", "#", test_result_root });
-		assert_true (result_matches ("abc-123_empty-matches_expected.txt"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "abc-123_empty-matches_expected.txt")));
 	}
 }
 
@@ -649,12 +648,12 @@ class DirTests : TestRplFile {
 
 	void test_recursive () {
 		run ({ "--recursive", "foo", "bar", test_result_root });
-		assert_true (result_matches ("test-dir-expected"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "test-dir-expected")));
 	}
 
 	void test_backup () {
 		run ({ "--backup", "--recursive", "foo", "bar", test_result_root });
-		assert_true (result_matches ("test-dir-backup-expected"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "test-dir-backup-expected")));
 	}
 }
 
@@ -667,7 +666,7 @@ class GlobTests : TestRplFile {
 
 	void test_globs () {
 		run ({ "--recursive", "--glob=*.txt", "foo", "bar", test_result_root });
-		assert_true (result_matches ("test-tree-expected"));
+		assert_true (result_matches (Path.build_filename (test_files_dir, "test-tree-expected")));
 	}
 
 	void test_globs_no_match () {
