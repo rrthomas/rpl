@@ -146,9 +146,9 @@ class TestRplOutputFile : TestRpl {
 		this.test_result_root = Path.build_filename (test_result_dir, "test.txt");
 	}
 
-	public bool result_matches (string expected_file) {
+	public bool result_matches (string expected_root) {
 		try {
-			check_prog ("diff", { "-r", expected_file, test_result_root });
+			check_prog ("diff", { "-r", expected_root, test_result_root });
 		} catch (Error e) {
 			return false;
 		}
