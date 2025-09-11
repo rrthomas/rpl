@@ -18,7 +18,7 @@
 
 using Posix;
 
-public string slurp_file (string filename) throws Error {
+public string slurp_file (string filename) throws FileError {
 	string contents;
 	FileUtils.get_contents (filename, out contents);
 	return contents;
@@ -30,7 +30,7 @@ public void string_to_file (string path, string contents) {
 		FileOutputStream os = file.create (FileCreateFlags.NONE);
 		os.write (contents.data);
 		os.close ();
-	} catch (GLib.Error e) {
+	} catch (Error e) {
 		print ("error writing to temporary file\n");
 		assert_no_error (e);
 	}
@@ -159,7 +159,7 @@ class TestRplOutputFile : TestRpl {
 		try {
 			var s = slurp_file (test_result_root);
 			return s == expected;
-		} catch (Error e) {
+		} catch (FileError e) {
 			return false;
 		}
 	}
