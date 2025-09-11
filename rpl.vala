@@ -164,8 +164,10 @@ ssize_t replace (int input_fd,
                  StringBuilder new_pattern,
                  IConv.IConv? iconv_in,
                  IConv.IConv? iconv_out) {
+	bool lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
 	const size_t INITIAL_BUF_SIZE = 1024 * 1024;
+	const size_t MAX_LOOKBEHIND_BYTES = 255 * 6; // 255 characters (PCRE2's hardwired limit) in UTF-8.
 	size_t buf_size = INITIAL_BUF_SIZE;
 	var buf = (owned) initial_buf;
 	var retry_prefix = new StringBuilder ();
@@ -191,6 +193,7 @@ ssize_t replace (int input_fd,
 	};
 
 	var tonext = new StringBuilder ();
+	var lookbehind_margin = new StringBuilder ();
 	ssize_t tonext_offset = 0;
 	ssize_t n_read = 0;
 	do {
@@ -217,19 +220,29 @@ ssize_t replace (int input_fd,
 		}
 
 		StringBuilder search_str;
-		// If we have search data held over from last iteration, copy it
-		// into a new buffer.
-		if (tonext.len > 0) {
-			search_str = new StringBuilder.sized (buf_size * 2);
-			append_string_builder_tail (search_str, tonext, tonext_offset);
-			append_string_builder_tail (search_str, buf, 0);
-		} else {
+		// If we have no search data held over from last iteration, and
+		// we're not using lookbehind, use the input directly.
+		if (tonext.len == 0 && !lookbehind) {
 			search_str = (owned) buf;
+		} else {
+			// If we're using lookbehind, use it as the start of the buffer.
+			if (lookbehind) {
+				search_str = new StringBuilder (lookbehind_margin.str);
+			} else {
+				// We have search data held over, so make a bigger buffer.
+				search_str = new StringBuilder.sized (buf_size * 2);
+			}
+			// If we have search data held over, prepend it to the buffer.
+			if (tonext.len > 0) {
+				append_string_builder_tail (search_str, tonext, tonext_offset);
+			}
+			// Finally, append the data we read.
+			append_string_builder_tail (search_str, buf, 0);
 		}
 
 		var result = new StringBuilder ();
-		size_t match_from = 0;
-		ssize_t end_pos = 0;
+		size_t match_from = lookbehind_margin.len;
+		ssize_t end_pos = lookbehind_margin.len;
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
 		while (true) {
@@ -300,6 +313,17 @@ ssize_t replace (int input_fd,
 				((string) ((char *)search_str.data + end_pos)).get_next_char (ref c_len, out c);
 				match_from += c_len;
 			}
+		}
+
+		// If we're using lookbehind, keep some of the buffer for next time.
+		if (lookbehind) {
+			lookbehind_margin = new StringBuilder ();
+			append_string_builder_slice (
+				lookbehind_margin,
+				search_str ?? tonext,
+				ssize_t.max (0, (ssize_t) (match_from - MAX_LOOKBEHIND_BYTES)),
+				(ssize_t) match_from
+			);
 		}
 
 		if (!args_info.dry_run_given) {

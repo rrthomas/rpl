@@ -278,6 +278,8 @@ class OutputFileTests : TestRplOutputFile {
 		add_test ("test_a_star_b_input_aaaxaaa", test_a_star_b_input_aaaxaaa);
 		add_test ("test_a_star_b_input_aaaxxaaa", test_a_star_b_input_aaaxxaaa);
 		add_test ("test_multi_buffer_matches", test_multi_buffer_matches);
+		add_test ("test_multi_buffer_lookbehind", test_multi_buffer_lookbehind);
+		add_test ("test_lookbehind_word_boundary", test_lookbehind_word_boundary);
 		add_test ("test_buffer_crossing_character", test_buffer_crossing_character);
 		add_test ("test_empty_match_at_buffer_end", test_empty_match_at_buffer_end);
 		add_test ("test_recursive_no_file_arguments", test_recursive_no_file_arguments);
@@ -337,6 +339,22 @@ class OutputFileTests : TestRplOutputFile {
 		string_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a'));
 		run ({ "a+", "b", test_result_root });
 		assert_true (result_matches (Path.build_filename (test_files_dir, "one-b.txt")));
+	}
+
+	void test_multi_buffer_lookbehind () {
+		string_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a'));
+		var expected = new StringBuilder ("b");
+		expected.append (string.nfill (MULTI_BUFFER_TEST_BYTES - 1, 'a'));
+		run ({ "(?<!a)a", "b", test_result_root });
+		assert_true (result_matches_string (expected.str));
+	}
+
+	void test_lookbehind_word_boundary () {
+		string_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a'));
+		var expected = new StringBuilder ("b");
+		expected.append (string.nfill (MULTI_BUFFER_TEST_BYTES - 1, 'a'));
+		run ({ "\\ba", "b", test_result_root });
+		assert_true (result_matches_string (expected.str));
 	}
 
 	void test_buffer_crossing_character () {
