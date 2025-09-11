@@ -377,6 +377,8 @@ StringBuilder slurp_patterns (string filename) {
 }
 
 int main (string[] argv) {
+	Intl.setlocale (ALL, "");
+
 	string[] args;
 #if WINDOWS
 	args = Win32.get_command_line ();
