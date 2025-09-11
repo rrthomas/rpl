@@ -24,6 +24,18 @@ public string slurp_file (string filename) throws Error {
 	return contents;
 }
 
+public void string_to_file (string path, string contents) {
+	try {
+		var file = File.new_for_path (path);
+		FileOutputStream os = file.create (FileCreateFlags.NONE);
+		os.write (contents.data);
+		os.close ();
+	} catch (GLib.Error e) {
+		print ("error writing to temporary file\n");
+		assert_no_error (e);
+	}
+}
+
 errordomain TestError {
 	TESTERROR;
 }
@@ -254,48 +266,23 @@ class OutputFileTests : TestRplOutputFile {
 	}
 
 	void test_multi_buffer_matches () {
-		try {
-			var file = File.new_for_path (test_result_root);
-			FileOutputStream os = file.create (FileCreateFlags.NONE);
-			os.write (string.nfill (2 * 1024 * 1024, 'a').data);
-			os.close ();
-		} catch (GLib.Error e) {
-			print ("error writing to temporary file\n");
-			assert_no_error (e);
-		}
+		string_to_file (test_result_root, string.nfill (2 * 1024 * 1024, 'a'));
 		run ({ "a+", "b", test_result_root });
 		assert_true (result_matches (Path.build_filename (test_files_dir, "one-b.txt")));
 	}
 
 	void test_buffer_crossing_character () {
-		try {
-			var file = File.new_for_path (test_result_root);
-			FileOutputStream os = file.create (FileCreateFlags.NONE);
-			os.write ("a".data);
-			var s = new StringBuilder ();
-			for (var i = 0; i < 2 * 1000 * 1000; i++) {
-				s.append_unichar ('á');
-			}
-			os.write (s.data);
-			os.close ();
-		} catch (GLib.Error e) {
-			print ("error writing to temporary file\n");
-			assert_no_error (e);
+		var s = new StringBuilder ("a");
+		for (var i = 0; i < 2 * 1000 * 1000; i++) {
+			s.append_unichar ('á');
 		}
+		string_to_file (test_result_root, s.str);
 		run ({ "á", "b", test_result_root });
 		assert_true (result_matches (Path.build_filename (test_files_dir, "many-a-acute_buffer-crossing-character_expected.txt")));
 	}
 
 	void test_empty_match_at_buffer_end () {
-		try {
-			var file = File.new_for_path (test_result_root);
-			FileOutputStream os = file.create (FileCreateFlags.NONE);
-			os.write (string.nfill (2 * 1000 * 1000, 'a').data);
-			os.close ();
-		} catch (GLib.Error e) {
-			print ("error writing to temporary file\n");
-			assert_no_error (e);
-		}
+		string_to_file (test_result_root, string.nfill (2 * 1000 * 1000, 'a'));
 		run ({ "a?", "b", test_result_root });
 		assert_true (result_matches (Path.build_filename (test_files_dir, "empty-match-at-buffer-end_expected.txt")));
 	}
