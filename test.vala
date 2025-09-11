@@ -266,12 +266,68 @@ class OutputFileTests : TestRplOutputFile {
 	public OutputFileTests(string bin_dir, string test_files_dir) {
 		base (bin_dir, test_files_dir);
 
+		add_test ("test_a_star_b_empty_input", test_a_star_b_empty_input);
+		add_test ("test_a_star_b_input_x", test_a_star_b_input_x);
+		add_test ("test_a_star_b_input_aaa", test_a_star_b_input_aaa);
+		add_test ("test_a_star_b_input_aaax", test_a_star_b_input_aaax);
+		add_test ("test_a_star_b_input_xaaa", test_a_star_b_input_xaaa);
+		add_test ("test_a_star_b_input_xaaax", test_a_star_b_input_xaaax);
+		add_test ("test_a_star_b_input_aaaxaaa", test_a_star_b_input_aaaxaaa);
+		add_test ("test_a_star_b_input_aaaxxaaa", test_a_star_b_input_aaaxxaaa);
 		add_test ("test_multi_buffer_matches", test_multi_buffer_matches);
 		add_test ("test_buffer_crossing_character", test_buffer_crossing_character);
 		add_test ("test_empty_match_at_buffer_end", test_empty_match_at_buffer_end);
 		add_test ("test_recursive_no_file_arguments", test_recursive_no_file_arguments);
 		add_test ("test_bad_regex", test_bad_regex);
 		add_test ("test_non_file_input", test_non_file_input);
+	}
+
+	void test_a_star_b_empty_input () {
+		string_to_file (test_result_root, "");
+		run ({ "a*", "b", test_result_root });
+		assert_true (result_matches_string ("b"));
+	}
+
+	void test_a_star_b_input_x () {
+		string_to_file (test_result_root, "x");
+		run ({ "a*", "b", test_result_root });
+		assert_true (result_matches_string ("bxb"));
+	}
+
+	void test_a_star_b_input_aaa () {
+		string_to_file (test_result_root, "aaa");
+		run ({ "a*", "b", test_result_root });
+		assert_true (result_matches_string ("bb"));
+	}
+
+	void test_a_star_b_input_aaax () {
+		string_to_file (test_result_root, "aaax");
+		run ({ "a*", "b", test_result_root });
+		assert_true (result_matches_string ("bbxb"));
+	}
+
+	void test_a_star_b_input_xaaa () {
+		string_to_file (test_result_root, "xaaa");
+		run ({ "a*", "b", test_result_root });
+		assert_true (result_matches_string ("bxbb"));
+	}
+
+	void test_a_star_b_input_xaaax () {
+		string_to_file (test_result_root, "xaaax");
+		run ({ "a*", "b", test_result_root });
+		assert_true (result_matches_string ("bxbbxb"));
+	}
+
+	void test_a_star_b_input_aaaxaaa () {
+		string_to_file (test_result_root, "aaaxaaa");
+		run ({ "a*", "b", test_result_root });
+		assert_true (result_matches_string ("bbxbb"));
+	}
+
+	void test_a_star_b_input_aaaxxaaa () {
+		string_to_file (test_result_root, "aaaxxaaa");
+		run ({ "a*", "b", test_result_root });
+		assert_true (result_matches_string ("bbxbxbb"));
 	}
 
 	void test_multi_buffer_matches () {
