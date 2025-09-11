@@ -98,7 +98,7 @@ private StringBuilder caselike (StringBuilder model, StringBuilder str) {
 	return res;
 }
 
-/* Append to `a` the bytes of `b` from `start` to the end of `b`. */
+// Append to `a` the bytes of `b` from `start` to the end of `b`.
 private void append_string_builder_slice (StringBuilder a, StringBuilder b, ssize_t start, ssize_t end)
 requires (0 <= start)
 requires (start <= end)
@@ -107,7 +107,7 @@ requires (end <= b.len)
 	a.append_len ((string) ((char *) b.str + start), end - start);
 }
 
-/* Append to `a` the bytes of `b` from `start` to the end of `b`. */
+// Append to `a` the bytes of `b` from `start` to the end of `b`.
 private void append_string_builder_tail (StringBuilder a, StringBuilder b, ssize_t start)
 requires (0 <= start)
 requires (start <= b.len) {
