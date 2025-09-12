@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet --pkg iconv
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet --pkg iconv fd-stream.vala prefix-input-stream.vala
 // rpl: search and replace text in files
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -41,6 +41,9 @@ enum Case {
 	CAPITALIZED,
 	MIXED
 }
+
+// A suitable buffer size for stream I/O.
+const int STREAM_BUF_SIZE = 1024 * 1024;
 
 private Case casetype (StringBuilder str)
 requires (str.len > 0)
@@ -155,7 +158,7 @@ private StringBuilder? to_utf8 (IConv.IConv iconv_in, ref StringBuilder buf) {
 
 private delegate ssize_t ReaderType ();
 
-ssize_t replace (int input_fd,
+ssize_t replace (InputStream input,
                  owned StringBuilder initial_buf,
                  string input_filename,
                  int output_fd,
@@ -184,10 +187,17 @@ ssize_t replace (int input_fd,
 			}
 		}
 		append_string_builder_tail (buf, retry_prefix, 0);
-		ssize_t n_read = 0;
+		size_t n_read = 0;
 		do {
-			n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
-			buf.len += n_read;
+			try {
+				input.read_all (
+					((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, STREAM_BUF_SIZE)],
+					out n_read
+				);
+				buf.len += (ssize_t) n_read;
+			} catch (IOError e) {
+				return -1;
+			}
 		} while (n_read > 0 && buf.len < buf_size);
 		if (args_info.verbose_given) {
 			warn (@"bytes read: $(n_read)\n");
@@ -530,13 +540,13 @@ int main (string[] argv) {
 	foreach (var filename in files) {
 		bool have_perms = false;
 		Posix.Stat perms = Posix.Stat () {};
-		int input_fd;
+		InputStream input;
 		int output_fd = -1;
 		string tmp_path = null;
 		if (filename == "-") {
 			filename = "standard input";
-			input_fd = GLib.stdin.fileno ();
-			Gnu.set_binary_mode (input_fd, Gnu.O_BINARY);
+			Gnu.set_binary_mode (Posix.STDIN_FILENO, Gnu.O_BINARY);
+			input = new FdInputStream (Posix.STDIN_FILENO);
 			output_fd = GLib.stdout.fileno ();
 			Gnu.set_binary_mode (output_fd, Gnu.O_BINARY);
 		} else {
@@ -555,17 +565,17 @@ int main (string[] argv) {
 			}
 
 			// Open the input file
-			var fd = Posix.open (filename, Posix.O_RDONLY);
-			if (fd < 0) { // GCOVR_EXCL_START
-				warn (@"skipping $filename: $(Posix.strerror(errno))");
+			try {
+				input = File.new_for_path (filename).read ();
+			} catch (GLib.Error e) { // GCOVR_EXCL_START
+				warn (@"skipping $filename: $(e.message)");
 				continue;
 			} // GCOVR_EXCL_STOP
-			input_fd = fd;
 
 			// Create the output file
 			if (!args_info.dry_run_given) {
 				tmp_path = ".tmp.rpl-XXXXXX";
-				fd = FileUtils.mkstemp (tmp_path);
+				int fd = FileUtils.mkstemp (tmp_path);
 				if (fd == -1) { // GCOVR_EXCL_START
 					warn (@"skipping $filename: cannot create temp file: $(Posix.strerror(errno))");
 					continue;
@@ -600,27 +610,21 @@ int main (string[] argv) {
 		}
 
 		// If we don't have an explicit encoding, guess
-		const int encoding_buf_size = 1024 * 1024;
-		var buf = new StringBuilder.sized (encoding_buf_size);
+		var buf = new StringBuilder.sized (STREAM_BUF_SIZE);
 		if (encoding == null) {
 			var detector = new UCharDet ();
 
 			// Scan at most 1MB, so we don't slurp a large file
-			ssize_t n_bytes = 0;
-			while (n_bytes < encoding_buf_size) {
-				ssize_t n_read = Posix.read (input_fd, (uint8*) buf.data + n_bytes, encoding_buf_size);
-				if (args_info.verbose_given) {
-					warn (@"bytes read to guess encoding: $(n_read)\n");
-				}
-				if (n_read < 0) { // GCOVR_EXCL_START
-					warn (@"error reading $filename: $(GLib.strerror(errno))");
-					break;
-				} // GCOVR_EXCL_STOP
-				if (n_read == 0)
-					break;
-				n_bytes += n_read;
-			}
-			buf.len = n_bytes;
+			try {
+				size_t n_bytes = 0;
+				input.read_all (buf.data[buf.len: buf.allocated_len], out n_bytes);
+				buf.len += (ssize_t) n_bytes;
+				if (args_info.verbose_given)
+					warn (@"bytes read to guess encoding: $(buf.len)\n");
+			} catch (IOError e) { // GCOVR_EXCL_START
+				warn (@"error reading $filename: $(e.message); skipping!");
+				continue;
+			} // GCOVR_EXCL_STOP
 			GLib.assert (detector.handle_data (buf.data) == 0);
 			detector.data_end ();
 			var encoding_guessed = false;
@@ -661,13 +665,15 @@ int main (string[] argv) {
 			iconv_in = IConv.IConv.open ("UTF-8", encoding);
 			iconv_out = IConv.IConv.open (encoding, "UTF-8");
 		}
-		num_matches = replace (input_fd, (owned) buf, filename, output_fd, regex, replace_opts, new_text, iconv_in, iconv_out);
+		num_matches = replace (input, (owned) buf, filename, output_fd, regex, replace_opts, new_text, iconv_in, iconv_out);
 		if (iconv_in != null) {
 			iconv_in.close ();
 			iconv_out.close ();
 		}
 
-		if (Posix.close (input_fd) < 0) { // GCOVR_EXCL_START
+		try {
+			input.close ();
+		} catch (IOError e) { // GCOVR_EXCL_START
 			warn (@"error closing $filename: $(GLib.strerror(errno))");
 		}
 		if (output_fd >= 0 && Posix.close (output_fd) < 0) {

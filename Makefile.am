@@ -49,7 +49,7 @@ TEST_FILES = \
 	$(wildcard test-files/test-tree/*/*.txt) \
 	$(wildcard test-files/test-tree-expected/*/*.txt)
 
-rpl_SOURCES = rpl.vala cmdline.c cmdline.h
+rpl_SOURCES = rpl.vala cmdline.c cmdline.h fd-stream.vala
 rpl_CFLAGS = $(AM_CFLAGS) --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 rpl_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg cmdline --pkg gio-2.0 --pkg posix --pkg gnu --pkg pcre2 --pkg uchardet --pkg iconv
 rpl_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
