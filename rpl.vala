@@ -225,7 +225,7 @@ throws IOError {
 				warn ("--encoding does not match file contents");
 			} else {
 				warn ("you can specify the encoding with --encoding");
-			}
+			} // GCOV_EXCL_LINE
 			return -1;
 		}
 
