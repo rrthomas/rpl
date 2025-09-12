@@ -203,7 +203,6 @@ throws IOError {
 	};
 
 	var tonext = new StringBuilder ();
-	var lookbehind_margin = new StringBuilder ();
 	size_t n_read = 0;
 	do {
 		var buf = new StringBuilder.sized (buf_size);
@@ -235,23 +234,16 @@ throws IOError {
 		if (tonext.len == 0 && !lookbehind) {
 			search_str = (owned) buf;
 		} else {
-			// If we're using lookbehind, use it as the start of the buffer.
-			if (lookbehind) {
-				search_str = new StringBuilder (lookbehind_margin.str);
-				// Append any search data held over from last time.
-				append_string_builder_tail (search_str, tonext, 0);
-			} else {
-				// If we're not using lookbehind, reuse `tonext`.
-				search_str = (owned) tonext;
-				tonext = new StringBuilder ();
-			}
-			// Finally, append the data we read.
+			// Reuse `tonext`
+			search_str = (owned) tonext;
+			tonext = new StringBuilder ();
+			// Append the data we read.
 			append_string_builder_tail (search_str, buf, 0);
 		}
 
 		var result = new StringBuilder ();
-		size_t match_from = lookbehind_margin.len;
-		ssize_t end_pos = lookbehind_margin.len;
+		size_t match_from = 0;
+		ssize_t end_pos = 0;
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
 		while (true) {
@@ -279,9 +271,12 @@ throws IOError {
 				break;
 			} else if (rc == Pcre2.Error.PARTIAL) {
 				// For a partial match, copy text to re-match and grow buffer.
+				size_t keep_from = start_pos;
+				if (lookbehind)
+					keep_from = size_t.max (0, keep_from - MAX_LOOKBEHIND_BYTES);
 				tonext = new StringBuilder ();
-				append_string_builder_tail (tonext, search_str, start_pos);
-				match_from = start_pos;
+				append_string_builder_tail (tonext, search_str, (ssize_t) keep_from);
+				match_from = start_pos - keep_from;
 				buf_size = size_t.max (buf_size, 2 * tonext.len + STREAM_BUF_SIZE);
 				break;
 			}
@@ -325,18 +320,7 @@ throws IOError {
 			}
 		}
 
-		// If we're using lookbehind, keep some of the buffer for next time.
-		if (lookbehind) {
-			lookbehind_margin = new StringBuilder ();
-			append_string_builder_slice (
-				lookbehind_margin,
-				search_str,
-				ssize_t.max (0, (ssize_t) (match_from - MAX_LOOKBEHIND_BYTES)),
-				(ssize_t) match_from
-			);
-		}
-
-		if (output != null) {
+		if (!args_info.dry_run_given) {
 			// Write output.
 			size_t bytes_written;
 			if (iconv_out != null) {
