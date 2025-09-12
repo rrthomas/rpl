@@ -625,7 +625,8 @@ int main (string[] argv) {
 				warn (@"error reading $filename: $(e.message); skipping!");
 				continue;
 			} // GCOVR_EXCL_STOP
-			GLib.assert (detector.handle_data (buf.data) == 0);
+			var ok = detector.handle_data (buf.data) == 0;
+			GLib.assert (ok);
 			detector.data_end ();
 			var encoding_guessed = false;
 			encoding = detector.get_charset ();
