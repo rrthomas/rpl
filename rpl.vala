@@ -221,7 +221,11 @@ throws IOError {
 		// If we failed to convert anything, error immediately.
 		if (retry_prefix == null) {
 			warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
-			warn ("you can specify the encoding with --encoding");
+			if (args_info.encoding_given) {
+				warn ("--encoding does not match file contents");
+			} else {
+				warn ("you can specify the encoding with --encoding");
+			}
 			return -1;
 		}
 
