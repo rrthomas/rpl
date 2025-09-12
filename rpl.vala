@@ -648,7 +648,7 @@ int main (string[] argv) {
 				encoding = null;
 			}
 
-			// Prepend data sent to UChardet to the rest of the input.
+			// Prepend data sent to UCharDet to the rest of the input.
 			input = new PrefixInputStream (buf.data, input);
 		}
 
