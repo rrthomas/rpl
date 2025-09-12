@@ -188,7 +188,7 @@ ssize_t replace (int input_fd,
 		if (args_info.verbose_given) {
 			warn (@"bytes read: $(n_read)\n");
 		}
-		buf.len = retry_prefix.len + n_read;
+		buf.len += n_read;
 		return buf.len;
 	};
 
