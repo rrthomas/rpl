@@ -170,9 +170,8 @@ ssize_t replace (InputStream input,
 throws IOError {
 	bool lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
-	const size_t INITIAL_BUF_SIZE = 1024 * 1024;
 	const size_t MAX_LOOKBEHIND_BYTES = 255 * 6; // 255 characters (PCRE2's hardwired limit) in UTF-8.
-	size_t buf_size = INITIAL_BUF_SIZE;
+	size_t buf_size = STREAM_BUF_SIZE;
 	var retry_prefix = new StringBuilder ();
 	var at_bob = true;
 
@@ -279,7 +278,7 @@ throws IOError {
 				tonext = new StringBuilder ();
 				append_string_builder_tail (tonext, search_str, start_pos);
 				match_from = start_pos;
-				buf_size = size_t.max (buf_size, 2 * tonext.len + INITIAL_BUF_SIZE);
+				buf_size = size_t.max (buf_size, 2 * tonext.len + STREAM_BUF_SIZE);
 				break;
 			}
 
