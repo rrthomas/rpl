@@ -156,10 +156,9 @@ private StringBuilder? to_utf8 (IConv.IConv iconv_in, ref StringBuilder buf) {
 	return retry_prefix;
 }
 
-private delegate ssize_t ReaderType () throws IOError;
+private delegate ssize_t ReaderType (StringBuilder buf) throws IOError;
 
 ssize_t replace (InputStream input,
-                 owned StringBuilder initial_buf,
                  string input_filename,
                  int output_fd,
                  Pcre2.Regex old_regex,
@@ -173,20 +172,11 @@ throws IOError {
 	const size_t INITIAL_BUF_SIZE = 1024 * 1024;
 	const size_t MAX_LOOKBEHIND_BYTES = 255 * 6; // 255 characters (PCRE2's hardwired limit) in UTF-8.
 	size_t buf_size = INITIAL_BUF_SIZE;
-	var buf = (owned) initial_buf;
 	var retry_prefix = new StringBuilder ();
 	var at_bob = true;
 
-	// Helper function to read input, returning initial_buf on first read.
-	var prefix_read = false;
-	ReaderType read_with_prefix = () => {
-		// If we've not yet processed initial_buf, return if it's not empty.
-		if (!prefix_read) {
-			prefix_read = true;
-			if (buf.len > 0) {
-				return buf.len;
-			}
-		}
+	// Helper function to read input.
+	ReaderType read_with_prefix = (buf) => {
 		append_string_builder_tail (buf, retry_prefix, 0);
 		size_t n_read = 0;
 		do {
@@ -206,7 +196,8 @@ throws IOError {
 	var lookbehind_margin = new StringBuilder ();
 	size_t n_read = 0;
 	do {
-		n_read = read_with_prefix ();
+		var buf = new StringBuilder.sized (buf_size);
+		n_read = read_with_prefix (buf);
 
 		// Convert or validate input, getting back any invalid suffix.
 		if (buf.len == 0) {
@@ -351,8 +342,6 @@ throws IOError {
 			} // GCOVR_EXCL_STOP
 		}
 
-		// Reset buffer for next iteration
-		buf = new StringBuilder.sized (buf_size);
 		at_bob = false;
 	} while (n_read != 0);
 
@@ -649,6 +638,9 @@ int main (string[] argv) {
 				}
 				encoding = null;
 			}
+
+			// Prepend data sent to UChardet to the rest of the input.
+			input = new PrefixInputStream (buf.data, input);
 		}
 
 		// Process the file
@@ -660,7 +652,7 @@ int main (string[] argv) {
 			iconv_out = IConv.IConv.open (encoding, "UTF-8");
 		}
 		try {
-			num_matches = replace (input, (owned) buf, filename, output_fd, regex, replace_opts, new_text, iconv_in, iconv_out);
+			num_matches = replace (input, filename, output_fd, regex, replace_opts, new_text, iconv_in, iconv_out);
 		} catch (IOError e) { // GCOVR_EXCL_START
 			warn (@"error reading $filename: $(e.message); skipping!");
 			try {
