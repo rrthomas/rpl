@@ -203,9 +203,9 @@ throws IOError {
 	};
 
 	var tonext = new StringBuilder ();
-	var lookbehind_margin = new StringBuilder ();
 	var prev_match_is_empty = false;
 	size_t n_read = 0;
+	ssize_t match_from = 0;
 	do {
 		var buf = new StringBuilder.sized (buf_size);
 		n_read = read_with_prefix (buf);
@@ -236,22 +236,14 @@ throws IOError {
 		if (tonext.len == 0 && !lookbehind) {
 			search_str = (owned) buf;
 		} else {
-			// If we're using lookbehind, use it as the start of the buffer.
-			if (lookbehind) {
-				search_str = new StringBuilder (lookbehind_margin.str); // FIXME: Broken if it contains `\0`
-				// Append any search data held over from last time.
-				append_string_builder_tail (search_str, tonext, 0);
-			} else {
-				// If we're not using lookbehind, reuse `tonext`.
-				search_str = (owned) tonext;
-				tonext = new StringBuilder ();
-			}
-			// Finally, append the data we read.
+			// Reuse `tonext`
+			search_str = (owned) tonext;
+			tonext = new StringBuilder ();
+			// Append the data we read.
 			append_string_builder_tail (search_str, buf, 0);
 		}
 
 		var result = new StringBuilder ();
-		ssize_t match_from = lookbehind_margin.len;
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
 		do {
@@ -264,11 +256,13 @@ throws IOError {
 					// Already at the end of the buffer.
 					break;
 				}
+//				warn(@"Skipping '$c'");
 				result.append_unichar(c);
 				match_from += c_len;
 			}
 
 			// Do match, and return on error.
+//			warn(@"About to match: match_from=$match_from");
 			int rc = 0;
 			Match? match = old_regex.match (search_str, (size_t) match_from, do_partial | notbol | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
 			if (rc < 0 && rc != Pcre2.Error.NOMATCH && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
@@ -284,17 +278,23 @@ throws IOError {
 				end_pos = (ssize_t) match.group_end(0);
 			}
 			append_string_builder_slice (result, search_str, match_from, start_pos);
+//			warn(@"startpos=$start_pos, end_pos=$end_pos");
 
 			// If we didn't get a match, break for more input.
 			if (rc == Pcre2.Error.NOMATCH) {
+//				warn(@"NOMATCH");
 				prev_match_is_empty = false; // Treat as a zero-length partial match.
 				break;
 			} else if (rc == Pcre2.Error.PARTIAL) {
+//				warn(@"PARTIAL");
 				prev_match_is_empty = false;
 				// For a partial match, copy text to re-match and grow buffer.
+				ssize_t keep_from = start_pos;
+				if (lookbehind)
+					keep_from = ssize_t.max (0, keep_from - (ssize_t) MAX_LOOKBEHIND_BYTES);
 				tonext = new StringBuilder ();
-				append_string_builder_tail (tonext, search_str, start_pos);
-				match_from = start_pos;
+				append_string_builder_tail (tonext, search_str, keep_from);
+				match_from = start_pos - keep_from;
 				buf_size = size_t.max (buf_size, 2 * tonext.len + STREAM_BUF_SIZE);
 				break;
 			}
@@ -332,17 +332,6 @@ throws IOError {
 
 			// If we're at the end of the input, break.
 		} while (!prev_match_is_empty || match_from < search_str.len);
-
-		// If we're using lookbehind, keep some of the buffer for next time.
-		if (lookbehind) {
-			lookbehind_margin = new StringBuilder ();
-			append_string_builder_slice (
-				lookbehind_margin,
-				search_str,
-				ssize_t.max (0, match_from - (ssize_t) MAX_LOOKBEHIND_BYTES),
-				match_from
-			);
-		}
 
 		if (output != null) {
 			// Write output.
