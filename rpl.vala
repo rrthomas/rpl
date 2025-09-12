@@ -229,11 +229,10 @@ ssize_t replace (int input_fd,
 				search_str = new StringBuilder (lookbehind_margin.str);
 				// Append any search data held over from last time.
 				append_string_builder_tail (search_str, tonext, 0);
-			} else if (tonext.len > 0) {
+			} else {
 				// If we're not using lookbehind, reuse `tonext`.
 				search_str = (owned) tonext;
-			} else {
-				search_str = new StringBuilder ();
+				tonext = new StringBuilder ();
 			}
 			// Finally, append the data we read.
 			append_string_builder_tail (search_str, buf, 0);
