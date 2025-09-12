@@ -184,11 +184,14 @@ ssize_t replace (int input_fd,
 			}
 		}
 		append_string_builder_tail (buf, retry_prefix, 0);
-		ssize_t n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
+		ssize_t n_read = 0;
+		do {
+			n_read = Posix.read (input_fd, ((uint8*) buf.data) + buf.len, buf_size - buf.len);
+			buf.len += n_read;
+		} while (n_read > 0 && buf.len < buf_size);
 		if (args_info.verbose_given) {
 			warn (@"bytes read: $(n_read)\n");
 		}
-		buf.len += n_read;
 		return buf.len;
 	};
 
