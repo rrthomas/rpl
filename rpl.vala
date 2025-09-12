@@ -157,10 +157,11 @@ private StringBuilder? to_utf8 (IConv.IConv iconv_in, ref StringBuilder buf) {
 }
 
 private delegate ssize_t ReaderType (StringBuilder buf) throws IOError;
+private delegate void WriterType (uint8 *buf, size_t len) throws IOError;
 
 ssize_t replace (InputStream input,
                  string input_filename,
-                 int output_fd,
+                 OutputStream? output,
                  Pcre2.Regex old_regex,
                  Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
@@ -190,6 +191,16 @@ throws IOError {
 			warn (@"bytes read: $(n_read)\n");
 		}
 		return buf.len;
+	};
+
+	// Helper function to write output from a small output buffer.
+	WriterType write_output = (buf, len) => {
+		size_t tot_written = 0;
+		do {
+			size_t n_written;
+			output.write_all (((uint8[]) (buf + tot_written))[0 : size_t.min (STREAM_BUF_SIZE, len - tot_written)], out n_written);
+			tot_written += n_written;
+		} while (tot_written < len);
 	};
 
 	var tonext = new StringBuilder ();
@@ -322,24 +333,20 @@ throws IOError {
 			);
 		}
 
-		if (!args_info.dry_run_given) {
+		if (output != null) {
 			// Write output.
-			ssize_t write_res = 0;
+			size_t bytes_written;
 			if (iconv_out != null) {
 				try {
-					size_t bytes_written;
-					string output = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
-					write_res = Posix.write (output_fd, output, bytes_written);
+					string converted = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
+					write_output (converted.data, bytes_written);
 				} catch (ConvertError e) {
 					warn (@"output encoding error: $(GLib.strerror(errno))");
 					return -1;
 				}
 			} else {
-				write_res = Posix.write (output_fd, result.data, result.len);
+				write_output (result.data, result.len);
 			}
-			if (write_res < 0) { // GCOVR_EXCL_START
-				warn (@"write error: $(GLib.strerror(errno))");
-			} // GCOVR_EXCL_STOP
 		}
 
 		at_bob = false;
@@ -523,14 +530,14 @@ int main (string[] argv) {
 		bool have_perms = false;
 		Posix.Stat perms = Posix.Stat () {};
 		InputStream input;
-		int output_fd = -1;
+		OutputStream output;
 		string tmp_path = null;
 		if (filename == "-") {
 			filename = "standard input";
 			Gnu.set_binary_mode (Posix.STDIN_FILENO, Gnu.O_BINARY);
 			input = new FdInputStream (Posix.STDIN_FILENO);
-			output_fd = GLib.stdout.fileno ();
-			Gnu.set_binary_mode (output_fd, Gnu.O_BINARY);
+			Gnu.set_binary_mode (Posix.STDOUT_FILENO, Gnu.O_BINARY);
+			output = new FdOutputStream (Posix.STDOUT_FILENO);
 		} else {
 			// Check `filename` is a regular file, and get its permissions
 			if (Posix.lstat (filename, out perms) != 0) {
@@ -555,14 +562,16 @@ int main (string[] argv) {
 			} // GCOVR_EXCL_STOP
 
 			// Create the output file
-			if (!args_info.dry_run_given) {
+			if (args_info.dry_run_given) {
+				output = null;
+			} else {
 				tmp_path = ".tmp.rpl-XXXXXX";
 				int fd = FileUtils.mkstemp (tmp_path);
 				if (fd == -1) { // GCOVR_EXCL_START
 					warn (@"skipping $filename: cannot create temp file: $(Posix.strerror(errno))");
 					continue;
 				} // GCOVR_EXCL_STOP
-				output_fd = fd;
+				output = new FdOutputStream (fd);
 
 				// Set permissions and owner
 				errno = 0;
@@ -652,9 +661,9 @@ int main (string[] argv) {
 			iconv_out = IConv.IConv.open (encoding, "UTF-8");
 		}
 		try {
-			num_matches = replace (input, filename, output_fd, regex, replace_opts, new_text, iconv_in, iconv_out);
+			num_matches = replace (input, filename, output, regex, replace_opts, new_text, iconv_in, iconv_out);
 		} catch (IOError e) { // GCOVR_EXCL_START
-			warn (@"error reading $filename: $(e.message); skipping!");
+			warn (@"error processing $filename: $(e.message); skipping!");
 			try {
 				input.close ();
 			} catch (IOError e) {}
@@ -669,10 +678,14 @@ int main (string[] argv) {
 			input.close ();
 		} catch (IOError e) { // GCOVR_EXCL_START
 			warn (@"error closing $filename: $(GLib.strerror(errno))");
-		}
-		if (output_fd >= 0 && Posix.close (output_fd) < 0) {
-			warn (@"error closing $filename: $(GLib.strerror(errno))");
 		} // GCOVR_EXCL_STOP
+		if (output != null) {
+			try {
+				output.close ();
+			} catch (IOError e) { // GCOVR_EXCL_START
+				warn (@"error closing $filename: $(GLib.strerror(errno))");
+			} // GCOVR_EXCL_STOP
+		}
 
 		// Delete temporary file if either we had an error (num_matches < 0)
 		// or nothing changed (num_matches == 0).
