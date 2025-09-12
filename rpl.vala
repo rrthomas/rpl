@@ -156,7 +156,7 @@ private StringBuilder? to_utf8 (IConv.IConv iconv_in, ref StringBuilder buf) {
 	return retry_prefix;
 }
 
-private delegate ssize_t ReaderType ();
+private delegate ssize_t ReaderType () throws IOError;
 
 ssize_t replace (InputStream input,
                  owned StringBuilder initial_buf,
@@ -166,7 +166,8 @@ ssize_t replace (InputStream input,
                  Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
                  IConv.IConv? iconv_in,
-                 IConv.IConv? iconv_out) {
+                 IConv.IConv? iconv_out)
+throws IOError {
 	bool lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
 	const size_t INITIAL_BUF_SIZE = 1024 * 1024;
@@ -189,15 +190,11 @@ ssize_t replace (InputStream input,
 		append_string_builder_tail (buf, retry_prefix, 0);
 		size_t n_read = 0;
 		do {
-			try {
-				input.read_all (
-					((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, STREAM_BUF_SIZE)],
-					out n_read
-				);
-				buf.len += (ssize_t) n_read;
-			} catch (IOError e) {
-				return -1;
-			}
+			input.read_all (
+				((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, STREAM_BUF_SIZE)],
+				out n_read
+			);
+			buf.len += (ssize_t) n_read;
 		} while (n_read > 0 && buf.len < buf_size);
 		if (args_info.verbose_given) {
 			warn (@"bytes read: $(n_read)\n");
@@ -207,13 +204,9 @@ ssize_t replace (InputStream input,
 
 	var tonext = new StringBuilder ();
 	var lookbehind_margin = new StringBuilder ();
-	ssize_t n_read = 0;
+	size_t n_read = 0;
 	do {
 		n_read = read_with_prefix ();
-		if (n_read < 0) { // GCOVR_EXCL_START
-			warn (@"error reading $input_filename: $(GLib.strerror(errno))");
-			break;
-		} // GCOVR_EXCL_STOP
 
 		// Convert or validate input, getting back any invalid suffix.
 		if (buf.len == 0) {
@@ -666,7 +659,15 @@ int main (string[] argv) {
 			iconv_in = IConv.IConv.open ("UTF-8", encoding);
 			iconv_out = IConv.IConv.open (encoding, "UTF-8");
 		}
-		num_matches = replace (input, (owned) buf, filename, output_fd, regex, replace_opts, new_text, iconv_in, iconv_out);
+		try {
+			num_matches = replace (input, (owned) buf, filename, output_fd, regex, replace_opts, new_text, iconv_in, iconv_out);
+		} catch (IOError e) { // GCOVR_EXCL_START
+			warn (@"error reading $filename: $(e.message); skipping!");
+			try {
+				input.close ();
+			} catch (IOError e) {}
+			num_matches = -1;
+		} // GCOVR_EXCL_STOP
 		if (iconv_in != null) {
 			iconv_in.close ();
 			iconv_out.close ();
