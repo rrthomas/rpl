@@ -594,18 +594,13 @@ int main (string[] argv) {
 
 		total_files += 1;
 
-		// If no encoding specified, reset guess for each file
-		if (!args_info.encoding_given) {
-			encoding = null;
-		}
-
 		if (args_info.verbose_given && !args_info.dry_run_given) {
 			warn (@"processing $filename");
 		}
 
 		// If we don't have an explicit encoding, guess
 		var buf = new StringBuilder.sized (STREAM_BUF_SIZE);
-		if (encoding == null) {
+		if (!args_info.encoding_given) {
 			var detector = new UCharDet ();
 
 			// Scan at most 1MB, so we don't slurp a large file
