@@ -568,7 +568,7 @@ int main (string[] argv) {
 			if (args_info.dry_run_given) {
 				output = null;
 			} else {
-				tmp_path = ".tmp.rpl-XXXXXX";
+				tmp_path = Path.build_filename(Path.get_dirname (filename), ".tmp.rpl-XXXXXX");
 				int fd = FileUtils.mkstemp (tmp_path);
 				if (fd == -1) { // GCOVR_EXCL_START
 					warn (@"skipping $filename: cannot create temp file: $(Posix.strerror(errno))");
