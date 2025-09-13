@@ -719,7 +719,7 @@ int main (string[] argv) {
 				string backup_name = @"$filename~";
 				var rc = FileUtils.rename (filename, backup_name);
 				if (rc < 0) {
-					warn (@"error renaming $filename to $backup_name; error: $(GLib.strerror(errno))");
+					warn (@"error renaming $filename to $backup_name: $(GLib.strerror(errno))");
 					remove_temp_file (tmp_path);
 					continue;
 				}
