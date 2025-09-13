@@ -681,7 +681,7 @@ int main (string[] argv) {
 			try {
 				output.close ();
 			} catch (IOError e) { // GCOVR_EXCL_START
-				warn (@"error closing $filename: $(GLib.strerror(errno))");
+				warn (@"error closing output: $(GLib.strerror(errno))");
 			} // GCOVR_EXCL_STOP
 		}
 
