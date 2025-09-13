@@ -6,9 +6,6 @@
 *_vala.stamp-t
 *.trs
 *.log
-*.gcov
-*.gcda
-*.gcno
 /INSTALL
 /Makefile
 /Makefile.in
@@ -32,15 +29,6 @@
 /missing
 /perf.data*
 /stamp-h1
-/pcre2-16-demo
-/pcre2-16-demo.exe
-/rpl
-/rpl.exe
-/rpl.1
-/rpl.info
-/rpl-*.tar.gz
 /test
 /test.exe
-/test-prefix-stream
-/test-prefix-stream.exe
 /TAGS
