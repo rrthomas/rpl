@@ -403,7 +403,7 @@ class OutputFileTests : TestRplOutputFile {
 class LoremTests : TestRplFile {
 	public LoremTests(string bin_dir, string test_files_dir) {
 		base (bin_dir, test_files_dir, "lorem.txt");
-		add_test ("test_ignore_case", test_ignore_case_verbose);
+		add_test ("test_ignore_case_verbose", test_ignore_case_verbose);
 		add_test ("test_match_case", test_match_case);
 		add_test ("test_no_flags", test_no_flags);
 		add_test ("test_use_regexp", test_use_regexp);
