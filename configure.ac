@@ -40,22 +40,6 @@ AM_CONDITIONAL(OS_WIN32, test "$native_win32" = yes)
 # Initialize gnulib
 gl_INIT
 
-# Extra libraries
-PKG_CHECK_MODULES(PCRE2, [libpcre2-8 >= 10.45])
-AC_DEFINE([PCRE2_CODE_UNIT_WIDTH], [8], [Define to select code unit width for libpcre2])
-PKG_CHECK_MODULES(UCHARDET, [uchardet])
-
-# PCRE2 16-bit flavor demo
-AC_ARG_WITH([16bit-demo],
-  [AS_HELP_STRING([--with-16bit-demo], [build PCRE2 16-bit flavor demo])],
-  [case $withval in
-     yes|no) ;;
-     *)      AC_MSG_ERROR([bad value $withval for old-pcre option]) ;;
-   esac
-   with_16bit_demo=$withval],
-   [with_16bit_demo=no])
-AM_CONDITIONAL([PCRE2_16_DEMO], [test "$with_16bit_demo" = yes])
-
 # Generate output
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile lib/Makefile])

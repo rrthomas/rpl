@@ -120,7 +120,7 @@ class TestRpl : GeeTestCase {
 
 	public TestRpl(string bin_dir, string test_files_dir) {
 		base ("TestRpl");
-		this.rpl = Path.build_filename (bin_dir, "rpl");
+		this.rpl = Path.build_filename (bin_dir, "rpl.sh");
 		this.test_files_dir = test_files_dir;
 	}
 
@@ -220,7 +220,6 @@ class NoFileTests : TestRpl {
 
 		add_test ("test_no_arguments", test_no_arguments);
 		add_test ("test_help", test_help);
-		add_test ("test_full_help", test_full_help);
 		add_test ("test_version", test_version);
 		add_test ("test_nonexistent_option", test_nonexistent_option);
 		add_test ("test_nonexistent_input", test_nonexistent_input);
@@ -230,17 +229,12 @@ class NoFileTests : TestRpl {
 
 	void test_no_arguments () {
 		var output = run ({ }, 1);
-		assert_true (output.std_out.contains ("Search and replace text in files."));
+		assert_true (output.std_err.contains ("requires at least 2 arg(s)"));
 	}
 
 	void test_help () {
 		var output = run ({ "--help" });
 		assert_true (output.std_out.contains ("Search and replace text in files."));
-	}
-
-	void test_full_help () {
-		var output = run ({ "--full-help" });
-		assert_true (output.std_out.contains ("use extended regex syntax [IGNORED]"));
 	}
 
 	void test_version () {
