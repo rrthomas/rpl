@@ -252,7 +252,7 @@ class NoFileTests : TestRpl {
 
 	void test_nonexistent_patterns_file () {
 		var output = run ({ "--files", "in", "out", "nonexistent.txt" }, 1);
-		assert_true (output.std_err.contains ("error reading patterns file"));
+		assert_true (output.std_err.contains ("error reading pattern file"));
 	}
 
 	void test_input_is_directory () {

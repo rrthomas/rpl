@@ -401,7 +401,7 @@ StringBuilder slurp_patterns (string filename) {
 	try {
 		FileUtils.get_data (filename, out input);
 	} catch (GLib.Error e) {
-		die (1, "error reading patterns file $(filename)");
+		die (1, "error reading pattern file $(filename)");
 	}
 	return new StringBuilder.from_buffer ((char[]) input);
 }
