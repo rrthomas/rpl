@@ -66,9 +66,9 @@ pcre2_16_demo_LDADD = $(LDADD) $(GLIB_LIBS) -lpcre2-16
 
 test_SOURCES = test.vala testcase.vala slurp.vala
 # -W flag in next line is to work around https://gitlab.gnome.org/GNOME/vala/-/issues/1413
-test_CFLAGS = $(AM_CFLAGS) --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) -Wno-incompatible-function-pointer-types
-test_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg gio-2.0 --pkg pcre2 --pkg posix --pkg gnu
-test_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
+test_CFLAGS = $(AM_CFLAGS) --include config.h $(GLIB_CFLAGS) -Wno-incompatible-function-pointer-types
+test_VALAFLAGS = $(AM_VALAFLAGS) --pkg gio-2.0 --pkg posix --pkg gnu
+test_LDADD = $(LDADD) $(GLIB_LIBS)
 
 test_prefix_stream_SOURCES = test-prefix-stream.vala prefix-input-stream.vala testcase.vala
 # -W flag in next line is to work around https://gitlab.gnome.org/GNOME/vala/-/issues/1413
