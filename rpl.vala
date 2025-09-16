@@ -187,7 +187,7 @@ throws IOError {
 			buf.len += (ssize_t) n_read;
 		} while (n_read > 0 && buf.len < buf_size);
 		if (args_info.verbose_given) {
-			warn (@"bytes read: $(n_read)\n");
+			warn (@"bytes read: $(n_read)");
 		}
 		return buf.len;
 	};
@@ -231,8 +231,8 @@ throws IOError {
 		}
 
 		StringBuilder search_str;
-		// If we have no search data held over from last iteration, and
-		// we're not using lookbehind, use the input directly.
+		// If we have no search data held over from the previous iteration,
+		// and we're not using lookbehind, use the input directly.
 		if (tonext.len == 0 && !lookbehind) {
 			search_str = (owned) buf;
 		} else {
@@ -399,7 +399,7 @@ StringBuilder slurp_patterns (string filename) {
 	try {
 		FileUtils.get_data (filename, out input);
 	} catch (GLib.Error e) {
-		die (1, "error reading pattern file $(filename)");
+		die (1, @"error reading pattern file $filename");
 	}
 	return new StringBuilder.from_buffer ((char[]) input);
 }
@@ -566,7 +566,7 @@ int main (string[] argv) {
 			if (args_info.dry_run_given) {
 				output = null;
 			} else {
-				tmp_path = Path.build_filename(Path.get_dirname (filename), ".tmp.rpl-XXXXXX");
+				tmp_path = Path.build_filename (Path.get_dirname (filename), ".tmp.rpl-XXXXXX");
 				int fd = FileUtils.mkstemp (tmp_path);
 				if (fd == -1) { // GCOVR_EXCL_START
 					warn (@"skipping $filename: cannot create temp file: $(Posix.strerror(errno))");
@@ -607,7 +607,7 @@ int main (string[] argv) {
 				input.read_all (buf.data[buf.len: buf.allocated_len], out n_bytes);
 				buf.len += (ssize_t) n_bytes;
 				if (args_info.verbose_given)
-					warn (@"bytes read to guess encoding: $(buf.len)\n");
+					warn (@"bytes read to guess encoding: $(buf.len)");
 			} catch (IOError e) { // GCOVR_EXCL_START
 				warn (@"error reading $filename: $(e.message); skipping!");
 				continue;
