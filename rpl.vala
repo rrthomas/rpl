@@ -204,6 +204,7 @@ throws IOError {
 
 	var tonext = new StringBuilder ();
 	var lookbehind_margin = new StringBuilder ();
+	var prev_match_is_empty = false;
 	size_t n_read = 0;
 	do {
 		var buf = new StringBuilder.sized (buf_size);
@@ -254,10 +255,18 @@ throws IOError {
 		ssize_t end_pos = lookbehind_margin.len;
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
-		while (true) {
+		do {
+			// Special case: if the previous match was empty, don't try to
+			// match again at the some position.
+			int c_len = 0;
+			if (prev_match_is_empty) {
+				unichar c;
+				((string) ((char *)search_str.data + end_pos)).get_next_char (ref c_len, out c);
+			}
+
 			// Do match, and return on error.
 			int rc = 0;
-			Match? match = old_regex.match (search_str, match_from, do_partial | notbol | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
+			Match? match = old_regex.match (search_str, match_from + c_len, do_partial | notbol | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
 			if (rc < 0 && rc != Pcre2.Error.NOMATCH && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
 				warn (@"$input_filename: $(get_error_message(rc))");
 				return -1; // GCOVR_EXCL_STOP
@@ -268,16 +277,12 @@ throws IOError {
 			append_string_builder_slice (result, search_str, end_pos, start_pos);
 			end_pos = (ssize_t) match.group_end (0);
 
-			// If the match is zero-width and at the end of the buffer, but
-			// not the end of the input, treat it as partial.
-			if (do_partial != 0 && start_pos == end_pos && start_pos == search_str.len) {
-				rc = Pcre2.Error.PARTIAL;
-			}
-
 			// If we didn't get a match, break for more input.
 			if (rc == Pcre2.Error.NOMATCH) {
+				prev_match_is_empty = false; // Arbitrary; we cannot match in the same place anyway.
 				break;
 			} else if (rc == Pcre2.Error.PARTIAL) {
+				prev_match_is_empty = false;
 				// For a partial match, copy text to re-match and grow buffer.
 				tonext = new StringBuilder ();
 				append_string_builder_tail (tonext, search_str, start_pos);
@@ -285,6 +290,8 @@ throws IOError {
 				buf_size = size_t.max (buf_size, 2 * tonext.len + STREAM_BUF_SIZE);
 				break;
 			}
+
+			prev_match_is_empty = start_pos == end_pos;
 
 			// Perform substitutions.
 			var replacement = old_regex.substitute (
@@ -302,7 +309,7 @@ throws IOError {
 			// Match case of replacement to case of original if required.
 			if (args_info.match_case_given) {
 				var model = new StringBuilder ();
-				append_string_builder_slice (model, search_str, (ssize_t) match.group_start (0), (ssize_t) match.group_end (0));
+				append_string_builder_slice (model, search_str, start_pos, end_pos);
 				var recased = caselike (model, replacement);
 				replacement = (owned) recased;
 			}
@@ -313,17 +320,8 @@ throws IOError {
 			// Move past the match.
 			num_matches += 1;
 			match_from = end_pos;
-			if (start_pos == end_pos) {
-				// If we're at the end of the input, break.
-				if (end_pos == search_str.len) {
-					break;
-				}
-				unichar c;
-				int c_len = 0;
-				((string) ((char *)search_str.data + end_pos)).get_next_char (ref c_len, out c);
-				match_from += c_len;
-			}
-		}
+			// If we're at the end of the input, break.
+		} while (!prev_match_is_empty || match_from < search_str.len);
 
 		// If we're using lookbehind, keep some of the buffer for next time.
 		if (lookbehind) {
