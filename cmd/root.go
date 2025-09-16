@@ -18,18 +18,21 @@ package cmd
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 
-	"github.com/Jemmic/go-pcre2"
 	"github.com/famz/SetLocale"
+	"github.com/rrthomas/go-pcre2"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/ianaindex"
+	"golang.org/x/text/transform"
 )
 
 func info(msg string) {
@@ -48,7 +51,7 @@ func die(code int, msg string) {
 // TODO: enum Case { LOWER, UPPER, CAPITALIZED, MIXED }
 
 // A suitable buffer size for stream I/O.
-// const streamBufSize = 1024 * 1024
+const streamBufSize = 1024 * 1024
 
 func removeTempFile(tmpPath string) {
 	if err := os.Remove(tmpPath); err != nil {
@@ -75,93 +78,145 @@ func getDirTree(root string) []string {
 	return results
 }
 
-func replace(input *os.File, inputFilename string, output *os.File, oldRegex *pcre2.Regexp, replaceOpts uint32, newPattern string) (int, error) { // TODO iconv
-	// lookbehind := false // FIXME
+func replace(input io.Reader, inputFilename string, output io.Writer, oldRegex *pcre2.Regexp, replaceOpts uint32, newPattern string) (int, error) {
+	lookbehind := oldRegex.MaxLookbehind() != 0
 	numMatches := 0
-	// const maxLookbehindBytes = 255 * 6 // 255 characters (PCRE2's hardwired limit) in UTF-8.
-	// bufSize := streamBufSize
-	// retryPrefix := ""
+	const maxLookbehindBytes = 255 * 6 // 255 characters (PCRE2's hardwired limit) in UTF-8.
+	bufSize := streamBufSize
 	atBob := false
 
-	// TODO: helper function to read input
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(input)
-	searchStr := buf.String()
+	// Helper function to read input
+	readInput := func(buf []byte) (int, error) {
+		var bytesRead int
+		var err error
+		if bytesRead, err = io.ReadFull(input, buf); err != nil {
+			if err != io.ErrUnexpectedEOF {
+				return -1, nil
+			}
+		}
+		if verbose {
+			warn(fmt.Sprintf("bytes read: %d", bytesRead))
+		}
+		return bytesRead, err
+	}
 
-	// TODO: helper function to write output
+	// Helper function to write output from a small buffer.
+	writeOutput := func(buf string) error {
+		if _, err := io.WriteString(output, buf); err != nil {
+			return err
+		}
+		return nil
+	}
 
-	// tonext := ""
+	tonext := ""
 	lookbehindMargin := ""
 	matcher := oldRegex.NewMatcher()
 	nRead := 0
 
-	var result string
-	matchFrom := len(lookbehindMargin)
-	endPos := matchFrom
-	doPartial := uint32(0)
-	if nRead > 0 {
-		doPartial = pcre2.PARTIAL_HARD
-	}
-	notbol := uint32(0)
-	if !atBob {
-		notbol = pcre2.NOTBOL
-	}
-	// for {
-	// Do match, and return on error.
-	rc := matcher.ExecString(searchStr, doPartial|notbol)
-	if rc < 0 && rc != pcre2.ERROR_NOMATCH && rc != pcre2.ERROR_PARTIAL {
-		warn(fmt.Sprintf("%s: %s", inputFilename, matcher.GetError()))
-	}
-
-	// Append unmatched input to result.
-	startPos := len(searchStr)
-	if rc != pcre2.ERROR_NOMATCH {
-		startPos = matcher.GroupIndices(0)[0]
-	}
-	// FIXME result += searchStr[endPos:startPos]
-	endPos = matcher.GroupIndices(0)[1]
-
-	// TODO: If the match is zero-width and at the end of the buffer, but
-	// not the end of the input, treat it as partial.
-
-	// TODO: If we didn't get a match, break for more input
-	switch rc {
-	case pcre2.ERROR_NOMATCH:
-		return -1, nil // break
-	case pcre2.ERROR_PARTIAL:
-		// TODO: For a partial match, copy text to re-match and grow buffer.
-	}
-
-	// Perform substitutions.
-	replacement := oldRegex.ReplaceAllString(searchStr, newPattern, replaceOpts|pcre2.NOTEMPTY|pcre2.NO_UTF_CHECK)
-	// TODO: detect and report errors.
-
-	// TODO: Match case of replacement to case of original if required.
-
-	// Add replacement to result.
-	result += replacement
-
-	// Move past the match.
-	numMatches += 1 // FIXME
-	matchFrom = endPos
-	if startPos == endPos {
-		// If we're at the end of the input, break.
-		if endPos == len(searchStr) {
-			return -1, nil // break
+	for {
+		buf := make([]byte, 0, bufSize)
+		var err error
+		if nRead, err = readInput(buf); err != nil {
+			return -1, err
+			// FIXME: give error messages:
+			// --encoding does not match file contents
+			// you can specify the encoding with --encoding
 		}
-		matchFrom += 1 // FIXME: advance by one character
+
+		var searchStr string
+		// If we have no search data held over from the previous iteration,
+		// and we're not using lookbehind, use the input directly.
+		if len(tonext) == 0 && !lookbehind {
+			searchStr = buf
+		} else {
+			// If we're using lookbehind, use it as the start of the buffer.
+			if lookbehind {
+				searchStr = lookbehindMargin
+				// Append any search data held over from last time
+				searchStr += tonext
+			} else {
+				// If we're not using lookbehind, reuse `tonext`.
+				searchStr = tonext
+				tonext = ""
+			}
+			// Finally, append the data we read.
+			searchStr += buf
+		}
+
+		var result string
+		matchFrom := len(lookbehindMargin)
+		endPos := matchFrom
+		doPartial := uint32(0)
+		if nRead > 0 {
+			doPartial = pcre2.PARTIAL_HARD
+		}
+		notbol := uint32(0)
+		if !atBob {
+			notbol = pcre2.NOTBOL
+		}
+		for {
+			// Do match, and return on error.
+			rc := matcher.MatchString(searchStr, doPartial|notbol)
+			if rc < 0 && rc != pcre2.ERROR_NOMATCH && rc != pcre2.ERROR_PARTIAL {
+				warn(fmt.Sprintf("%s: %s", inputFilename, matcher.GetError()))
+				return -1, err
+			}
+
+			// Append unmatched input to result.
+			startPos := len(searchStr)
+			if rc != pcre2.ERROR_NOMATCH {
+				startPos = matcher.GroupIndices(0)[0]
+			}
+			result += searchStr[endPos:startPos]
+			endPos = matcher.GroupIndices(0)[1]
+
+			// If the match is zero-width and at the end of the buffer, but
+			// not the end of the input, treat it as partial.
+			if doPartial != 0 && startPos == endPos && startPos == len(searchStr) {
+				rc = pcre2.ERROR_PARTIAL
+			}
+
+			// If we didn't get a match, break for more input
+			switch rc {
+			case pcre2.ERROR_NOMATCH:
+				break
+			case pcre2.ERROR_PARTIAL:
+				// For a partial match, copy text to re-match and grow buffer.
+				tonext = searchStr[startPos:]
+				matchFrom = startPos
+				bufSize = max(bufSize, 2 * len(tonext) + streamBufSize)
+			}
+
+			// Perform substitutions.
+			replacement, err := oldRegex.Substitute(searchStr, matchFrom, replaceOpts|pcre2.NOTEMPTY|pcre2.SUBSTITUTE_MATCHED|pcre2.NO_UTF_CHECK, match, newPattern)
+			// TODO: detect and report errors.
+
+			// TODO: Match case of replacement to case of original if required.
+
+			// Add replacement to result.
+			result += replacement
+
+			// Move past the match.
+			numMatches += 1 // FIXME
+			matchFrom = endPos
+			if startPos == endPos {
+				// If we're at the end of the input, break.
+				if endPos == len(searchStr) {
+					return -1, nil // break
+				}
+				matchFrom += 1 // FIXME: advance by one character
+			}
+		}
+		
+		// TODO: If we're using lookbehind, keep some of the buffer for next time.
+
+		if output != nil {
+			// Write output.
+			io.WriteString(output, result)
+		}
+
+		atBob = false
 	}
-	// }
-
-	// TODO: If we're using lookbehind, keep some of the buffer for next time.
-
-	if output != nil {
-		// Write output.
-		// TODO: iconv
-		output.WriteString(result)
-	}
-
-	atBob = false
 
 	return numMatches, nil
 }
@@ -339,19 +394,32 @@ func main(cmd *cobra.Command, args []string) {
 			warn(fmt.Sprintf("processing %s", filename))
 		}
 
-		encoding := "UTF-8" // TODO: If we don't have an explicit encoding, guess
+		var encodingName string
+		var decoder io.Reader
+		var encoder io.Writer
+		if setEncoding == "" || strings.ToUpper(setEncoding) == "UTF-8" { // TODO: If we don't have an explicit encoding, guess
+			encodingName = "UTF-8"
+			transformer := encoding.UTF8Validator
+			decoder = transform.NewReader(input, transformer)
+			encoder = output
+		} else {
+			encodingName = setEncoding
+			var textEncoding encoding.Encoding
+			if textEncoding, err = ianaindex.IANA.Encoding(encodingName); err != nil {
+				die(1, fmt.Sprintf("encoding %s is unknown", encodingName))
+			}
+			decoder = textEncoding.NewDecoder().Reader(input)
+			encoder = textEncoding.NewEncoder().Writer(output)
+		}
 
 		// Process the file
 		var numMatches = 0
-		if encoding != "" {
-			// TODO: set up iconv
-		}
-		if numMatches, err = replace(input, filename, output, regex, replaceOpts, newText); err != nil {
+
+		if numMatches, err = replace(decoder, filename, encoder, regex, replaceOpts, newText); err != nil {
 			warn(fmt.Sprintf("error processing %s: %s; skipping!", filename, err.Error()))
 			input.Close()
 			numMatches = -1
 		}
-		// TODO: tear down iconv
 
 		if err = input.Close(); err != nil {
 			warn(fmt.Sprintf("error closing %s: %s", filename, err.Error()))

@@ -204,7 +204,7 @@ class EncodingTests : TestRplFile {
 
 	void test_bad_encoding () {
 		var output = run ({ "--encoding=utf-8", "Lorem", "L-O-R-E-M", test_result_root });
-		assert_true (output.std_err.contains ("error decoding"));
+		assert_true (output.std_err.contains ("invalid UTF-8"));
 	}
 
 	void test_explicit_encoding () {
