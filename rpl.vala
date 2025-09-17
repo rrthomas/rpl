@@ -317,9 +317,11 @@ throws IOError {
 			// Add replacement to result.
 			append_string_builder_tail (result, replacement, 0);
 
-			// Move past the match.
-			num_matches += 1;
+			// Update the match position.
 			match_from = end_pos;
+
+			num_matches += 1;
+
 			// If we're at the end of the input, break.
 		} while (!prev_match_is_empty || match_from < search_str.len);
 
