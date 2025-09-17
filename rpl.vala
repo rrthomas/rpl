@@ -718,11 +718,11 @@ int main (string[] argv) {
 			if (args_info.backup_given) {
 				string backup_name = @"$filename~";
 				var rc = FileUtils.rename (filename, backup_name);
-				if (rc < 0) {
+				if (rc < 0) { // GCOVR_EXCL_START
 					warn (@"error renaming $filename to $backup_name: $(GLib.strerror(errno))");
 					remove_temp_file (tmp_path);
 					continue;
-				}
+				} // GCOVR_EXCL_STOP
 			}
 
 			// Overwrite the result
@@ -730,11 +730,11 @@ int main (string[] argv) {
 				var src = File.new_for_path (tmp_path);
 				var dst = File.new_for_path (filename);
 				src.move (dst, FileCopyFlags.OVERWRITE);
-			} catch (GLib.Error e) {
+			} catch (GLib.Error e) { // GCOVR_EXCL_START
 				warn (@"could not move $tmp_path to $filename: $(GLib.strerror(errno))");
 				remove_temp_file (tmp_path);
 				continue;
-			}
+			} // GCOVR_EXCL_STOP
 
 			// Restore the times
 			if (args_info.keep_times_given && have_perms) {
