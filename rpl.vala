@@ -284,15 +284,8 @@ throws IOError {
 			if (rc == Pcre2.Error.NOMATCH || rc == Pcre2.Error.PARTIAL) {
 				// Treat `NOMATCH` as a zero-length `PARTIAL`.
 //				warn(@"Incomplete match: $(get_error_message(rc))");
+				match_from = start_pos;
 				prev_match_is_empty = false;
-				// For a partial match, copy text to re-match and grow buffer.
-				ssize_t keep_from = start_pos;
-				if (lookbehind)
-					keep_from = ssize_t.max (0, keep_from - (ssize_t) MAX_LOOKBEHIND_BYTES);
-				tonext = new StringBuilder ();
-				append_string_builder_tail (tonext, search_str, keep_from);
-				match_from = start_pos - keep_from;
-				buf_size = size_t.max (buf_size, 2 * tonext.len + STREAM_BUF_SIZE);
 				break;
 			}
 
@@ -327,6 +320,15 @@ throws IOError {
 
 			num_matches += 1;
 		}
+
+		// Copy text to re-match and grow buffer.
+		ssize_t keep_from = match_from;
+		if (lookbehind)
+			keep_from = ssize_t.max (0, keep_from - (ssize_t) MAX_LOOKBEHIND_BYTES);
+		tonext = new StringBuilder ();
+		append_string_builder_tail (tonext, search_str, keep_from);
+		match_from -= keep_from;
+		buf_size = size_t.max (buf_size, 2 * tonext.len + STREAM_BUF_SIZE);
 
 		if (output != null) {
 			// Write output.
