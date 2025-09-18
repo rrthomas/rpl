@@ -281,12 +281,9 @@ throws IOError {
 //			warn(@"startpos=$start_pos, end_pos=$end_pos");
 
 			// If we didn't get a match, break for more input.
-			if (rc == Pcre2.Error.NOMATCH) {
-//				warn(@"NOMATCH");
-				prev_match_is_empty = false; // Treat as a zero-length partial match.
-				break;
-			} else if (rc == Pcre2.Error.PARTIAL) {
-//				warn(@"PARTIAL");
+			if (rc == Pcre2.Error.NOMATCH || rc == Pcre2.Error.PARTIAL) {
+				// Treat `NOMATCH` as a zero-length `PARTIAL`.
+//				warn(@"Incomplete match: $(get_error_message(rc))");
 				prev_match_is_empty = false;
 				// For a partial match, copy text to re-match and grow buffer.
 				ssize_t keep_from = start_pos;
