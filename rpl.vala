@@ -298,7 +298,7 @@ throws IOError {
 		ssize_t match_from = lookbehind_margin.len;
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
-		do {
+		while (true) {
 			// Special case: if the previous match was empty, don't try to
 			// match again at the some position.
 			if (prev_match_is_empty) {
@@ -373,9 +373,7 @@ throws IOError {
 			match_from = end_pos;
 
 			num_matches += 1;
-
-			// If we're at the end of the input, break.
-		} while (!prev_match_is_empty || match_from < search_str.len);
+		}
 
 		// If we're using lookbehind, keep some of the buffer for next time.
 		if (lookbehind) {
