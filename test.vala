@@ -16,19 +16,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <https://www.gnu.org/licenses/>.
 
+// To run only some tests, run the tests normally to ensure the binary is up
+// to date, then:
+
+// TEST_FILES_DIR=./test-files ./test -p "/PATH/TO/TEST"
+// ./test --help for more details
+
 using Posix;
 
-public string slurp_file (string filename) throws FileError {
+public string slurp_file (string filename, out size_t length = null) throws FileError {
 	string contents;
-	FileUtils.get_contents (filename, out contents);
+	size_t contents_length;
+	FileUtils.get_contents (filename, out contents, out contents_length);
+	length = contents_length;
 	return contents;
 }
 
-public void string_to_file (string path, string contents) {
+public void buffer_to_file (string path, uint8[] buf) {
 	try {
 		var file = File.new_for_path (path);
 		FileOutputStream os = file.create (FileCreateFlags.NONE);
-		os.write (contents.data);
+		os.write (buf);
 		os.close ();
 	} catch (Error e) {
 		print ("error writing to temporary file\n");
@@ -155,10 +163,12 @@ class TestRplOutputFile : TestRpl {
 		return true;
 	}
 
-	public bool result_matches_string (string expected) {
+	public bool result_matches_string (string expected, size_t length = -1) {
 		try {
 			var s = slurp_file (test_result_root);
-			return s == expected;
+			if (length == -1)
+				return s == expected;
+			return Memory.cmp (s, expected, length) == 0;
 		} catch (FileError e) {
 			return false;
 		}
@@ -280,6 +290,7 @@ class OutputFileTests : TestRplOutputFile {
 		add_test ("test_multi_buffer_matches", test_multi_buffer_matches);
 		add_test ("test_multi_buffer_lookbehind", test_multi_buffer_lookbehind);
 		add_test ("test_lookbehind_word_boundary", test_lookbehind_word_boundary);
+		add_test ("test_lookbehind_with_NULs", test_lookbehind_with_NULs);
 		add_test ("test_buffer_crossing_character", test_buffer_crossing_character);
 		add_test ("test_empty_match_at_buffer_end", test_empty_match_at_buffer_end);
 		add_test ("test_recursive_no_file_arguments", test_recursive_no_file_arguments);
@@ -288,69 +299,85 @@ class OutputFileTests : TestRplOutputFile {
 	}
 
 	void test_a_star_b_empty_input () {
-		string_to_file (test_result_root, "");
+		buffer_to_file (test_result_root, "".data);
 		run ({ "a*", "b", test_result_root });
 		assert_true (result_matches_string ("b"));
 	}
 
 	void test_a_star_b_input_x () {
-		string_to_file (test_result_root, "x");
+		buffer_to_file (test_result_root, "x".data);
 		run ({ "a*", "b", test_result_root });
 		assert_true (result_matches_string ("bxb"));
 	}
 
 	void test_a_star_b_input_aaa () {
-		string_to_file (test_result_root, "aaa");
+		buffer_to_file (test_result_root, "aaa".data);
 		run ({ "a*", "b", test_result_root });
 		assert_true (result_matches_string ("bb"));
 	}
 
 	void test_a_star_b_input_aaax () {
-		string_to_file (test_result_root, "aaax");
+		buffer_to_file (test_result_root, "aaax".data);
 		run ({ "a*", "b", test_result_root });
 		assert_true (result_matches_string ("bbxb"));
 	}
 
 	void test_a_star_b_input_xaaa () {
-		string_to_file (test_result_root, "xaaa");
+		buffer_to_file (test_result_root, "xaaa".data);
 		run ({ "a*", "b", test_result_root });
 		assert_true (result_matches_string ("bxbb"));
 	}
 
 	void test_a_star_b_input_xaaax () {
-		string_to_file (test_result_root, "xaaax");
+		buffer_to_file (test_result_root, "xaaax".data);
 		run ({ "a*", "b", test_result_root });
 		assert_true (result_matches_string ("bxbbxb"));
 	}
 
 	void test_a_star_b_input_aaaxaaa () {
-		string_to_file (test_result_root, "aaaxaaa");
+		buffer_to_file (test_result_root, "aaaxaaa".data);
 		run ({ "a*", "b", test_result_root });
 		assert_true (result_matches_string ("bbxbb"));
 	}
 
 	void test_a_star_b_input_aaaxxaaa () {
-		string_to_file (test_result_root, "aaaxxaaa");
+		buffer_to_file (test_result_root, "aaaxxaaa".data);
 		run ({ "a*", "b", test_result_root });
 		assert_true (result_matches_string ("bbxbxbb"));
 	}
 
 	void test_multi_buffer_matches () {
-		string_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a'));
+		buffer_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a').data);
 		run ({ "a+", "b", test_result_root });
 		assert_true (result_matches (Path.build_filename (test_files_dir, "one-b.txt")));
 	}
 
 	void test_multi_buffer_lookbehind () {
-		string_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a'));
+		buffer_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a').data);
 		var expected = new StringBuilder ("b");
 		expected.append (string.nfill (MULTI_BUFFER_TEST_BYTES - 1, 'a'));
 		run ({ "(?<!a)a", "b", test_result_root });
 		assert_true (result_matches_string (expected.str));
 	}
 
+	void test_lookbehind_with_NULs () {
+		var s = new StringBuilder ();
+		for (var i = 0; i < MULTI_BUFFER_TEST_BYTES; i++) {
+			s.append_c ('a');
+			s.append_c (0);
+		}
+		buffer_to_file (test_result_root, s.data);
+		var expected = new StringBuilder ();
+		for (var i = 0; i < MULTI_BUFFER_TEST_BYTES; i++) {
+			expected.append_c ('b');
+			expected.append_c (0);
+		}
+		run ({ "(?<!c)a", "b", test_result_root });
+		assert_true (result_matches_string (expected.str, expected.len));
+	}
+
 	void test_lookbehind_word_boundary () {
-		string_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a'));
+		buffer_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a').data);
 		var expected = new StringBuilder ("b");
 		expected.append (string.nfill (MULTI_BUFFER_TEST_BYTES - 1, 'a'));
 		run ({ "\\ba", "b", test_result_root });
@@ -364,7 +391,7 @@ class OutputFileTests : TestRplOutputFile {
 		for (var i = 0; i < MULTI_BUFFER_TEST_BYTES; i++) {
 			s.append_unichar ('á');
 		}
-		string_to_file (test_result_root, s.str);
+		buffer_to_file (test_result_root, s.data);
 		var expected = new StringBuilder ("a");
 		expected.append (string.nfill (MULTI_BUFFER_TEST_BYTES, 'b'));
 		run ({ "á", "b", test_result_root });
@@ -372,7 +399,7 @@ class OutputFileTests : TestRplOutputFile {
 	}
 
 	void test_empty_match_at_buffer_end () {
-		string_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a'));
+		buffer_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a').data);
 		var expected = string.nfill (MULTI_BUFFER_TEST_BYTES + 1, 'b');
 		run ({ "a?", "b", test_result_root });
 		assert_true (result_matches_string (expected));
