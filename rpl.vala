@@ -187,7 +187,7 @@ throws IOError {
 			buf.len += (ssize_t) n_read;
 		} while (n_read > 0 && buf.len < buf_size);
 		if (args_info.verbose_given) {
-			warn (@"bytes read: $(n_read)");
+			warn (@"bytes read: $(buf.len)");
 		}
 		return buf.len;
 	};
