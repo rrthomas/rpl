@@ -769,7 +769,7 @@ int main (string[] argv) {
 				var dst = File.new_for_path (filename);
 				src.move (dst, FileCopyFlags.OVERWRITE);
 			} catch (GLib.Error e) { // GCOVR_EXCL_START
-				warn (@"could not move $tmp_path to $filename: $(GLib.strerror(errno))");
+				warn (@"error renaming $tmp_path to $filename: $(GLib.strerror(errno))");
 				remove_temp_file (tmp_path);
 				continue;
 			} // GCOVR_EXCL_STOP
