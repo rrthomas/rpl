@@ -662,7 +662,7 @@ int main (string[] argv) {
 			// Scan at most 1MB, so we don't slurp a large file
 			try {
 				size_t n_bytes = 0;
-				input.read_all (buf.data[buf.len: buf.allocated_len], out n_bytes);
+				input.read_all (buf.data[0: STREAM_BUF_SIZE], out n_bytes);
 				buf.len += (ssize_t) n_bytes;
 				if (args_info.verbose_given)
 					warn (@"bytes read to guess encoding: $(buf.len)");
