@@ -287,7 +287,12 @@ class OutputFileTests : TestRplOutputFile {
 		add_test ("test_a_star_b_input_xaaax", test_a_star_b_input_xaaax);
 		add_test ("test_a_star_b_input_aaaxaaa", test_a_star_b_input_aaaxaaa);
 		add_test ("test_a_star_b_input_aaaxxaaa", test_a_star_b_input_aaaxxaaa);
-		add_test ("test_multi_buffer_matches", test_multi_buffer_matches);
+		// These multi-buffer tests all test different match conditions at the
+		// end of the file when that aligns with a buffer boundary.
+		add_test ("test_multi_buffer_matches_partial_match_at_end", test_multi_buffer_matches_partial_match_at_end);
+		add_test ("test_multi_buffer_matches_partial_empty_match_at_end", test_multi_buffer_matches_partial_empty_match_at_end);
+		add_test ("test_multi_buffer_matches_complete_match_at_end", test_multi_buffer_matches_complete_match_at_end);
+		add_test ("test_multi_buffer_matches_complete_empty_match_at_end", test_multi_buffer_matches_complete_empty_match_at_end);
 		add_test ("test_multi_buffer_lookbehind", test_multi_buffer_lookbehind);
 		add_test ("test_lookbehind_word_boundary", test_lookbehind_word_boundary);
 		add_test ("test_lookbehind_with_NULs", test_lookbehind_with_NULs);
@@ -346,10 +351,28 @@ class OutputFileTests : TestRplOutputFile {
 		assert_true (result_matches_string ("bbxbxbb"));
 	}
 
-	void test_multi_buffer_matches () {
+	void test_multi_buffer_matches_partial_match_at_end () {
 		buffer_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a').data);
 		run ({ "a+", "b", test_result_root });
-		assert_true (result_matches (Path.build_filename (test_files_dir, "one-b.txt")));
+		assert_true (result_matches_string ("b"));
+	}
+
+	void test_multi_buffer_matches_partial_empty_match_at_end () {
+		buffer_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a').data);
+		run ({ "a*", "b", test_result_root });
+		assert_true (result_matches_string ("bb"));
+	}
+
+	void test_multi_buffer_matches_complete_match_at_end () {
+		buffer_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a').data);
+		run ({ "a", "b", test_result_root });
+		assert_true (result_matches_string (string.nfill (MULTI_BUFFER_TEST_BYTES, 'b')));
+	}
+
+	void test_multi_buffer_matches_complete_empty_match_at_end () {
+		buffer_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a').data);
+		run ({ "a|$", "b", test_result_root });
+		assert_true (result_matches_string (string.nfill (MULTI_BUFFER_TEST_BYTES + 1, 'b')));
 	}
 
 	void test_multi_buffer_lookbehind () {
