@@ -265,7 +265,7 @@ throws IOError {
 					// Already at the end of the buffer.
 					break;
 				}
-				result.append_unichar(c);
+				result.append_unichar (c);
 				match_from += c_len;
 			}
 
@@ -282,7 +282,7 @@ throws IOError {
 			ssize_t end_pos = search_str.len;
 			if (rc != Pcre2.Error.NOMATCH) {
 				start_pos = (ssize_t) match.group_start (0);
-				end_pos = (ssize_t) match.group_end(0);
+				end_pos = (ssize_t) match.group_end (0);
 			}
 			append_string_builder_slice (result, search_str, match_from, start_pos);
 
