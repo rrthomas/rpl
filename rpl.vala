@@ -285,15 +285,11 @@ throws IOError {
 		} else {
 			// If we're using lookbehind, use it as the start of the buffer.
 			if (lookbehind) {
-				search_str = new StringBuilder ();
-				search_str.append_len (lookbehind_margin.str, lookbehind_margin.len);
-				// Append any search data held over from last time.
-				append_string_builder_tail (search_str, tonext, 0);
-			} else {
-				// If we're not using lookbehind, reuse `tonext`.
-				search_str = (owned) tonext;
-				tonext = new StringBuilder ();
+				// Prepend lookbehind_margin to tonext
+				tonext.insert_len (0, lookbehind_margin.str, lookbehind_margin.len);
 			}
+			search_str = (owned) tonext;
+			tonext = new StringBuilder ();
 			// Finally, append the data we read.
 			append_string_builder_tail (search_str, buf, 0);
 		}
@@ -662,7 +658,7 @@ int main (string[] argv) {
 			// Scan at most 1MB, so we don't slurp a large file
 			try {
 				size_t n_bytes = 0;
-				input.read_all (buf.data[0: STREAM_BUF_SIZE], out n_bytes);
+				input.read_all (buf.data[0 : STREAM_BUF_SIZE], out n_bytes);
 				buf.len += (ssize_t) n_bytes;
 				if (args_info.verbose_given)
 					warn (@"bytes read to guess encoding: $(buf.len)");
