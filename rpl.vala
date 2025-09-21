@@ -238,7 +238,8 @@ throws IOError {
 		} else {
 			// If we're using lookbehind, use it as the start of the buffer.
 			if (lookbehind) {
-				search_str = new StringBuilder (lookbehind_margin.str); // FIXME: Broken if it contains `\0`
+				search_str = new StringBuilder ();
+				search_str.append_len (lookbehind_margin.str, lookbehind_margin.len);
 				// Append any search data held over from last time.
 				append_string_builder_tail (search_str, tonext, 0);
 			} else {
