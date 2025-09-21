@@ -46,10 +46,10 @@ Subprocess start_prog (string prog, string[] args) throws TestError {
 	Subprocess proc = null;
 	try {
 		proc = new Subprocess.newv (cmd.data,
-									SubprocessFlags.SEARCH_PATH_FROM_ENVP
-									| SubprocessFlags.STDIN_PIPE
-									| SubprocessFlags.STDOUT_PIPE
-									| SubprocessFlags.STDERR_PIPE);
+		                            SubprocessFlags.SEARCH_PATH_FROM_ENVP
+		                            | SubprocessFlags.STDIN_PIPE
+		                            | SubprocessFlags.STDOUT_PIPE
+		                            | SubprocessFlags.STDERR_PIPE);
 	} catch (Error e) {
 		print (@"error starting command $(string.joinv(" ", cmd.data)): $(e.message)\n");
 		throw new TestError.TESTERROR ("could not run command");
@@ -391,9 +391,9 @@ class OutputFileTests : TestRplOutputFile {
 	void test_non_file_input () {
 		var output = run ( {"foo", "bar",
 #if WINDOWS
-							"nul:"
+		                    "nul:"
 #else
-							"/dev/null"
+		                    "/dev/null"
 #endif
 						   });
 		assert_true (output.std_err.contains ("not a regular file"));
@@ -547,7 +547,7 @@ class LoremUtf8Tests : TestRplFile {
 		assert_true (Posix.lstat (test_result_root, out perms) == 0);
 		var new_mtime = (timespec) Gnu.get_stat_mtime (perms);
 		assert_true (orig_mtime.tv_sec == new_mtime.tv_sec &&
-					 orig_mtime.tv_nsec == new_mtime.tv_nsec);
+		             orig_mtime.tv_nsec == new_mtime.tv_nsec);
 	}
 
 	void test_without_keep_times () {
@@ -558,7 +558,7 @@ class LoremUtf8Tests : TestRplFile {
 		assert_true (Posix.lstat (test_result_root, out perms) == 0);
 		var new_mtime = (timespec) Gnu.get_stat_mtime (perms);
 		assert_true (!(orig_mtime.tv_sec == new_mtime.tv_sec &&
-					   orig_mtime.tv_nsec == new_mtime.tv_nsec));
+		               orig_mtime.tv_nsec == new_mtime.tv_nsec));
 	}
 
 	private void prompt_test (string input, string expected) {
@@ -594,7 +594,7 @@ class LoremUtf8Tests : TestRplFile {
 
 	void test_force () {
 		if (!try_sudo ({ "chown", "0:0", test_result_root }) ||
-			!try_sudo ({ "chmod", "644", test_result_root })) {
+		    !try_sudo ({ "chmod", "644", test_result_root })) {
 			return;
 		}
 		var output = run_prog ("sudo", { "-n", rpl, "--force", "amét", "amèt", test_result_root });
@@ -605,8 +605,8 @@ class LoremUtf8Tests : TestRplFile {
 
 	void test_force_fail () {
 		if (!try_sudo ({ "chown", "0:0", test_result_root }) ||
-			!try_sudo ({ "chmod", "777", test_result_root }) ||
-			!try_sudo ({ "chmod", "755", test_result_dir })) {
+		    !try_sudo ({ "chmod", "777", test_result_root }) ||
+		    !try_sudo ({ "chmod", "755", test_result_dir })) {
 			return;
 		}
 		var output = run ({ "--force", "amét", "amèt", test_result_root });
@@ -616,8 +616,8 @@ class LoremUtf8Tests : TestRplFile {
 
 	void test_set_attributes_fail () {
 		if (!try_sudo ({ "chown", "0:0", test_result_root }) ||
-			!try_sudo ({ "chmod", "777", test_result_root }) ||
-			!try_sudo ({ "chmod", "755", test_result_dir })) {
+		    !try_sudo ({ "chmod", "777", test_result_root }) ||
+		    !try_sudo ({ "chmod", "755", test_result_dir })) {
 			return;
 		}
 		var output = run ({ "amét", "amèt", test_result_root });
