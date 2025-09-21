@@ -43,7 +43,7 @@ enum Case {
 }
 
 // A suitable buffer size for stream I/O.
-const int STREAM_BUF_SIZE = 1024 * 1024;
+int initial_buf_size = 1024 * 1024;
 
 private Case casetype (StringBuilder str)
 requires (str.len > 0)
@@ -218,7 +218,7 @@ throws IOError {
 	bool lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
 	const size_t MAX_LOOKBEHIND_BYTES = 255 * 6; // 255 characters (PCRE2's hardwired limit) in UTF-8.
-	size_t buf_size = STREAM_BUF_SIZE;
+	size_t buf_size = initial_buf_size;
 	var retry_prefix = new StringBuilder ();
 	var at_bob = true;
 
@@ -228,7 +228,7 @@ throws IOError {
 		size_t n_read = 0;
 		do {
 			input.read_all (
-				((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, STREAM_BUF_SIZE)],
+				((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, initial_buf_size)],
 				out n_read
 			);
 			buf.len += (ssize_t) n_read;
@@ -244,7 +244,7 @@ throws IOError {
 		size_t tot_written = 0;
 		do {
 			size_t n_written;
-			output.write_all (((uint8[]) (buf + tot_written))[0 : size_t.min (STREAM_BUF_SIZE, len - tot_written)], out n_written);
+			output.write_all (((uint8[]) (buf + tot_written))[0 : size_t.min (initial_buf_size, len - tot_written)], out n_written);
 			tot_written += n_written;
 		} while (tot_written < len);
 	};
@@ -371,7 +371,7 @@ throws IOError {
 		tonext = new StringBuilder ();
 		append_string_builder_tail (tonext, search_str, keep_from);
 		match_from -= keep_from;
-		buf_size = size_t.max (buf_size, 2 * tonext.len + STREAM_BUF_SIZE);
+		buf_size = size_t.max (buf_size, 2 * tonext.len + initial_buf_size);
 
 		if (output != null) {
 			// Write output.
@@ -573,6 +573,7 @@ int main (string[] argv) {
 		OutputStream output;
 		string tmp_path = null;
 		if (filename == "-") {
+			initial_buf_size = 64 * 1024; // A better size for pipes
 			filename = "standard input";
 			Gnu.set_binary_mode (Posix.STDIN_FILENO, Gnu.O_BINARY);
 			input = new FdInputStream (Posix.STDIN_FILENO);
@@ -636,14 +637,14 @@ int main (string[] argv) {
 		}
 
 		// If we don't have an explicit encoding, guess
-		var buf = new StringBuilder.sized (STREAM_BUF_SIZE);
+		var buf = new StringBuilder.sized (initial_buf_size);
 		if (!args_info.encoding_given) {
 			var detector = new UCharDet ();
 
 			// Scan at most 1MB, so we don't slurp a large file
 			try {
 				size_t n_bytes = 0;
-				input.read_all (buf.data[0 : STREAM_BUF_SIZE], out n_bytes);
+				input.read_all (buf.data[0 : initial_buf_size], out n_bytes);
 				buf.len += (ssize_t) n_bytes;
 				if (args_info.verbose_given)
 					warn (@"bytes read to guess encoding: $(buf.len)");
