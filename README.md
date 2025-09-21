@@ -50,7 +50,7 @@ As well as the dependencies for building from source, you will need Vala,
 automake, autoconf, gengetopt and help2man. These should be packaged in most
 distributions.
 
-Having cloned the repository, run `autoreconf -fi`, then follow the
+Having cloned the repository, run `./bootstrap`, then follow the
 instructions above for building from source.
 
 
