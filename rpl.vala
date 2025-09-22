@@ -151,8 +151,7 @@ ssize_t replace (InputStream input,
                  Pcre2.Regex old_regex,
                  Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
-                 IConv.IConv iconv_in,
-                 IConv.IConv iconv_out)
+                 IConv.IConv iconv_in)
 throws IOError {
 	bool lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
@@ -311,15 +310,14 @@ throws IOError {
 		buf_size = size_t.max (buf_size, 2 * tonext.len + initial_buf_size);
 
 		if (output != null) {
-			// Write output.
-			size_t bytes_written;
 			try {
-				string converted = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
-				write_output (converted.data, bytes_written);
-			} catch (ConvertError e) {
-				warn (@"output encoding error: $(GLib.strerror(errno))");
-				return -1;
-			}
+				write_output (result.data, result.len);
+			} catch (IOError e) { // GCOV_EXCL_START
+				if (e is IOError.INVALID_DATA) {
+					throw new IOError.INVALID_DATA(@"output encoding error: $(GLib.strerror(errno))");
+				}
+				throw e;
+			} // GCOV_EXCL_STOP
 		}
 
 		at_bob = false;
@@ -621,9 +619,12 @@ int main (string[] argv) {
 		// Process the file
 		ssize_t num_matches = 0;
 		IConv.IConv iconv_in = IConv.IConv.open ("UTF-8", encoding);
-		IConv.IConv iconv_out = IConv.IConv.open (encoding, "UTF-8");
 		try {
-			num_matches = replace (input, filename, output, regex, replace_opts, new_text, iconv_in, iconv_out);
+			var oconverter = new CharsetConverter (encoding, "UTF-8");
+			output = new ConverterOutputStream (output, oconverter);
+		} catch (GLib.Error e) {}
+		try {
+			num_matches = replace (input, filename, output, regex, replace_opts, new_text, iconv_in);
 		} catch (IOError e) { // GCOVR_EXCL_START
 			warn (@"error processing $filename: $(e.message); skipping!");
 			try {
@@ -632,7 +633,6 @@ int main (string[] argv) {
 			num_matches = -1;
 		} // GCOVR_EXCL_STOP
 		iconv_in.close ();
-		iconv_out.close ();
 
 		try {
 			input.close ();
