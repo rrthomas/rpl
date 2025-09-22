@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet --pkg iconv fd-stream.vala prefix-input-stream.vala
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet fd-stream.vala prefix-input-stream.vala
 // rpl: search and replace text in files
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -117,29 +117,15 @@ requires (start <= b.len) {
 	append_string_builder_slice (a, b, start, b.len);
 }
 
-private StringBuilder? to_utf8 (IConv.IConv iconv_in, ref StringBuilder buf) {
-	var retry_prefix = new StringBuilder ();
-	// Convert input to UTF-8
-	unowned char[] buf_ptr = (char[]) buf.data;
-	size_t buf_len = buf.len;
-	// Guess maximum input:output ratio required.
-	size_t out_buf_size = buf.len * 8;
-	var out_buf = new StringBuilder.sized (out_buf_size);
-	unowned char[] out_buf_ptr = (char[]) out_buf.data;
-	size_t out_buf_len = out_buf_size;
-	var rc = iconv_in.iconv (ref buf_ptr, ref buf_len, ref out_buf_ptr, ref out_buf_len);
-	// Try carrying invalid input over to next iteration in case it's
-	// just incomplete.
-	retry_prefix.append_len ((string) buf_ptr, (ssize_t) buf_len);
-	// If we failed to convert anything, error immediately.
-	if (rc == -1 && buf_ptr == (char[]) buf.data) {
-		return null;
-	}
-	size_t out_len = out_buf_size - out_buf_len;
-	buf = (owned) out_buf;
-	buf.len = (ssize_t) out_len;
-	buf.truncate (buf.len);
-	return retry_prefix;
+// Wrap string.validate_len to cope with NULs.
+private size_t check_utf8 (uchar *init_s, size_t len) {
+       var end = init_s + len;
+       var valid_to = init_s;
+       while (!((string) valid_to).validate_len (end - valid_to, out valid_to) &&
+              *valid_to == '\0') {
+               valid_to += 1;
+       }
+       return valid_to - init_s;
 }
 
 private delegate ssize_t ReaderType (StringBuilder buf) throws IOError;
@@ -150,27 +136,31 @@ ssize_t replace (InputStream input,
                  OutputStream? output,
                  Pcre2.Regex old_regex,
                  Pcre2.MatchFlags replace_opts,
-                 StringBuilder new_pattern,
-                 IConv.IConv iconv_in)
+                 StringBuilder new_pattern)
 throws IOError {
 	bool lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
 	const size_t MAX_LOOKBEHIND_BYTES = 255 * 6; // 255 characters (PCRE2's hardwired limit) in UTF-8.
 	size_t buf_size = initial_buf_size;
-	var retry_prefix = new StringBuilder ();
 	var at_bob = true;
 
 	// Helper function to read input.
 	// Read in chunks that definitely fit in `int`, the type of array
 	// lengths.
-	ReaderType read_with_prefix = (buf) => {
-		append_string_builder_tail (buf, retry_prefix, 0);
+	ReaderType read_input = (buf) => {
 		size_t n_read = 0;
 		do {
-			input.read_all (
-				((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, initial_buf_size)],
-				out n_read
-			);
+			try {
+				input.read_all (
+					((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, initial_buf_size)],
+					out n_read
+				);
+			} catch (IOError e) {
+				if (e is IOError.INVALID_DATA) {
+					throw new IOError.INVALID_DATA ("error decoding input");
+				}
+				throw e;
+			}
 			buf.len += (ssize_t) n_read;
 		} while (n_read > 0 && buf.len < buf_size);
 		if (args_info.verbose_given) {
@@ -197,25 +187,7 @@ throws IOError {
 	ssize_t match_from = 0;
 	do {
 		var buf = new StringBuilder.sized (buf_size);
-		n_read = read_with_prefix (buf);
-
-		// Convert or validate input, getting back any invalid suffix.
-		if (buf.len == 0) {
-			retry_prefix = new StringBuilder ();
-		} else {
-			retry_prefix = to_utf8 (iconv_in, ref buf);
-		}
-
-		// If we failed to convert anything, error immediately.
-		if (retry_prefix == null) {
-			warn (@"error decoding $input_filename: $(GLib.strerror(errno))");
-			if (args_info.encoding_given) {
-				warn ("--encoding does not match file contents");
-			} else {
-				warn ("you can specify the encoding with --encoding"); // GCOV_EXCL_LINE
-			}
-			return -1;
-		}
+		n_read = read_input (buf);
 
 		StringBuilder search_str;
 		// If we have no search data held over from the previous iteration,
@@ -229,6 +201,9 @@ throws IOError {
 			// Append the data we read.
 			append_string_builder_tail (search_str, buf, 0);
 		}
+
+		// Compute length of valid input.
+		ssize_t valid_len = (ssize_t) check_utf8 (search_str.str, search_str.len);
 
 		var result = new StringBuilder ();
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
@@ -249,15 +224,15 @@ throws IOError {
 
 			// Do match, and return on error.
 			int rc = 0;
-			Match? match = old_regex.match (search_str.data, search_str.len, (size_t) match_from, do_partial | notbol | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
+			Match? match = old_regex.match (search_str.data, valid_len, (size_t) match_from, do_partial | notbol | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
 			if (rc < 0 && rc != Pcre2.Error.NOMATCH && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
 				warn (@"error in search: $(get_error_message(rc))");
 				return -1; // GCOVR_EXCL_STOP
 			}
 
 			// Append unmatched input to result.
-			ssize_t start_pos = search_str.len;
-			ssize_t end_pos = search_str.len;
+			ssize_t start_pos = valid_len;
+			ssize_t end_pos = valid_len;
 			if (rc != Pcre2.Error.NOMATCH) {
 				start_pos = (ssize_t) match.group_start (0);
 				end_pos = (ssize_t) match.group_end (0);
@@ -276,7 +251,7 @@ throws IOError {
 
 			// Perform substitutions.
 			var replacement = old_regex.substitute (
-				search_str.data, search_str.len, (size_t) match_from,
+				search_str.data, valid_len, (size_t) match_from,
 				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | Pcre2.MatchFlags.NO_UTF_CHECK,
 				match,
 				new_pattern,
@@ -626,21 +601,24 @@ int main (string[] argv) {
 
 		// Process the file
 		ssize_t num_matches = 0;
-		IConv.IConv iconv_in = IConv.IConv.open ("UTF-8", encoding);
 		try {
+			var iconverter = new CharsetConverter ("UTF-8", encoding);
+			input = new ConverterInputStream (input, iconverter);
 			var oconverter = new CharsetConverter (encoding, "UTF-8");
 			output = new ConverterOutputStream (output, oconverter);
 		} catch (GLib.Error e) {}
 		try {
-			num_matches = replace (input, filename, output, regex, replace_opts, new_text, iconv_in);
+			num_matches = replace (input, filename, output, regex, replace_opts, new_text);
 		} catch (IOError e) { // GCOVR_EXCL_START
 			warn (@"error processing $filename: $(e.message); skipping!");
+			if (e is IOError.INVALID_DATA) {
+				warn ("you can specify the encoding with --encoding");
+			}
 			try {
 				input.close ();
 			} catch (IOError e) {}
 			num_matches = -1;
 		} // GCOVR_EXCL_STOP
-		iconv_in.close ();
 
 		try {
 			input.close ();
