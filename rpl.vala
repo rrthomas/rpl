@@ -161,6 +161,8 @@ throws IOError {
 	var at_bob = true;
 
 	// Helper function to read input.
+	// Read in chunks that definitely fit in `int`, the type of array
+	// lengths.
 	ReaderType read_with_prefix = (buf) => {
 		append_string_builder_tail (buf, retry_prefix, 0);
 		size_t n_read = 0;
@@ -178,6 +180,8 @@ throws IOError {
 	};
 
 	// Helper function to write output from a small output buffer.
+	// This works around the length of arrays being `int`, which might not
+	// hold the length of the output.
 	WriterType write_output = (buf, len) => {
 		size_t tot_written = 0;
 		do {
@@ -314,7 +318,7 @@ throws IOError {
 				write_output (result.data, result.len);
 			} catch (IOError e) { // GCOV_EXCL_START
 				if (e is IOError.INVALID_DATA) {
-					throw new IOError.INVALID_DATA(@"output encoding error: $(GLib.strerror(errno))");
+					throw new IOError.INVALID_DATA (@"output encoding error: $(GLib.strerror(errno))");
 				}
 				throw e;
 			} // GCOV_EXCL_STOP
@@ -560,6 +564,10 @@ int main (string[] argv) {
 				}
 			}
 		}
+
+		// Buffer the raw streams
+		input = new BufferedInputStream.sized (input, initial_buf_size);
+		output = new BufferedOutputStream.sized (output, initial_buf_size);
 
 		total_files += 1;
 
