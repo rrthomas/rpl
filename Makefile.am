@@ -12,7 +12,7 @@ AM_VALAFLAGS = --debug --vapidir=$(srcdir)
 if OS_WIN32
 AM_VALAFLAGS += -D WINDOWS
 endif
-VAPIS =	config.vapi cmdline.vapi gnu.vapi pcre2.vapi uchardet.vapi iconv.vapi
+VAPIS =	config.vapi cmdline.vapi gnu.vapi pcre2.vapi uchardet.vapi
 
 LDADD = $(top_builddir)/lib/libgnu.a $(CODE_COVERAGE_LDFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/lib -I$(top_builddir)/lib $(CODE_COVERAGE_CPPFLAGS)
@@ -51,7 +51,7 @@ TEST_FILES = \
 
 rpl_SOURCES = rpl.vala cmdline.c cmdline.h fd-stream.vala prefix-input-stream.vala
 rpl_CFLAGS = $(AM_CFLAGS) --include config.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS) $(UCHARDET_CFLAGS) $(CODE_COVERAGE_CFLAGS)
-rpl_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg cmdline --pkg gio-2.0 --pkg posix --pkg gnu --pkg pcre2 --pkg uchardet --pkg iconv
+rpl_VALAFLAGS = $(AM_VALAFLAGS) --pkg config --pkg cmdline --pkg gio-2.0 --pkg posix --pkg gnu --pkg pcre2 --pkg uchardet
 rpl_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
 
 rpl.c: cmdline.h
