@@ -117,53 +117,15 @@ requires (start <= b.len) {
 	append_string_builder_slice (a, b, start, b.len);
 }
 
-// Adapted from https://www.cl.cam.ac.uk/~mgk25/ucs/utf8_check.c
-// Used under the GPL as permitted.
+// Wrap string.validate_len to cope with NULs.
 private size_t check_utf8 (uchar *init_s, size_t len) { // GCOV_EXCL_START
-	uchar *s = init_s;
-	while (s - init_s < len) {
-		if (*s < 0x80)
-			/* 0xxxxxxx */
-			s++;
-		else if ((s[0] & 0xe0) == 0xc0) {
-			if (s - init_s >= len - 1)
-				break;
-			/* 110XXXXx 10xxxxxx */
-			if ((s[1] & 0xc0) != 0x80 ||
-			    (s[0] & 0xfe) == 0xc0)              /* overlong? */
-				break;
-			else
-				s += 2;
-		} else if ((s[0] & 0xf0) == 0xe0) {
-			if (s - init_s >= len - 2)
-				break;
-			/* 1110XXXX 10Xxxxxx 10xxxxxx */
-			if ((s[1] & 0xc0) != 0x80 ||
-			    (s[2] & 0xc0) != 0x80 ||
-			    (s[0] == 0xe0 && (s[1] & 0xe0) == 0x80) || /* overlong? */
-			    (s[0] == 0xed && (s[1] & 0xe0) == 0xa0) || /* surrogate? */
-			    (s[0] == 0xef && s[1] == 0xbf &&
-			     (s[2] & 0xfe) == 0xbe))            /* U+FFFE or U+FFFF? */
-				break;
-			else
-				s += 3;
-		} else if ((s[0] & 0xf8) == 0xf0) {
-			if (s - init_s >= len - 3)
-				break;
-			/* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
-			if ((s[1] & 0xc0) != 0x80 ||
-			    (s[2] & 0xc0) != 0x80 ||
-			    (s[3] & 0xc0) != 0x80 ||
-			    (s[0] == 0xf0 && (s[1] & 0xf0) == 0x80) || /* overlong? */
-			    (s[0] == 0xf4 && s[1] > 0x8f) || s[0] > 0xf4) /* > U+10FFFF? */
-				break;
-			else
-				s += 4;
-		} else
-			break;
+	var end = init_s + len;
+	var valid_to = init_s;
+	while (!((string) valid_to).validate_len (end - valid_to, out valid_to) &&
+	       *valid_to == '\0') {
+		valid_to += 1;
 	}
-
-	return s - init_s;
+	return valid_to - init_s;
 } // GCOV_EXCL_STOP
 
 private StringBuilder? validate_utf8 (StringBuilder buf) {
