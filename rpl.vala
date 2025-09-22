@@ -117,29 +117,6 @@ requires (start <= b.len) {
 	append_string_builder_slice (a, b, start, b.len);
 }
 
-// Wrap string.validate_len to cope with NULs.
-private size_t check_utf8 (uchar *init_s, size_t len) { // GCOV_EXCL_START
-	var end = init_s + len;
-	var valid_to = init_s;
-	while (!((string) valid_to).validate_len (end - valid_to, out valid_to) &&
-	       *valid_to == '\0') {
-		valid_to += 1;
-	}
-	return valid_to - init_s;
-} // GCOV_EXCL_STOP
-
-private StringBuilder? validate_utf8 (StringBuilder buf) {
-	var retry_prefix = new StringBuilder ();
-	// Check that input is valid UTF-8
-	size_t num_valid = check_utf8 (buf.str, buf.len);
-	retry_prefix.append_len ((string) ((char *) buf.str + num_valid), (ssize_t) (buf.len - num_valid));
-	buf.truncate (num_valid);
-	if (num_valid == 0) { // GCOV_EXCL_START
-		return null;
-	} // GCOV_EXCL_STOP
-	return retry_prefix;
-}
-
 private StringBuilder? to_utf8 (IConv.IConv iconv_in, ref StringBuilder buf) {
 	var retry_prefix = new StringBuilder ();
 	// Convert input to UTF-8
@@ -174,8 +151,8 @@ ssize_t replace (InputStream input,
                  Pcre2.Regex old_regex,
                  Pcre2.MatchFlags replace_opts,
                  StringBuilder new_pattern,
-                 IConv.IConv? iconv_in,
-                 IConv.IConv? iconv_out)
+                 IConv.IConv iconv_in,
+                 IConv.IConv iconv_out)
 throws IOError {
 	bool lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
@@ -222,8 +199,6 @@ throws IOError {
 		// Convert or validate input, getting back any invalid suffix.
 		if (buf.len == 0) {
 			retry_prefix = new StringBuilder ();
-		} else if (iconv_in == null) {
-			retry_prefix = validate_utf8 (buf);
 		} else {
 			retry_prefix = to_utf8 (iconv_in, ref buf);
 		}
@@ -338,16 +313,12 @@ throws IOError {
 		if (output != null) {
 			// Write output.
 			size_t bytes_written;
-			if (iconv_out != null) {
-				try {
-					string converted = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
-					write_output (converted.data, bytes_written);
-				} catch (ConvertError e) {
-					warn (@"output encoding error: $(GLib.strerror(errno))");
-					return -1;
-				}
-			} else {
-				write_output (result.data, result.len);
+			try {
+				string converted = convert_with_iconv (result.str, result.len, (GLib.IConv) iconv_out, null, out bytes_written);
+				write_output (converted.data, bytes_written);
+			} catch (ConvertError e) {
+				warn (@"output encoding error: $(GLib.strerror(errno))");
+				return -1;
 			}
 		}
 
@@ -640,10 +611,7 @@ int main (string[] argv) {
 			} // GCOVR_EXCL_STOP
 
 			if (encoding_guessed && (encoding == "ASCII" || encoding == "UTF-8")) {
-				if (args_info.verbose_given) {
-					warn (@"guessed an encoding that does not require iconv");
-				}
-				encoding = null;
+				encoding = "UTF-8";
 			}
 
 			// Prepend data sent to UCharDet to the rest of the input.
@@ -652,12 +620,8 @@ int main (string[] argv) {
 
 		// Process the file
 		ssize_t num_matches = 0;
-		IConv.IConv? iconv_in = null;
-		IConv.IConv? iconv_out = null;
-		if (encoding != null) {
-			iconv_in = IConv.IConv.open ("UTF-8", encoding);
-			iconv_out = IConv.IConv.open (encoding, "UTF-8");
-		}
+		IConv.IConv iconv_in = IConv.IConv.open ("UTF-8", encoding);
+		IConv.IConv iconv_out = IConv.IConv.open (encoding, "UTF-8");
 		try {
 			num_matches = replace (input, filename, output, regex, replace_opts, new_text, iconv_in, iconv_out);
 		} catch (IOError e) { // GCOVR_EXCL_START
@@ -667,10 +631,8 @@ int main (string[] argv) {
 			} catch (IOError e) {}
 			num_matches = -1;
 		} // GCOVR_EXCL_STOP
-		if (iconv_in != null) {
-			iconv_in.close ();
-			iconv_out.close ();
-		}
+		iconv_in.close ();
+		iconv_out.close ();
 
 		try {
 			input.close ();
