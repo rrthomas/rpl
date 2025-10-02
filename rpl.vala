@@ -200,6 +200,7 @@ throws IOError {
 			tonext = new StringBuilder ();
 			// Append the data we read.
 			append_string_builder_tail (search_str, buf, 0);
+			buf = null;
 		}
 
 		// Compute length of valid input.
@@ -286,7 +287,7 @@ throws IOError {
 		search_str.erase (0, keep_from);
 		match_from -= keep_from;
 		tonext = (owned) search_str;
-		buf_size = size_t.max (buf_size, 2 * tonext.len + initial_buf_size);
+		buf_size = size_t.max (buf_size, 2 * tonext.len);
 
 		if (output != null) {
 			try {
