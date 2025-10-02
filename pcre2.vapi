@@ -433,13 +433,13 @@ namespace Pcre2 {
 		private int _match (Uchar* subject, size_t subject_len, size_t startoffset, MatchFlags options, Match match_data, void *mcontext = null);
 
 		[CCode (cname = "_vala_pcre2_match")]
-		public Match? match (GLib.StringBuilder subject, size_t startoffset, uint32 options, out int rc) {
+		public Match? match (Uchar *subject, size_t subject_len, size_t startoffset, uint32 options, out int rc) {
 			var match = create_match ();
 			if (match == null) {
 				rc = Error.NOMEMORY;
 				return null;
 			}
-			rc = _match ((Uchar *)subject.data, subject.len / sizeof(Uchar), startoffset, options, match);
+			rc = _match (subject, subject_len / sizeof(Uchar), startoffset, options, match);
 			return match;
 		}
 
@@ -456,19 +456,19 @@ namespace Pcre2 {
 		);
 
 		[CCode (cname = "_vala_pcre2_substitute")]
-		public GLib.StringBuilder substitute (GLib.StringBuilder subject, size_t startoffset, MatchFlags options, Match match, GLib.StringBuilder replacement, out int rc) {
+		public GLib.StringBuilder substitute (Uchar *subject, size_t subject_len, size_t startoffset, MatchFlags options, Match match, GLib.StringBuilder replacement, out int rc) {
 			size_t outlength;
 			if (MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY in options) {
 				outlength = replacement.len;
 			} else {
-				outlength = subject.len + replacement.len;
+				outlength = subject_len + replacement.len;
 			}
 
 			var output = new GLib.StringBuilder.sized (outlength);
-			rc = _substitute (subject.data, subject.len, startoffset, options | MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH, match, null, replacement.data, replacement.len, output.data, ref outlength);
+			rc = _substitute (subject, subject_len, startoffset, options | MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH, match, null, replacement.data, replacement.len, output.data, ref outlength);
 			if (rc == Error.NOMEMORY) {
 				output = new GLib.StringBuilder.sized (outlength);
-				rc = _substitute (subject.data, subject.len, startoffset, options, match, null, replacement.data, replacement.len, output.data, ref outlength);
+				rc = _substitute (subject, subject_len, startoffset, options, match, null, replacement.data, replacement.len, output.data, ref outlength);
 				GLib.assert (rc != Error.NOMEMORY);
 			}
 			output.len = (ssize_t) outlength;

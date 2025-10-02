@@ -249,7 +249,7 @@ throws IOError {
 
 			// Do match, and return on error.
 			int rc = 0;
-			Match? match = old_regex.match (search_str, (size_t) match_from, do_partial | notbol | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
+			Match? match = old_regex.match (search_str.data, search_str.len, (size_t) match_from, do_partial | notbol | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
 			if (rc < 0 && rc != Pcre2.Error.NOMATCH && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
 				warn (@"error in search: $(get_error_message(rc))");
 				return -1; // GCOVR_EXCL_STOP
@@ -276,7 +276,7 @@ throws IOError {
 
 			// Perform substitutions.
 			var replacement = old_regex.substitute (
-				search_str, (size_t) match_from,
+				search_str.data, search_str.len, (size_t) match_from,
 				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | Pcre2.MatchFlags.NO_UTF_CHECK,
 				match,
 				new_pattern,
