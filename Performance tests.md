@@ -38,3 +38,13 @@ Command                     Python   Vala   Python w/encoding  Vala w/encoding  
 `rpl a+ b many-a.txt`         1.4G   0.7G   1.1G               1.1G              0.4G
 `rpl a*x b many-a.txt`        2.1G   0.8G   1.8G               1.8G              0.3G
 `rpl (?<!a)a b many-a.txt`     28G   1.4G    28G               2.4G               n/a   Python buggy: 1 match per buffer load
+
+
+# Space profiling
+
+Using Valgrind's [`massif`](https://valgrind.org/docs/manual/ms-manual.html).
+
+```
+rm massif.out.*; cp many-a.{orig.,}txt; valgrind --tool=massif --detailed-freq=1 --max-snapshots=1000 ./rpl 'a*' b many-a.txt
+massif-visualizer massif.out.*
+```
