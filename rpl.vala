@@ -308,9 +308,9 @@ throws IOError {
 		ssize_t keep_from = match_from;
 		if (lookbehind)
 			keep_from = ssize_t.max (0, keep_from - (ssize_t) MAX_LOOKBEHIND_BYTES);
-		tonext = new StringBuilder ();
-		append_string_builder_tail (tonext, search_str, keep_from);
+		search_str.erase (0, keep_from);
 		match_from -= keep_from;
+		tonext = (owned) search_str;
 		buf_size = size_t.max (buf_size, 2 * tonext.len + initial_buf_size);
 
 		if (output != null) {
