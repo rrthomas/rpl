@@ -158,10 +158,20 @@ ssize_t read_all (InputStream input, StringBuilder buf) throws IOError {
 // This works around the length of arrays being `int`, which might not
 // hold the length of the output.
 void write_all (OutputStream output, uint8 *buf, size_t len) throws IOError {
+	if (output == null) {
+		return;
+	}
 	size_t tot_written = 0;
 	do {
 		size_t n_written;
-		output.write_all (((uint8[]) (buf + tot_written))[0 : size_t.min (initial_buf_size, len - tot_written)], out n_written);
+		try {
+			output.write_all (((uint8[]) (buf + tot_written))[0 : size_t.min (initial_buf_size, len - tot_written)], out n_written);
+		} catch (IOError e) { // GCOV_EXCL_START
+			if (e is IOError.INVALID_DATA) {
+				throw new IOError.INVALID_DATA (@"output encoding error: $(GLib.strerror(errno))");
+			}
+			throw e;
+		} // GCOV_EXCL_STOP
 		tot_written += n_written;
 	} while (tot_written < len);
 }
@@ -279,16 +289,7 @@ throws IOError {
 		match_from -= keep_from;
 		tonext = (owned) search_str;
 
-		if (output != null) {
-			try {
-				write_all (output, result.data, result.len);
-			} catch (IOError e) { // GCOV_EXCL_START
-				if (e is IOError.INVALID_DATA) {
-					throw new IOError.INVALID_DATA (@"output encoding error: $(GLib.strerror(errno))");
-				}
-				throw e;
-			} // GCOV_EXCL_STOP
-		}
+		write_all (output, result.data, result.len);
 
 		at_bob = false;
 	} while (n_read != 0);
