@@ -164,14 +164,7 @@ void write_all (OutputStream output, uint8 *buf, size_t len) throws IOError {
 	size_t tot_written = 0;
 	do {
 		size_t n_written;
-		try {
-			output.write_all (((uint8[]) (buf + tot_written))[0 : size_t.min (initial_buf_size, len - tot_written)], out n_written);
-		} catch (IOError e) { // GCOV_EXCL_START
-			if (e is IOError.INVALID_DATA) {
-				throw new IOError.INVALID_DATA (@"output encoding error: $(GLib.strerror(errno))");
-			}
-			throw e;
-		} // GCOV_EXCL_STOP
+		output.write_all (((uint8[]) (buf + tot_written))[0 : size_t.min (initial_buf_size, len - tot_written)], out n_written);
 		tot_written += n_written;
 	} while (tot_written < len);
 }

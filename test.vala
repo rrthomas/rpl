@@ -532,12 +532,12 @@ class LoremTests : TestRplFile {
 
 	void test_bad_output_encoding () {
 		var output = run ({ "--encoding=iso-8859-1", "amet", "amαt", test_result_root }, 0);
-		assert_true (output.std_err.contains ("output encoding error"));
+		assert_true (output.std_err.contains ("Invalid or incomplete multibyte or wide character"));
 	}
 
 	void test_bad_ascii_output () {
 		var output = run ({ "--encoding=ascii", "amet", "amαt", test_result_root }, 0);
-		assert_true (output.std_err.contains ("output encoding error"));
+		assert_true (output.std_err.contains ("Invalid or incomplete multibyte or wide character"));
 	}
 }
 
