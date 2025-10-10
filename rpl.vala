@@ -183,14 +183,17 @@ throws IOError {
 	ssize_t match_from = 0;
 	do {
 		var buf_size = size_t.max (tonext.allocated_len, 2 * tonext.len);
-		var buf = new StringBuilder.sized (buf_size);
-		n_read = read_all (input, buf, buf_size);
-
-		// Reuse `tonext`
-		var search_str = (owned) tonext;
-		// Append the data we read.
-		append_string_builder_tail (search_str, buf, 0);
-		buf = null;
+		StringBuilder search_str;
+		if (buf_size > tonext.allocated_len) {
+			search_str = new StringBuilder.sized (buf_size);
+			append_string_builder_tail (search_str, tonext, 0);
+			tonext = null;
+		} else {
+			search_str = (owned) tonext;
+		}
+		// StringBuilder.sized can allocate more memory than requested.
+		GLib.assert (search_str.allocated_len >= buf_size);
+		n_read = read_all (input, search_str, buf_size);
 
 		// Compute length of valid input.
 		ssize_t valid_len = (ssize_t) check_utf8 (search_str.str, search_str.len);
