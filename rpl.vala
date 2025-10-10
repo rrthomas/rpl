@@ -203,7 +203,6 @@ throws IOError {
 		// Compute length of valid input.
 		ssize_t valid_len = (ssize_t) check_utf8 (search_str.str, search_str.len);
 
-		var result = new StringBuilder ();
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
 		while (true) {
@@ -216,7 +215,9 @@ throws IOError {
 					// Already at the end of the buffer.
 					break;
 				}
-				result.append_unichar (c);
+				var c_str = new StringBuilder ();
+				c_str.append_unichar (c);
+				write_all (output, c_str.data, c_str.len);
 				match_from += c_len;
 			}
 
@@ -235,7 +236,7 @@ throws IOError {
 				start_pos = (ssize_t) match.group_start (0);
 				end_pos = (ssize_t) match.group_end (0);
 			}
-			append_string_builder_slice (result, search_str, match_from, start_pos);
+			write_all (output, ((char *) search_str.data) + match_from, start_pos - match_from);
 
 			// If we didn't get a match, break for more input.
 			if (rc == Pcre2.Error.NOMATCH || rc == Pcre2.Error.PARTIAL) {
@@ -268,8 +269,7 @@ throws IOError {
 				replacement = (owned) recased;
 			}
 
-			// Add replacement to result.
-			append_string_builder_tail (result, replacement, 0);
+			write_all (output, replacement.data, replacement.len);
 
 			// Update the match position.
 			match_from = end_pos;
@@ -284,8 +284,6 @@ throws IOError {
 		search_str.erase (0, keep_from);
 		match_from -= keep_from;
 		tonext = (owned) search_str;
-
-		write_all (output, result.data, result.len);
 
 		at_bob = false;
 	} while (n_read != 0);
