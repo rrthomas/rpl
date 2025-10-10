@@ -185,19 +185,11 @@ throws IOError {
 		var buf = new StringBuilder.sized (buf_size);
 		n_read = read_all (input, buf, buf_size);
 
-		StringBuilder search_str;
-		// If we have no search data held over from the previous iteration,
-		// and we're not using lookbehind, use the input directly.
-		if (tonext.len == 0 && !lookbehind) {
-			search_str = (owned) buf;
-		} else {
-			// Reuse `tonext`
-			search_str = (owned) tonext;
-			tonext = new StringBuilder ();
-			// Append the data we read.
-			append_string_builder_tail (search_str, buf, 0);
-			buf = null;
-		}
+		// Reuse `tonext`
+		var search_str = (owned) tonext;
+		// Append the data we read.
+		append_string_builder_tail (search_str, buf, 0);
+		buf = null;
 
 		// Compute length of valid input.
 		ssize_t valid_len = (ssize_t) check_utf8 (search_str.str, search_str.len);
