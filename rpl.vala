@@ -101,7 +101,7 @@ private StringBuilder caselike (StringBuilder model, StringBuilder str) {
 	return res;
 }
 
-// Append to `a` the bytes of `b` from `start` to the end of `b`.
+// Append to `a` the bytes of `b` from `start` to `end`.
 private void append_string_builder_slice (StringBuilder a, StringBuilder b, ssize_t start, ssize_t end)
 requires (0 <= start)
 requires (start <= end)
@@ -128,10 +128,11 @@ private size_t check_utf8 (uchar *init_s, size_t len) {
 	return valid_to - init_s;
 }
 
-// Helper function to read input.
+// Helper function to read input by appending to `buf`.
 // Read in chunks that definitely fit in `int`, the type of array
 // lengths.
 ssize_t read_all (InputStream input, StringBuilder buf, size_t buf_size) throws IOError {
+	ssize_t initial_len = buf.len;
 	size_t n_read = 0;
 	do {
 		try {
@@ -150,7 +151,7 @@ ssize_t read_all (InputStream input, StringBuilder buf, size_t buf_size) throws 
 	if (args_info.verbose_given) {
 		warn (@"bytes read: $(buf.len)");
 	}
-	return buf.len;
+	return buf.len - initial_len;
 }
 
 // Helper function to write output from a small output buffer.
