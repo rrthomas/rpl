@@ -175,14 +175,13 @@ throws IOError {
 	bool lookbehind = old_regex.pattern_info_maxlookbehind () != 0;
 	ssize_t num_matches = 0;
 	const size_t MAX_LOOKBEHIND_BYTES = 255 * 6; // 255 characters (PCRE2's hardwired limit) in UTF-8.
-	size_t buf_size = initial_buf_size;
 	var at_bob = true;
-
-	var tonext = new StringBuilder ();
+	var tonext = new StringBuilder.sized (initial_buf_size);
 	var prev_match_is_empty = false;
 	size_t n_read = 0;
 	ssize_t match_from = 0;
 	do {
+		var buf_size = size_t.max (tonext.allocated_len, 2 * tonext.len);
 		var buf = new StringBuilder.sized (buf_size);
 		n_read = read_all (input, buf, buf_size);
 
@@ -284,7 +283,6 @@ throws IOError {
 		search_str.erase (0, keep_from);
 		match_from -= keep_from;
 		tonext = (owned) search_str;
-		buf_size = size_t.max (buf_size, 2 * tonext.len);
 
 		if (output != null) {
 			try {
