@@ -131,13 +131,13 @@ private size_t check_utf8 (uchar *init_s, size_t len) {
 // Helper function to read input by appending to `buf`.
 // Read in chunks that definitely fit in `int`, the type of array
 // lengths.
-ssize_t read_all (InputStream input, StringBuilder buf, size_t buf_size) throws IOError {
+ssize_t read_all (InputStream input, StringBuilder buf) throws IOError {
 	ssize_t initial_len = buf.len;
 	size_t n_read = 0;
 	do {
 		try {
 			input.read_all (
-				((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, initial_buf_size)],
+				((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf.allocated_len - buf.len, initial_buf_size)],
 				out n_read
 			);
 		} catch (IOError e) {
@@ -147,7 +147,7 @@ ssize_t read_all (InputStream input, StringBuilder buf, size_t buf_size) throws 
 			throw e;
 		}
 		buf.len += (ssize_t) n_read;
-	} while (n_read > 0 && buf.len < buf_size);
+	} while (n_read > 0 && buf.len < buf.allocated_len);
 	if (args_info.verbose_given) {
 		warn (@"bytes read: $(buf.len)");
 	}
@@ -182,18 +182,17 @@ throws IOError {
 	size_t n_read = 0;
 	ssize_t match_from = 0;
 	do {
-		var buf_size = size_t.max (tonext.allocated_len, 2 * tonext.len);
 		StringBuilder search_str;
-		if (buf_size > tonext.allocated_len) {
-			search_str = new StringBuilder.sized (buf_size);
+		if (2 * tonext.len > tonext.allocated_len) {
+			// FIXME: StringBuilder.sized can allocate a surprising amount
+			// of memory, e.g. 4MB requested, 8MB allocated.
+			search_str = new StringBuilder.sized (2 * tonext.len);
 			append_string_builder_tail (search_str, tonext, 0);
 			tonext = null;
 		} else {
 			search_str = (owned) tonext;
 		}
-		// StringBuilder.sized can allocate more memory than requested.
-		GLib.assert (search_str.allocated_len >= buf_size);
-		n_read = read_all (input, search_str, buf_size);
+		n_read = read_all (input, search_str);
 
 		// Compute length of valid input.
 		ssize_t valid_len = (ssize_t) check_utf8 (search_str.str, search_str.len);
