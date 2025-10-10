@@ -119,17 +119,51 @@ requires (start <= b.len) {
 
 // Wrap string.validate_len to cope with NULs.
 private size_t check_utf8 (uchar *init_s, size_t len) {
-       var end = init_s + len;
-       var valid_to = init_s;
-       while (!((string) valid_to).validate_len (end - valid_to, out valid_to) &&
-              *valid_to == '\0') {
-               valid_to += 1;
-       }
-       return valid_to - init_s;
+	var end = init_s + len;
+	var valid_to = init_s;
+	while (!((string) valid_to).validate_len (end - valid_to, out valid_to) &&
+	       *valid_to == '\0') {
+		valid_to += 1;
+	}
+	return valid_to - init_s;
 }
 
-private delegate ssize_t ReaderType (StringBuilder buf) throws IOError;
-private delegate void WriterType (uint8 *buf, size_t len) throws IOError;
+// Helper function to read input.
+// Read in chunks that definitely fit in `int`, the type of array
+// lengths.
+ssize_t read_all (InputStream input, StringBuilder buf, size_t buf_size) throws IOError {
+	size_t n_read = 0;
+	do {
+		try {
+			input.read_all (
+				((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, initial_buf_size)],
+				out n_read
+			);
+		} catch (IOError e) {
+			if (e is IOError.INVALID_DATA) {
+				throw new IOError.INVALID_DATA ("error decoding input");
+			}
+			throw e;
+		}
+		buf.len += (ssize_t) n_read;
+	} while (n_read > 0 && buf.len < buf_size);
+	if (args_info.verbose_given) {
+		warn (@"bytes read: $(buf.len)");
+	}
+	return buf.len;
+}
+
+// Helper function to write output from a small output buffer.
+// This works around the length of arrays being `int`, which might not
+// hold the length of the output.
+void write_all (OutputStream output, uint8 *buf, size_t len) throws IOError {
+	size_t tot_written = 0;
+	do {
+		size_t n_written;
+		output.write_all (((uint8[]) (buf + tot_written))[0 : size_t.min (initial_buf_size, len - tot_written)], out n_written);
+		tot_written += n_written;
+	} while (tot_written < len);
+}
 
 ssize_t replace (InputStream input,
                  string input_filename,
@@ -144,50 +178,13 @@ throws IOError {
 	size_t buf_size = initial_buf_size;
 	var at_bob = true;
 
-	// Helper function to read input.
-	// Read in chunks that definitely fit in `int`, the type of array
-	// lengths.
-	ReaderType read_input = (buf) => {
-		size_t n_read = 0;
-		do {
-			try {
-				input.read_all (
-					((uint8[]) ((uint8*)buf.data + buf.len))[0 : size_t.min (buf_size - buf.len, initial_buf_size)],
-					out n_read
-				);
-			} catch (IOError e) {
-				if (e is IOError.INVALID_DATA) {
-					throw new IOError.INVALID_DATA ("error decoding input");
-				}
-				throw e;
-			}
-			buf.len += (ssize_t) n_read;
-		} while (n_read > 0 && buf.len < buf_size);
-		if (args_info.verbose_given) {
-			warn (@"bytes read: $(buf.len)");
-		}
-		return buf.len;
-	};
-
-	// Helper function to write output from a small output buffer.
-	// This works around the length of arrays being `int`, which might not
-	// hold the length of the output.
-	WriterType write_output = (buf, len) => {
-		size_t tot_written = 0;
-		do {
-			size_t n_written;
-			output.write_all (((uint8[]) (buf + tot_written))[0 : size_t.min (initial_buf_size, len - tot_written)], out n_written);
-			tot_written += n_written;
-		} while (tot_written < len);
-	};
-
 	var tonext = new StringBuilder ();
 	var prev_match_is_empty = false;
 	size_t n_read = 0;
 	ssize_t match_from = 0;
 	do {
 		var buf = new StringBuilder.sized (buf_size);
-		n_read = read_input (buf);
+		n_read = read_all (input, buf, buf_size);
 
 		StringBuilder search_str;
 		// If we have no search data held over from the previous iteration,
@@ -291,7 +288,7 @@ throws IOError {
 
 		if (output != null) {
 			try {
-				write_output (result.data, result.len);
+				write_all (output, result.data, result.len);
 			} catch (IOError e) { // GCOV_EXCL_START
 				if (e is IOError.INVALID_DATA) {
 					throw new IOError.INVALID_DATA (@"output encoding error: $(GLib.strerror(errno))");
