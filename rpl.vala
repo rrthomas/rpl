@@ -598,7 +598,11 @@ int main (string[] argv) {
 			input = new ConverterInputStream (input, iconverter);
 			var oconverter = new CharsetConverter (encoding, "UTF-8");
 			output = new ConverterOutputStream (output, oconverter);
-		} catch (GLib.Error e) {}
+		} catch (GLib.Error e) {
+			// We are definitely performing a known conversion.
+			GLib.assert (false);
+		}
+
 		try {
 			num_matches = replace (input, filename, output, regex, replace_opts, new_text);
 		} catch (IOError e) { // GCOVR_EXCL_START
