@@ -599,6 +599,10 @@ int main (string[] argv) {
 			GLib.assert (false);
 		}
 
+		// Buffer the charset converters
+		input = new BufferedInputStream.sized (input, initial_buf_size);
+		output = new BufferedOutputStream.sized (output, initial_buf_size);
+
 		try {
 			num_matches = replace (input, filename, output, regex, replace_opts, new_text);
 		} catch (IOError e) { // GCOVR_EXCL_START
