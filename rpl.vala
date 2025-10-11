@@ -202,6 +202,9 @@ throws IOError {
 
 		// Compute length of valid input.
 		ssize_t valid_len = (ssize_t) check_utf8 (search_str.str, search_str.len);
+		if (valid_len == 0 && search_str.len > 0) {
+			throw new IOError.INVALID_DATA ("error decoding input");
+		}
 
 		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
@@ -432,6 +435,9 @@ int main (string[] argv) {
 	}
 
 	string encoding = args_info.encoding_arg;
+	if (encoding != null) {
+		encoding = encoding.up ();
+	}
 
 	var ccontext = new Pcre2.CompileContext ();
 	if (args_info.whole_words_given) {
@@ -556,7 +562,7 @@ int main (string[] argv) {
 			GLib.assert (ok);
 			detector.data_end ();
 			var encoding_guessed = false;
-			encoding = detector.get_charset ();
+			encoding = detector.get_charset ().up ();
 			if (encoding != "") {
 				if (args_info.verbose_given) {
 					warn (@"guessed encoding '$encoding'");
@@ -587,19 +593,21 @@ int main (string[] argv) {
 
 		// Process the file
 		ssize_t num_matches = 0;
-		try {
-			var iconverter = new CharsetConverter ("UTF-8", encoding);
-			input = new ConverterInputStream (input, iconverter);
-			var oconverter = new CharsetConverter (encoding, "UTF-8");
-			output = new ConverterOutputStream (output, oconverter);
-		} catch (GLib.Error e) {
-			// We are definitely performing a known conversion.
-			GLib.assert (false);
-		}
+		if (encoding != "UTF-8") {
+			try {
+				var iconverter = new CharsetConverter ("UTF-8", encoding);
+				input = new ConverterInputStream (input, iconverter);
+				var oconverter = new CharsetConverter (encoding, "UTF-8");
+				output = new ConverterOutputStream (output, oconverter);
+			} catch (GLib.Error e) {
+				// We are definitely performing a known conversion.
+				GLib.assert (false);
+			}
 
-		// Buffer the charset converters
-		input = new BufferedInputStream.sized (input, initial_buf_size);
-		output = new BufferedOutputStream.sized (output, initial_buf_size);
+			// Buffer the charset converters
+			input = new BufferedInputStream.sized (input, initial_buf_size);
+			output = new BufferedOutputStream.sized (output, initial_buf_size);
+		}
 
 		try {
 			num_matches = replace (input, filename, output, regex, replace_opts, new_text);
