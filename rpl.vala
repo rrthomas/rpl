@@ -176,6 +176,11 @@ void write_all (OutputStream output, uint8 *buf, size_t len) throws IOError {
 	} while (tot_written < len);
 }
 
+// Allocate a StringBuilder without adding a byte for trailing NUL.
+StringBuilder string_builder_sized (size_t size) {
+	return new StringBuilder.sized (size - 1);
+}
+
 ssize_t replace (InputStream input,
                  string input_filename,
                  OutputStream? output,
@@ -187,16 +192,14 @@ throws IOError {
 	ssize_t num_matches = 0;
 	const size_t MAX_LOOKBEHIND_BYTES = 255 * 6; // 255 characters (PCRE2's hardwired limit) in UTF-8.
 	var at_bob = true;
-	var tonext = new StringBuilder.sized (initial_buf_size);
+	var tonext = string_builder_sized (initial_buf_size - 1);
 	var prev_match_is_empty = false;
 	size_t n_read = 0;
 	ssize_t match_from = 0;
 	do {
 		StringBuilder search_str;
 		if (2 * tonext.len > tonext.allocated_len) {
-			// FIXME: StringBuilder.sized can allocate a surprising amount
-			// of memory, e.g. 4MB requested, 8MB allocated.
-			search_str = new StringBuilder.sized (2 * tonext.len);
+			search_str = string_builder_sized (2 * tonext.len - 1);
 			append_string_builder_tail (search_str, tonext, 0);
 			tonext = null;
 		} else {
@@ -543,7 +546,7 @@ int main (string[] argv) {
 		}
 
 		// If we don't have an explicit encoding, guess
-		var buf = new StringBuilder.sized (initial_buf_size);
+		var buf = string_builder_sized (initial_buf_size - 1);
 		if (!args_info.encoding_given) {
 			var detector = new UCharDet ();
 
