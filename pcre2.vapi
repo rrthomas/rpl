@@ -413,9 +413,9 @@ namespace Pcre2 {
 		private int _pcre2_pattern_info(PatternInfo what, void *where);
 
 		[CCode (cname = "_vala_pcre2_pattern_info_maxlookbehind")]
-		public uint32 pattern_info_maxlookbehind() {
+		public uint32 pattern_info_maxlookbehind () {
 			uint32 res = 0;
-			_pcre2_pattern_info(PatternInfo.MAXLOOKBEHIND, &res);
+			_pcre2_pattern_info (PatternInfo.MAXLOOKBEHIND, &res);
 			return res;
 		}
 
@@ -464,10 +464,10 @@ namespace Pcre2 {
 				outlength = subject_len + replacement.len;
 			}
 
-			var output = new GLib.StringBuilder.sized (outlength);
+			var output = new GLib.StringBuilder.sized (outlength - 1);
 			rc = _substitute (subject, subject_len, startoffset, options | MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH, match, null, replacement.data, replacement.len, output.data, ref outlength);
 			if (rc == Error.NOMEMORY) {
-				output = new GLib.StringBuilder.sized (outlength);
+				output = new GLib.StringBuilder.sized (outlength - 1);
 				rc = _substitute (subject, subject_len, startoffset, options, match, null, replacement.data, replacement.len, output.data, ref outlength);
 				GLib.assert (rc != Error.NOMEMORY);
 			}

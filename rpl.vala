@@ -185,14 +185,14 @@ throws IOError {
 	ssize_t num_matches = 0;
 	const size_t MAX_LOOKBEHIND_BYTES = 255 * 6; // 255 characters (PCRE2's hardwired limit) in UTF-8.
 	var at_bob = true;
-	var tonext = string_builder_sized (initial_buf_size - 1);
+	var tonext = string_builder_sized (initial_buf_size);
 	var prev_match_is_empty = false;
 	size_t n_read = 0;
 	ssize_t match_from = 0;
 	do {
 		StringBuilder search_str;
 		if (2 * tonext.len > tonext.allocated_len) {
-			search_str = string_builder_sized (2 * tonext.len - 1);
+			search_str = string_builder_sized (2 * tonext.len);
 			append_string_builder_tail (search_str, tonext, 0);
 			tonext = null;
 		} else {
@@ -543,7 +543,7 @@ int main (string[] argv) {
 		}
 
 		// If we don't have an explicit encoding, guess
-		var buf = string_builder_sized (initial_buf_size - 1);
+		var buf = string_builder_sized (initial_buf_size);
 		if (!args_info.encoding_given) {
 			var detector = new UCharDet ();
 
