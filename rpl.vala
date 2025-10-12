@@ -140,8 +140,8 @@ private size_t check_utf8 (uchar *init_s, size_t len) {
 // Helper function to read input by appending to `buf`.
 // Read in chunks that definitely fit in `int`, the type of array
 // lengths.
-ssize_t read_all (InputStream input, StringBuilder buf) throws IOError {
-	ssize_t initial_len = buf.len;
+// Return `true` if we filled the buffer, or `false` if the input ended early.
+bool read_all (InputStream input, StringBuilder buf) throws IOError {
 	size_t n_read = 0;
 	do {
 		try {
@@ -161,7 +161,7 @@ ssize_t read_all (InputStream input, StringBuilder buf) throws IOError {
 	if (args_info.verbose_given) {
 		warn (@"bytes read: $(buf.len)");
 	}
-	return buf.len - initial_len;
+	return buf.len == buf.allocated_len;
 }
 
 // Helper function to write output from a small output buffer.
@@ -197,10 +197,9 @@ throws IOError {
 	var at_bob = true;
 	var tonext = string_builder_sized (initial_buf_size);
 	var prev_match_is_empty = false;
-	size_t n_read = 0;
+	bool is_partial = true;
 	ssize_t match_from = 0;
 	do {
-		var old_len = tonext.len; // To check for progress.
 		StringBuilder search_str;
 		if (2 * tonext.len > tonext.allocated_len) {
 			search_str = string_builder_sized (2 * tonext.len);
@@ -209,21 +208,20 @@ throws IOError {
 		} else {
 			search_str = (owned) tonext;
 		}
-		n_read = read_all (input, search_str);
+		is_partial = read_all (input, search_str);
 
 		// The bytes read might end with a partial UTF-8 character.
 		// Compute length of valid UTF-8 input.
 		// If `lookbehind`, `search_str` might start with a partial character.
 		// Therefore, check starting at the known UTF-8 boundary `match_from`.
 		ssize_t valid_len = match_from + (ssize_t) check_utf8 (((char *)search_str.str) + match_from, search_str.len - match_from);
-		if (valid_len < old_len) {
-			/// We certainly read enough bytes to complete one UTF-8 character.
-			/// But `valid_len` didn't even reach those bytes.
-			/// The input contains invalid UTF-8 starting before `old_len`.
+		ssize_t minimum_valid_len = is_partial ? search_str.len - 5 : search_str.len;
+		if (valid_len < minimum_valid_len) {
+			/// The input has invalid UTF-8 before any final partial character.
 			throw new IOError.INVALID_DATA ("error decoding input");
 		}
 
-		var do_partial = n_read > 0 ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
+		var do_partial = is_partial ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
 		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
 		while (true) {
 			// Special case: if the previous match was empty, don't try to
@@ -266,7 +264,7 @@ throws IOError {
 
 			prev_match_is_empty = start_pos == end_pos;
 
-			// Perform substitutions.
+			// Perform substitution.
 			var replacement = old_regex.substitute (
 				search_str.data, valid_len, (size_t) match_from,
 				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | Pcre2.MatchFlags.NO_UTF_CHECK,
@@ -304,7 +302,7 @@ throws IOError {
 		tonext = (owned) search_str;
 
 		at_bob = false;
-	} while (n_read != 0);
+	} while (is_partial);
 
 	if (args_info.verbose_given) {
 		warn ("no input left, exiting");
