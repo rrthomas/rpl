@@ -200,6 +200,7 @@ throws IOError {
 	size_t n_read = 0;
 	ssize_t match_from = 0;
 	do {
+		var old_len = tonext.len; // To check for progress.
 		StringBuilder search_str;
 		if (2 * tonext.len > tonext.allocated_len) {
 			search_str = string_builder_sized (2 * tonext.len);
@@ -210,9 +211,15 @@ throws IOError {
 		}
 		n_read = read_all (input, search_str);
 
-		// Compute length of valid input.
-		ssize_t valid_len = (ssize_t) check_utf8 (search_str.str, search_str.len);
-		if (valid_len == 0 && search_str.len > 0) {
+		// The bytes read might end with a partial UTF-8 character.
+		// Compute length of valid UTF-8 input.
+		// If `lookbehind`, `search_str` might start with a partial character.
+		// Therefore, check starting at the known UTF-8 boundary `match_from`.
+		ssize_t valid_len = match_from + (ssize_t) check_utf8 (((char *)search_str.str) + match_from, search_str.len - match_from);
+		if (valid_len < old_len) {
+			/// We certainly read enough bytes to complete one UTF-8 character.
+			/// But `valid_len` didn't even reach those bytes.
+			/// The input contains invalid UTF-8 starting before `old_len`.
 			throw new IOError.INVALID_DATA ("error decoding input");
 		}
 
