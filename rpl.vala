@@ -218,9 +218,7 @@ throws IOError {
 					// Already at the end of the buffer.
 					break;
 				}
-				var c_str = new StringBuilder ();
-				c_str.append_unichar (c);
-				write_all (output, c_str.data, c_str.len);
+				write_all (output, (char *)search_str.data + match_from, c_len);
 				match_from += c_len;
 			}
 
