@@ -221,8 +221,6 @@ throws IOError {
 			throw new IOError.INVALID_DATA ("error decoding input");
 		}
 
-		var do_partial = is_partial ? Pcre2.MatchFlags.PARTIAL_HARD : 0;
-		var notbol = at_bob ? 0 : Pcre2.MatchFlags.NOTBOL;
 		while (true) {
 			// Special case: if the previous match was empty, don't try to
 			// match again at the some position.
@@ -238,8 +236,11 @@ throws IOError {
 			}
 
 			// Do match, and return on error.
-			int rc = 0;
-			Match? match = old_regex.match (search_str.data, valid_len, (size_t) match_from, do_partial | notbol | Pcre2.MatchFlags.NO_UTF_CHECK, out rc);
+			var flags = Pcre2.MatchFlags.NO_UTF_CHECK |
+				(is_partial ? Pcre2.MatchFlags.PARTIAL_HARD : 0) |
+				(at_bob ? 0 : Pcre2.MatchFlags.NOTBOL);
+			int rc;
+			Match? match = old_regex.match (search_str.data, valid_len, (size_t) match_from, flags, out rc);
 			if (rc < 0 && rc != Pcre2.Error.NOMATCH && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
 				warn (@"error in search: $(get_error_message(rc))");
 				return -1; // GCOVR_EXCL_STOP
