@@ -237,8 +237,8 @@ throws IOError {
 
 			// Do match, and return on error.
 			var flags = Pcre2.MatchFlags.NO_UTF_CHECK |
-				(is_partial ? Pcre2.MatchFlags.PARTIAL_HARD : 0) |
-				(at_bob ? 0 : Pcre2.MatchFlags.NOTBOL);
+			            (is_partial ? Pcre2.MatchFlags.PARTIAL_HARD : 0) |
+			            (at_bob ? 0 : Pcre2.MatchFlags.NOTBOL);
 			int rc;
 			Match? match = old_regex.match (search_str.data, valid_len, (size_t) match_from, flags, out rc);
 			if (rc < 0 && rc != Pcre2.Error.NOMATCH && rc != Pcre2.Error.PARTIAL) { // GCOVR_EXCL_START
@@ -561,7 +561,7 @@ int main (string[] argv) {
 			// Scan at most 1MB, so we don't slurp a large file
 			var buf = string_builder_sized (initial_buf_size);
 			try {
-				read_all(input, buf);
+				read_all (input, buf);
 				if (args_info.verbose_given)
 					warn (@"bytes read to guess encoding: $(buf.len)");
 			} catch (IOError e) { // GCOVR_EXCL_START
