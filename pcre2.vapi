@@ -457,21 +457,22 @@ namespace Pcre2 {
 
 		[CCode (cname = "_vala_pcre2_substitute")]
 		public GLib.StringBuilder substitute (Uchar *subject, size_t subject_len, size_t startoffset, MatchFlags options, Match match, GLib.StringBuilder replacement, out int rc) {
-			size_t outlength;
+			size_t out_length;
 			if (MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY in options) {
-				outlength = replacement.len;
+				out_length = replacement.len;
 			} else {
-				outlength = subject_len + replacement.len;
+				out_length = subject_len + replacement.len;
 			}
 
-			var output = new GLib.StringBuilder.sized (outlength - 1);
-			rc = _substitute (subject, subject_len, startoffset, options | MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH, match, null, replacement.data, replacement.len, output.data, ref outlength);
+			var output = new GLib.StringBuilder.sized (out_length);
+			rc = _substitute (subject, subject_len, startoffset, options | MatchFlags.SUBSTITUTE_OVERFLOW_LENGTH, match, null, replacement.data, replacement.len, output.data, ref out_length);
 			if (rc == Error.NOMEMORY) {
-				output = new GLib.StringBuilder.sized (outlength - 1);
-				rc = _substitute (subject, subject_len, startoffset, options, match, null, replacement.data, replacement.len, output.data, ref outlength);
+				output = new GLib.StringBuilder.sized (out_length);
+				rc = _substitute (subject, subject_len, startoffset, options, match, null, replacement.data, replacement.len, output.data, ref out_length);
 				GLib.assert (rc != Error.NOMEMORY);
 			}
-			output.len = (ssize_t) outlength;
+			((char *)output.str)[out_length] = '\0';
+			output.len = (ssize_t) out_length;
 			return output;
 		}
 

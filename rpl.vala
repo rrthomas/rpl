@@ -101,6 +101,15 @@ private StringBuilder caselike (StringBuilder model, StringBuilder str) {
 	return res;
 }
 
+// Safely set the `len` of a `StringBuilder`.
+void set_string_builder_len (StringBuilder s, ssize_t new_len)
+requires (0 <= new_len)
+requires (new_len <= s.allocated_len)
+{
+	((char *)s.str)[new_len] = '\0';
+	s.len = new_len;
+}
+
 // Append to `a` the bytes of `b` from `start` to `end`.
 private void append_string_builder_slice (StringBuilder a, StringBuilder b, ssize_t start, ssize_t end)
 requires (0 <= start)
@@ -146,7 +155,8 @@ ssize_t read_all (InputStream input, StringBuilder buf) throws IOError {
 			}
 			throw e;
 		}
-		buf.len += (ssize_t) n_read;
+		set_string_builder_len (buf, buf.len + (ssize_t) n_read);
+
 	} while (n_read > 0 && buf.len < buf.allocated_len);
 	if (args_info.verbose_given) {
 		warn (@"bytes read: $(buf.len)");
@@ -541,21 +551,18 @@ int main (string[] argv) {
 		}
 
 		// If we don't have an explicit encoding, guess
-		var buf = string_builder_sized (initial_buf_size);
 		if (!args_info.encoding_given) {
-			var detector = new UCharDet ();
-
 			// Scan at most 1MB, so we don't slurp a large file
+			var buf = string_builder_sized (initial_buf_size);
 			try {
-				size_t n_bytes = 0;
-				input.read_all (buf.data[0 : initial_buf_size], out n_bytes);
-				buf.len += (ssize_t) n_bytes;
+				read_all(input, buf);
 				if (args_info.verbose_given)
 					warn (@"bytes read to guess encoding: $(buf.len)");
 			} catch (IOError e) { // GCOVR_EXCL_START
 				warn (@"error reading $filename: $(e.message); skipping!");
 				continue;
 			} // GCOVR_EXCL_STOP
+			var detector = new UCharDet ();
 			var ok = detector.handle_data (buf.data) == 0;
 			GLib.assert (ok);
 			detector.data_end ();
