@@ -4,3 +4,6 @@
 [submodule "gnulib"]
 	path = gnulib
 	url = git://git.sv.gnu.org/gnulib.git
+[submodule "vala-extra-vapis"]
+	path = vala-extra-vapis
+	url = https://gitlab.gnome.org/GNOME/vala-extra-vapis/

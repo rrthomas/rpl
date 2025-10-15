@@ -8,11 +8,11 @@ SUBDIRS = lib
 
 include $(top_srcdir)/aminclude_static.am
 
-AM_VALAFLAGS = --debug --vapidir=$(srcdir)
+AM_VALAFLAGS = --debug --vapidir=$(srcdir) --vapidir=$(srcdir)/vala-extra-vapis
 if OS_WIN32
 AM_VALAFLAGS += -D WINDOWS
 endif
-VAPIS =	config.vapi cmdline.vapi gnu.vapi pcre2.vapi uchardet.vapi
+VAPIS =	config.vapi cmdline.vapi gnu.vapi pcre2.vapi
 
 LDADD = $(top_builddir)/lib/libgnu.a $(CODE_COVERAGE_LDFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/lib -I$(top_builddir)/lib $(CODE_COVERAGE_CPPFLAGS)

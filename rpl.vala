@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet fd-stream.vala prefix-input-stream.vala
+#! /usr/bin/env -S vala --vapidir=. --vapidir=./vala-extra-vapis --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet fd-stream.vala prefix-input-stream.vala
 // rpl: search and replace text in files
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -20,6 +20,7 @@ using Config;
 using Posix;
 using Pcre2;
 using Gengetopt;
+using UcharDet;
 
 
 void info (string msg) {
@@ -568,7 +569,7 @@ int main (string[] argv) {
 				warn (@"error reading $filename: $(e.message); skipping!");
 				continue;
 			} // GCOVR_EXCL_STOP
-			var detector = new UCharDet ();
+			var detector = new UcharDet.Classifier ();
 			var ok = detector.handle_data (buf.data) == 0;
 			GLib.assert (ok);
 			detector.data_end ();
