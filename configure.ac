@@ -9,7 +9,7 @@ AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AM_INIT_AUTOMAKE([-Wall std-options foreign])
 
 # Checks for programs
-AM_PROG_CC_C_O
+AC_PROG_CC
 gl_EARLY
 AM_PROG_AR
 AC_PROG_RANLIB
