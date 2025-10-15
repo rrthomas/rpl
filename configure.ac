@@ -41,16 +41,7 @@ AM_CONDITIONAL(OS_WIN32, test "$native_win32" = yes)
 gl_INIT
 
 # Extra libraries
-AC_ARG_WITH([old-pcre],
-  [AS_HELP_STRING([--with-old-pcre], [allow the use of PCRE >= 10.35])],
-  [case $withval in
-     yes)    pcre_min_version=10.35 ;;
-     no)     ;;
-     *)      AC_MSG_ERROR([bad value $withval for old-pcre option]) ;;
-   esac
-   pcre_min_version=$withval],
-   [pcre_min_version=10.45])
-PKG_CHECK_MODULES(PCRE2, [libpcre2-8 >= $pcre_min_version])
+PKG_CHECK_MODULES(PCRE2, [libpcre2-8 >= 10.45])
 AC_DEFINE([PCRE2_CODE_UNIT_WIDTH], [8], [Define to select code unit width for libpcre2])
 PKG_CHECK_MODULES(UCHARDET, [uchardet])
 
@@ -69,8 +60,3 @@ AM_CONDITIONAL([PCRE2_16_DEMO], [test "$with_16bit_demo" = yes])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile lib/Makefile])
 AC_OUTPUT
-
-# Warn if PCRE is too old for \1 syntax
-pcre_version=$(pkg-config --modversion libpcre2-8)
-AS_VERSION_COMPARE([$pcre_version], [10.45],
-  [AC_MSG_WARN([libpcre2 $pcre_version too old for \1 capture reference syntax (needs 10.45) but using anyway])])
