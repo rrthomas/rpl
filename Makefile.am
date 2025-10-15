@@ -57,7 +57,7 @@ rpl_LDADD = $(LDADD) $(GLIB_LIBS) $(PCRE2_LIBS) $(UCHARDET_LIBS)
 rpl.c: cmdline.h
 
 cmdline.h cmdline.c: $(top_srcdir)/opts.ggo
-	gengetopt < $(top_srcdir)/opts.ggo --unamed-opts="OLD-TEXT NEW-TEXT [FILE...]"
+	$(GENGETOPT) < $(top_srcdir)/opts.ggo --unamed-opts="OLD-TEXT NEW-TEXT [FILE...]"
 
 pcre2_16_demo_SOURCES = pcre2-16-demo.vala
 pcre2_16_demo_CFLAGS = $(AM_CFLAGS) --include config.h --include pcre2-16.h $(GLIB_CFLAGS) $(PCRE2_CFLAGS)
