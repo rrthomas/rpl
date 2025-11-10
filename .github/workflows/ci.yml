@@ -10,7 +10,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-        with: { submodules: true }
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@main
       - name: Install dependencies
@@ -23,7 +22,7 @@ jobs:
           ./configure && make check || ( cat test.log && exit 1 )
           sudo make install
           rpl --help
-          make distcheck DISTCHECK_CONFIGURE_FLAGS=--with-old-pcre
+          make distcheck
       - name: Code coverage
         run: |
           brew install lcov gcovr
@@ -52,7 +51,6 @@ jobs:
           mingw-w64-${{matrix.env}}-pcre2
           mingw-w64-${{matrix.env}}-uchardet
     - uses: actions/checkout@v5
-      with: { submodules: true }
     - name: Bootstrap (gnulib and autoreconf)
       run: ./bootstrap
     - name: Build and run minimal test
