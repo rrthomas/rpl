@@ -266,9 +266,10 @@ throws IOError {
 			prev_match_is_empty = start_pos == end_pos;
 
 			// Perform substitution.
+			var substitute_opts = replace_opts | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | (flags & ~Pcre2.MatchFlags.PARTIAL_HARD);
 			var replacement = old_regex.substitute (
 				search_str.data, valid_len, (size_t) match_from,
-				replace_opts | Pcre2.MatchFlags.NOTEMPTY | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY | Pcre2.MatchFlags.NO_UTF_CHECK,
+				substitute_opts,
 				match,
 				new_pattern,
 				out rc
