@@ -1,7 +1,7 @@
 #! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu testcase.vala slurp.vala
 // rpl tests
 //
-// © 2025 Reuben Thomas <rrt@sc3d.org>
+// © 2025-2026 Reuben Thomas <rrt@sc3d.org>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -727,10 +727,16 @@ class BackreferenceTests : TestRplFile {
 	public BackreferenceTests(string bin_dir, string test_files_dir) {
 		base (bin_dir, test_files_dir, "aba.txt");
 		add_test ("test_backreference_numbering", test_backreference_numbering);
+		add_test ("test_python_backreference_numbering", test_python_backreference_numbering);
 	}
 
 	void test_backreference_numbering () {
 		run ({ "a(b)a", "$1", test_result_root });
+		assert_true (result_matches (Path.build_filename (test_files_dir, "aba_backreference-numbering_expected.txt")));
+	}
+
+	void test_python_backreference_numbering () {
+		run ({ "a(b)a", "\\1", test_result_root });
 		assert_true (result_matches (Path.build_filename (test_files_dir, "aba_backreference-numbering_expected.txt")));
 	}
 }

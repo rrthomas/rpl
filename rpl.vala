@@ -1,7 +1,7 @@
 #! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet fd-stream.vala prefix-input-stream.vala
 // rpl: search and replace text in files
 //
-// © 2025 Reuben Thomas <rrt@sc3d.org>
+// © 2025-2026 Reuben Thomas <rrt@sc3d.org>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -460,10 +460,10 @@ int main (string[] argv) {
 	}
 
 	var opts = Pcre2.CompileFlags.MULTILINE | Pcre2.CompileFlags.UTF | Pcre2.CompileFlags.UCP;
-	Pcre2.MatchFlags replace_opts = 0;
+	Pcre2.MatchFlags replace_opts = Pcre2.MatchFlags.SUBSTITUTE_EXTENDED;
 	if (args_info.fixed_strings_given) {
 		opts = Pcre2.CompileFlags.LITERAL; // Override default options, which are incompatible with LITERAL.
-		replace_opts |= Pcre2.MatchFlags.SUBSTITUTE_LITERAL;
+		replace_opts = Pcre2.MatchFlags.SUBSTITUTE_LITERAL;
 	}
 	if (args_info.ignore_case_given || args_info.match_case_given) {
 		opts |= Pcre2.CompileFlags.CASELESS;
