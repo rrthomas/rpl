@@ -460,10 +460,10 @@ int main (string[] argv) {
 	}
 
 	var opts = Pcre2.CompileFlags.MULTILINE | Pcre2.CompileFlags.UTF | Pcre2.CompileFlags.UCP;
-	Pcre2.MatchFlags replace_opts = 0;
+	Pcre2.MatchFlags replace_opts = Pcre2.MatchFlags.SUBSTITUTE_EXTENDED;
 	if (args_info.fixed_strings_given) {
 		opts = Pcre2.CompileFlags.LITERAL; // Override default options, which are incompatible with LITERAL.
-		replace_opts |= Pcre2.MatchFlags.SUBSTITUTE_LITERAL;
+		replace_opts = Pcre2.MatchFlags.SUBSTITUTE_LITERAL;
 	}
 	if (args_info.ignore_case_given || args_info.match_case_given) {
 		opts |= Pcre2.CompileFlags.CASELESS;
