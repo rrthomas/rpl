@@ -426,7 +426,7 @@ def main(argv: list[str] = sys.argv[1:]) -> None:
                 try:
                     os.chown(tmp_path, perms.st_uid, perms.st_gid)
                     os.chmod(tmp_path, perms.st_mode)
-                except OSError as e:
+                except (OSError, AttributeError) as e:
                     warn(f"Unable to set attributes of {filename}; error: {e}")
                     if args.force:
                         warn("New file attributes may not match!")
