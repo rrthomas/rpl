@@ -30,7 +30,7 @@ int main () {
 	int rc = 0;
 	for (size_t offset = 0; offset < hello_world.char_count () * sizeof(uint16); ) {
 		print (@"offset: $offset\n");
-		Match? match = re.match (subject, offset, 0, out rc);
+		Match? match = re.match (subject, subject.len, offset, 0, out rc);
 		if (rc == Pcre2.Error.NOMATCH) {
 			print ("no match\n");
 			break;
