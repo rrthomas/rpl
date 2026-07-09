@@ -9,7 +9,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@main
       - name: Install dependencies
@@ -50,7 +50,7 @@ jobs:
           mingw-w64-${{matrix.env}}-glib2
           mingw-w64-${{matrix.env}}-pcre2
           mingw-w64-${{matrix.env}}-uchardet
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Bootstrap (gnulib and autoreconf)
       run: ./bootstrap
     - name: Build and run minimal test
