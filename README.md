@@ -1,7 +1,7 @@
 # rpl
 
 https://github.com/rrthomas/rpl  
-© 2025 Reuben Thomas <rrt@sc3d.org>  
+© Reuben Thomas <rrt@sc3d.org>  
 
 A search/replace utility.
 
