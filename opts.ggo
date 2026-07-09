@@ -3,7 +3,7 @@ purpose "Search and replace text in files."
 text "\nOLD-TEXT matches at most once in each position, even when it matches the empty string.\n"
 usage " [OPTION...] OLD-TEXT NEW-TEXT [FILE...]"
 
-versiontext "Copyright (C) 2025 Reuben Thomas <rrt@sc3d.org>
+versiontext "Copyright (C) 2025-2026 Reuben Thomas <rrt@sc3d.org>
 
 Licence GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
@@ -16,6 +16,7 @@ option "quiet"         q "quiet mode"                                           
 option "verbose"       v "verbose mode"                                               flag off
 option "dry-run"       s "simulation mode"                                            flag off
 option "fixed-strings" F "treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions" flag off
+option "dotall"        - "let dot (period) match any character, including newlines"   flag off
 option "files"         - "OLD-TEXT and NEW-TEXT are file names to read patterns from" flag off
 option "glob"          x "modify only files matching the given glob (may be given more than once)" string typestr="GLOB" multiple default="*" optional
 option "recursive"     R "search recursively"                                         flag off

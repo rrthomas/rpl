@@ -468,6 +468,9 @@ int main (string[] argv) {
 	if (args_info.ignore_case_given || args_info.match_case_given) {
 		opts |= Pcre2.CompileFlags.CASELESS;
 	}
+	if (args_info.dotall_given) {
+		opts |= Pcre2.CompileFlags.DOTALL;
+	}
 	int errorcode;
 	size_t erroroffset;
 	var regex = Pcre2.Regex.compile ((Pcre2.Uchar[]) old_text.data, opts, out errorcode, out erroroffset, ccontext);

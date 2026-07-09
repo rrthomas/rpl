@@ -40,6 +40,8 @@ namespace Gengetopt {
 		int dry_run_flag;	/**< @brief simulation mode (default=off).  */
 		const string dry_run_help; /**< @brief simulation mode help description.  */
 		int fixed_strings_flag;	/**< @brief treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions (default=off).  */
+		int dotall_flag;	/**< @brief treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions (default=off).  */
+		const string dotall_help;	/**< @brief treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions (default=off).  */
 		const string fixed_strings_help; /**< @brief treat OLD-TEXT and NEW-TEXT as fixed strings, not regular expressions help description.  */
 		const string files_help; /**< @brief OLD-TEXT and NEW-TEXT are file names to read patterns from help description.  */
 		[CCode (array_length = false)] string[] glob_arg;	/**< @brief modify only files matching the given glob (may be given more than once).  */
@@ -63,6 +65,7 @@ namespace Gengetopt {
 		bool dry_run_given ;	/**< @brief Whether dry-run was given.  */
 		bool escape_given ;	/**< @brief Whether escape was given.  */
 		bool fixed_strings_given ;	/**< @brief Whether fixed-strings was given.  */
+		bool dotall_given ;	/**< @brief Whether dotall was given.  */
 		bool files_given ;	/**< @brief Whether files was given.  */
 		uint glob_given ;	/**< @brief How many times glob was given.  */
 		bool recursive_given ;	/**< @brief Whether recursive was given.  */

@@ -301,6 +301,7 @@ class OutputFileTests : TestRplOutputFile {
 		add_test ("test_recursive_no_file_arguments", test_recursive_no_file_arguments);
 		add_test ("test_bad_regex", test_bad_regex);
 		add_test ("test_non_file_input", test_non_file_input);
+		add_test ("test_dotall", test_dotall);
 	}
 
 	void test_a_star_b_empty_input () {
@@ -425,6 +426,13 @@ class OutputFileTests : TestRplOutputFile {
 		buffer_to_file (test_result_root, string.nfill (MULTI_BUFFER_TEST_BYTES, 'a').data);
 		var expected = string.nfill (MULTI_BUFFER_TEST_BYTES + 1, 'b');
 		run ({ "a?", "b", test_result_root });
+		assert_true (result_matches_string (expected));
+	}
+
+	void test_dotall () {
+		buffer_to_file (test_result_root, "a\na".data);
+		var expected = "bb";
+		run ({ "--dotall", "a.a", "bb", test_result_root });
 		assert_true (result_matches_string (expected));
 	}
 
