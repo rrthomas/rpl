@@ -43,7 +43,7 @@ gl_INIT
 # Extra libraries
 PKG_CHECK_MODULES(PCRE2, [libpcre2-8 >= 10.45])
 AC_DEFINE([PCRE2_CODE_UNIT_WIDTH], [8], [Define to select code unit width for libpcre2])
-PKG_CHECK_MODULES(UCHARDET, [uchardet])
+PKG_CHECK_MODULES(CHARDET, [chardet])
 
 # PCRE2 16-bit flavor demo
 AC_ARG_WITH([16bit-demo],

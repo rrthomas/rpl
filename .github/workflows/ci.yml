@@ -14,7 +14,7 @@ jobs:
         uses: Homebrew/actions/setup-homebrew@main
       - name: Install dependencies
         run: |
-          brew install autoconf automake vala pcre2 uchardet gengetopt help2man
+          brew install autoconf automake vala pcre2 libchardet gengetopt help2man
           echo "$(brew --prefix m4)/bin" >> $GITHUB_PATH
       - name: Build and test
         run: |
@@ -27,32 +27,33 @@ jobs:
         run: |
           brew install lcov gcovr
           ./configure --enable-code-coverage && make clean && make && make check-code-coverage && make assert-full-coverage
-  build-windows:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    strategy:
-      matrix:
-        include:
-        - { sys: mingw64, env: x86_64 }
-    steps:
-    - uses: msys2/setup-msys2@v2
-      with:
-        release: false
-        msystem: ${{matrix.sys}}
-        install: >-
-          patch git groff help2man gengetopt
-          mingw-w64-${{matrix.env}}-autotools
-          mingw-w64-${{matrix.env}}-pkg-config
-          mingw-w64-${{matrix.env}}-gcc
-          mingw-w64-${{matrix.env}}-vala
-          mingw-w64-${{matrix.env}}-glib2
-          mingw-w64-${{matrix.env}}-pcre2
-          mingw-w64-${{matrix.env}}-uchardet
-    - uses: actions/checkout@v5
-    - name: Bootstrap (gnulib and autoreconf)
-      run: ./bootstrap
-    - name: Build and run minimal test
-      # See https://github.com/rrthomas/rpl/issues/55
-      run: ./configure && make && ./rpl --help
+  # FIXME: build libchardet from source on Windows?
+  # build-windows:
+  #   runs-on: windows-latest
+  #   defaults:
+  #     run:
+  #       shell: msys2 {0}
+  #   strategy:
+  #     matrix:
+  #       include:
+  #       - { sys: mingw64, env: x86_64 }
+  #   steps:
+  #   - uses: msys2/setup-msys2@v2
+  #     with:
+  #       release: false
+  #       msystem: ${{matrix.sys}}
+  #       install: >-
+  #         patch git groff help2man gengetopt
+  #         mingw-w64-${{matrix.env}}-autotools
+  #         mingw-w64-${{matrix.env}}-pkg-config
+  #         mingw-w64-${{matrix.env}}-gcc
+  #         mingw-w64-${{matrix.env}}-vala
+  #         mingw-w64-${{matrix.env}}-glib2
+  #         mingw-w64-${{matrix.env}}-pcre2
+  #         mingw-w64-${{matrix.env}}-chardet
+  #   - uses: actions/checkout@v5
+  #   - name: Bootstrap (gnulib and autoreconf)
+  #     run: ./bootstrap
+  #   - name: Build and run minimal test
+  #     # See https://github.com/rrthomas/rpl/issues/55
+  #     run: ./configure && make && ./rpl --help

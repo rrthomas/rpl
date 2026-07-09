@@ -1,4 +1,4 @@
-#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg uchardet fd-stream.vala prefix-input-stream.vala
+#! /usr/bin/env -S vala --vapidir=. --pkg gio-2.0 --pkg posix --pkg gnu --pkg config --pkg cmdline --pkg pcre2 --pkg chardet fd-stream.vala prefix-input-stream.vala
 // rpl: search and replace text in files
 //
 // © 2025 Reuben Thomas <rrt@sc3d.org>
@@ -569,12 +569,12 @@ int main (string[] argv) {
 				warn (@"error reading $filename: $(e.message); skipping!");
 				continue;
 			} // GCOVR_EXCL_STOP
-			var detector = new UCharDet ();
-			var ok = detector.handle_data (buf.data) == 0;
+			var detector = new Chardet.DetectObj ();
+			var ok = Chardet.detect (buf.str, ref detector) == Chardet.Result.SUCCESS;
 			GLib.assert (ok);
-			detector.data_end ();
 			var encoding_guessed = false;
-			encoding = detector.get_charset ().up ();
+			encoding = detector.encoding.up ();
+			Chardet.DetectObj.free (ref detector);
 			if (encoding != "") {
 				if (args_info.verbose_given) {
 					warn (@"guessed encoding '$encoding'");
@@ -599,7 +599,7 @@ int main (string[] argv) {
 				encoding = "UTF-8";
 			}
 
-			// Prepend data sent to UCharDet to the rest of the input.
+			// Prepend data sent to Chardet to the rest of the input.
 			input = new PrefixInputStream (buf.data, input);
 		}
 

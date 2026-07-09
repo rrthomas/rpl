@@ -25,7 +25,7 @@ Ubuntu or Homebrew.
 ### Building from source
 
 To build `rpl` you will need a C compiler, GNU Make, GLib, PCRE2 and
-[uchardet](https://www.freedesktop.org/wiki/Software/uchardet/). These
+[libchardet](https://ftp.oops.org/pub/oops/libchardet). These
 should already be packaged in most distributions. (Although `rpl` is written
 in Vala, a Vala compiler is only needed for development.)
 
