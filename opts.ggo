@@ -3,7 +3,7 @@ purpose "Search and replace text in files."
 text "\nOLD-TEXT matches at most once in each position, even when it matches the empty string.\n"
 usage " [OPTION...] OLD-TEXT NEW-TEXT [FILE...]"
 
-versiontext "Copyright (C) 2025-2026 Reuben Thomas <rrt@sc3d.org>
+versiontext "Copyright (C) 2026 Reuben Thomas <rrt@sc3d.org>
 
 Licence GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
