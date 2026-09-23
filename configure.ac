@@ -41,7 +41,7 @@ AM_CONDITIONAL(OS_WIN32, test "$native_win32" = yes)
 gl_INIT
 
 # Extra libraries
-PKG_CHECK_MODULES(PCRE2, [libpcre2-8 >= 10.45])
+PKG_CHECK_MODULES(PCRE2, [libpcre2-8 >= 10.48])
 AC_DEFINE([PCRE2_CODE_UNIT_WIDTH], [8], [Define to select code unit width for libpcre2])
 PKG_CHECK_MODULES(UCHARDET, [uchardet])
 
