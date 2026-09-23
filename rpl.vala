@@ -266,7 +266,7 @@ throws IOError {
 			prev_match_is_empty = start_pos == end_pos;
 
 			// Perform substitution.
-			var substitute_opts = (flags & ~Pcre2.MatchFlags.PARTIAL_HARD) | replace_opts | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY;
+			var substitute_opts = flags | replace_opts | Pcre2.MatchFlags.SUBSTITUTE_MATCHED | Pcre2.MatchFlags.SUBSTITUTE_REPLACEMENT_ONLY;
 			var replacement = old_regex.substitute (
 				search_str.data, valid_len, (size_t) match_from,
 				substitute_opts,
