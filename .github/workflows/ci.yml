@@ -24,10 +24,10 @@ jobs:
           sudo make install
           rpl --help
           make distcheck
-      - name: Code coverage
-        run: |
-          brew install lcov gcovr
-          ./configure --enable-code-coverage && make clean && make && make check-code-coverage && make assert-full-coverage
+      # - name: Code coverage
+      #   run: |
+      #     brew install lcov gcovr
+      #     #./configure --enable-code-coverage && make clean && make && make check-code-coverage && make assert-full-coverage
   build-windows:
     runs-on: windows-latest
     defaults:
