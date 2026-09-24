@@ -1,5 +1,6 @@
 *~
 .deps
+.envrc
 *.c
 *.o
 *_vala.stamp
