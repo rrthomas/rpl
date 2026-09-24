@@ -18,6 +18,7 @@ jobs:
           echo "$(brew --prefix m4)/bin" >> $GITHUB_PATH
       - name: Build and test
         run: |
+          export LD_LIBRARY_PATH=$(brew --prefix pcre2)/lib
           ./bootstrap
           ./configure && make check || ( cat test.log && exit 1 )
           sudo make install
